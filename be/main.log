@@ -1,0 +1,37 @@
+# Thông tin sửa lỗi đăng nhập
+
+## Nguyên nhân lỗi
+Lỗi đăng nhập xảy ra do xung đột giữa hai implementation của UserDetailsService 
+(UserDetailsServiceImpl và CustomUserDetailsService) gây ra vòng lặp vô hạn trong quá 
+trình xác thực.
+
+## Các thay đổi đã thực hiện
+1. Đã xóa file `UserDetailsServiceImpl.java` (giữ lại `CustomUserDetailsService` có @Primary)
+2. Thêm logging chi tiết để bắt lỗi xác thực
+3. Đơn giản hóa cấu hình bảo mật trong `SecurityConfig.java`
+4. Cải thiện xử lý lỗi trong `JwtAuthenticationFilter.java`
+
+## Hướng dẫn khởi động lại máy chủ
+1. Dừng máy chủ hiện tại (nếu đang chạy): 
+   - Nhấn Ctrl+C trong terminal đang chạy máy chủ, hoặc 
+   - Tìm và kill process: `pkill -f "java -jar"`
+
+2. Biên dịch lại project:
+   ```
+   cd be
+   ./mvnw clean package -DskipTests
+   ```
+
+3. Khởi động lại máy chủ:
+   ```
+   java -jar target/*.jar
+   ```
+
+4. Kiểm tra logs để xác nhận không còn lỗi:
+   ```
+   tail -f logs/spring.log
+   ```
+
+## Xác nhận sửa lỗi
+Sau khi khởi động lại máy chủ, hãy thử đăng nhập lại. Nếu vẫn gặp lỗi, vui lòng kiểm tra 
+logs của máy chủ để biết thêm chi tiết về lỗi. 

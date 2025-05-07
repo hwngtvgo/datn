@@ -1,0 +1,21 @@
+{
+    "java.debug.settings.onBuildFailureProceed": true,
+    "github.copilot.enable": {
+        "*": true,
+        "plaintext": true,
+        "markdown": true,
+        "typescript": true,
+        "typescriptreact": true,
+        "java": true
+    },
+    "github.copilot.advanced": {
+        "workspaceRules": true
+    },
+    "java.checkstyle.configuration": "/google_checks.xml",
+    "java.format.settings.url": ".vscode/java-formatter.xml",
+    "java.format.settings.profile": "GoogleStyle",
+    "java.codeGeneration.packageNamePatterns": {
+        "controller": "controllers",
+        "service": "services"
+    }
+}

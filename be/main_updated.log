@@ -1,0 +1,44 @@
+# Thông tin sửa lỗi trong ứng dụng TOEIC
+
+## Các vấn đề đã được sửa
+
+### 1. Lỗi nhóm câu hỏi dùng chung file âm thanh và đoạn văn
+- Đã cải thiện phương thức `createAudioGroup` để đảm bảo tất cả câu hỏi trong nhóm part 3-4 sử dụng chung file âm thanh
+- Đã thêm kiểm tra loại câu hỏi (LISTENING) và part (3 hoặc 4) trước khi tạo nhóm
+- Kiểm tra file âm thanh không được rỗng
+
+### 2. Lỗi nhóm câu hỏi dùng chung đoạn văn
+- Đã cải thiện phương thức `createPassageGroup` để quản lý đoạn văn chung cho part 6-7
+- Đã thêm kiểm tra loại câu hỏi (READING) và part (6 hoặc 7)
+- Chỉ lưu đoạn văn trong câu hỏi đầu tiên và liên kết các câu hỏi khác
+
+### 3. Lỗi quản lý đề thi
+- Đã cải thiện phương thức `getPublicTests` và `getAllTests` để xử lý lỗi
+- Đã sửa phương thức `createTest` để thiết lập giá trị mặc định và kiểm tra lỗi
+
+### 4. Cải thiện chuyển đổi dữ liệu
+- Đã thêm ModelMapper để chuyển đổi giữa Entity và DTO
+- Đã đơn giản hóa code và cải thiện hiệu suất
+
+## Hướng dẫn sử dụng
+
+### Tạo nhóm câu hỏi dùng chung file âm thanh (Part 3-4)
+1. Tạo ít nhất 3 câu hỏi với loại LISTENING và part 3 hoặc 4
+2. Gửi request POST đến `/api/questions/audio-group` với:
+   - `questions`: danh sách câu hỏi dạng JSON
+   - `audioFile`: file âm thanh (bắt buộc)
+
+### Tạo nhóm câu hỏi dùng chung đoạn văn (Part 6-7)
+1. Tạo ít nhất 2 câu hỏi với loại READING và part 6 hoặc 7
+2. Gửi request POST đến `/api/questions/passage-group` với:
+   - `questions`: danh sách câu hỏi dạng JSON
+   - `passage`: nội dung đoạn văn (bắt buộc)
+
+### Quản lý đề thi
+1. Xem danh sách đề thi: GET `/api/tests` (admin) hoặc `/api/tests/public` (tất cả)
+2. Tạo đề thi mới: POST `/api/tests` với thông tin đề thi JSON
+3. Thêm câu hỏi vào đề thi: PUT `/api/tests/{id}` với danh sách câu hỏi
+
+## Lưu ý
+- Khi tạo nhóm câu hỏi, hãy đảm bảo loại và part đúng
+- Nếu vẫn gặp lỗi, hãy kiểm tra log server để biết thêm thông tin chi tiết 
