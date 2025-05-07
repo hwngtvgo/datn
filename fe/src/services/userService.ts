@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { API_URL } from '../config/constants';
-import authService from './authService';
+import authModule from '../modules/auth';
 
 // Định nghĩa các interfaces sử dụng trong service
 export interface UserResponse {
@@ -39,13 +39,7 @@ class UserService {
   // Lấy danh sách tất cả người dùng
   async getAllUsers(): Promise<UserResponse[]> {
     try {
-      // Đảm bảo header xác thực được thiết lập
-      const token = authService.getCurrentUser()?.accessToken;
-      if (token) {
-        authService.setAuthHeader(token);
-      }
-      
-      const response = await axios.get<UserResponse[]>(`${API_URL}/users`);
+      const response = await axios.get<UserResponse[]>(`${API_URL}/users`, authModule.createAuthConfig());
       return response.data;
     } catch (error) {
       console.error('Lỗi khi lấy danh sách người dùng:', error);
@@ -56,13 +50,7 @@ class UserService {
   // Lấy thông tin người dùng theo ID
   async getUserById(id: number): Promise<UserResponse> {
     try {
-      // Đảm bảo header xác thực được thiết lập
-      const token = authService.getCurrentUser()?.accessToken;
-      if (token) {
-        authService.setAuthHeader(token);
-      }
-      
-      const response = await axios.get<UserResponse>(`${API_URL}/users/${id}`);
+      const response = await axios.get<UserResponse>(`${API_URL}/users/${id}`, authModule.createAuthConfig());
       return response.data;
     } catch (error) {
       console.error(`Lỗi khi lấy thông tin người dùng với ID ${id}:`, error);
@@ -73,13 +61,7 @@ class UserService {
   // Tạo người dùng mới
   async createUser(userData: CreateUserRequest): Promise<UserResponse> {
     try {
-      // Đảm bảo header xác thực được thiết lập
-      const token = authService.getCurrentUser()?.accessToken;
-      if (token) {
-        authService.setAuthHeader(token);
-      }
-      
-      const response = await axios.post<UserResponse>(`${API_URL}/users`, userData);
+      const response = await axios.post<UserResponse>(`${API_URL}/users`, userData, authModule.createAuthConfig());
       return response.data;
     } catch (error) {
       console.error('Lỗi khi tạo người dùng mới:', error);
@@ -90,13 +72,7 @@ class UserService {
   // Cập nhật thông tin người dùng
   async updateUser(id: number, userData: UpdateUserRequest): Promise<UserResponse> {
     try {
-      // Đảm bảo header xác thực được thiết lập
-      const token = authService.getCurrentUser()?.accessToken;
-      if (token) {
-        authService.setAuthHeader(token);
-      }
-      
-      const response = await axios.put<UserResponse>(`${API_URL}/users/${id}`, userData);
+      const response = await axios.put<UserResponse>(`${API_URL}/users/${id}`, userData, authModule.createAuthConfig());
       return response.data;
     } catch (error) {
       console.error(`Lỗi khi cập nhật người dùng với ID ${id}:`, error);
@@ -107,13 +83,7 @@ class UserService {
   // Cập nhật mật khẩu người dùng
   async updatePassword(id: number, passwordData: UpdatePasswordRequest): Promise<void> {
     try {
-      // Đảm bảo header xác thực được thiết lập
-      const token = authService.getCurrentUser()?.accessToken;
-      if (token) {
-        authService.setAuthHeader(token);
-      }
-      
-      await axios.put(`${API_URL}/users/${id}/password`, passwordData);
+      await axios.put(`${API_URL}/users/${id}/password`, passwordData, authModule.createAuthConfig());
     } catch (error) {
       console.error(`Lỗi khi cập nhật mật khẩu cho người dùng với ID ${id}:`, error);
       throw error;
@@ -123,13 +93,7 @@ class UserService {
   // Xóa người dùng
   async deleteUser(id: number): Promise<void> {
     try {
-      // Đảm bảo header xác thực được thiết lập
-      const token = authService.getCurrentUser()?.accessToken;
-      if (token) {
-        authService.setAuthHeader(token);
-      }
-      
-      await axios.delete(`${API_URL}/users/${id}`);
+      await axios.delete(`${API_URL}/users/${id}`, authModule.createAuthConfig());
     } catch (error) {
       console.error(`Lỗi khi xóa người dùng với ID ${id}:`, error);
       throw error;

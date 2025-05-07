@@ -91,7 +91,7 @@ export default function AdminExams() {
   // Tải danh sách câu hỏi
   const loadQuestions = async () => {
     try {
-      const data = await toeicQuestionService.getAllQuestions()
+      const data = await toeicQuestionService.getQuestions()
       setAvailableQuestions(data)
     } catch (error) {
       console.error("Lỗi khi tải danh sách câu hỏi:", error)
