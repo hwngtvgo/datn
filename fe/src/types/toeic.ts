@@ -22,8 +22,7 @@ export enum ExamType {
 export enum QuestionCategory {
   GRAMMAR = 'GRAMMAR',
   VOCABULARY = 'VOCABULARY',
-  PRACTICE = 'PRACTICE',
-  OTHER = 'OTHER'
+
 }
 
 // Interface định nghĩa cấu trúc một tùy chọn (lựa chọn) cho câu hỏi
