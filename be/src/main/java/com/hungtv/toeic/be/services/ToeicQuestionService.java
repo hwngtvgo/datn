@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -512,6 +511,16 @@ public class ToeicQuestionService {
         
         // Lấy danh sách câu hỏi trong nhóm
         List<ToeicQuestion> questions = questionRepository.findByQuestionGroupIdOrderByQuestionOrder(groupId);
+        
+        // Lấy danh sách bài thi chứa nhóm câu hỏi này
+        List<Test> relatedTests = testRepository.findByQuestionGroupsContaining(group);
+        
+        // Xóa mối quan hệ giữa nhóm câu hỏi và các bài thi
+        for (Test test : relatedTests) {
+            // Xóa nhóm câu hỏi khỏi bài thi
+            test.removeQuestionGroup(group);
+            testRepository.save(test);
+        }
         
         // Xóa từng câu hỏi
         questions.forEach(q -> deleteQuestion(q.getId()));

@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import com.hungtv.toeic.be.models.QuestionGroup;
 import com.hungtv.toeic.be.models.Test;
 
 @Repository
@@ -13,4 +14,7 @@ public interface TestRepository extends JpaRepository<Test, Long> {
     List<Test> findByIsActiveTrue();
     List<Test> findByCreatedBy(String createdBy);
     List<Test> findByTitleContainingIgnoreCase(String title);
+    
+    // Tìm tất cả bài thi chứa nhóm câu hỏi
+    List<Test> findByQuestionGroupsContaining(QuestionGroup questionGroup);
 } 

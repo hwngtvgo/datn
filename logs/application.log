@@ -44792,3 +44792,1378 @@
 2025-05-07 17:05:35 [http-nio-8080-exec-8] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/yaml]
 2025-05-07 17:05:35 [http-nio-8080-exec-8] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [[com.hungtv.toeic.be.payload.response.TestResponse@461a6605, com.hungtv.toeic.be.payload.response.Te (truncated)...]
 2025-05-07 17:05:35 [http-nio-8080-exec-8] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-05-09 17:01:52 [restartedMain] INFO  com.hungtv.toeic.be.BeApplication - Starting BeApplication using Java 21.0.7 with PID 85988 (/home/hwngtv/datn/be/target/classes started by hwngtv in /home/hwngtv/datn)
+2025-05-09 17:01:52 [restartedMain] DEBUG com.hungtv.toeic.be.BeApplication - Running with Spring Boot v3.4.4, Spring v6.2.5
+2025-05-09 17:01:52 [restartedMain] INFO  com.hungtv.toeic.be.BeApplication - No active profile set, falling back to 1 default profile: "default"
+2025-05-09 17:01:52 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2025-05-09 17:01:52 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2025-05-09 17:01:53 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-05-09 17:01:53 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 67 ms. Found 7 JPA repository interfaces.
+2025-05-09 17:01:54 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2025-05-09 17:01:54 [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-05-09 17:01:54 [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.39]
+2025-05-09 17:01:54 [restartedMain] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2025-05-09 17:01:54 [restartedMain] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1774 ms
+2025-05-09 17:01:54 [restartedMain] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-05-09 17:01:54 [restartedMain] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.6.11.Final
+2025-05-09 17:01:54 [restartedMain] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-05-09 17:01:54 [restartedMain] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-05-09 17:01:54 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-05-09 17:01:55 [restartedMain] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@2889e8ae
+2025-05-09 17:01:55 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2025-05-09 17:01:55 [restartedMain] WARN  org.hibernate.orm.deprecation - HHH90000025: MySQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2025-05-09 17:01:55 [restartedMain] INFO  o.hibernate.orm.connections.pooling - HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 8.0.41
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2025-05-09 17:01:55 [restartedMain] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-05-09 17:01:55 [restartedMain] DEBUG org.hibernate.SQL - 
+    alter table roles 
+       modify column name enum ('ROLE_ADMIN','ROLE_MODERATOR','ROLE_USER')
+2025-05-09 17:01:55 [restartedMain] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-05-09 17:01:56 [restartedMain] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Filter 'authenticationJwtTokenFilter' configured for use
+2025-05-09 17:01:56 [restartedMain] INFO  o.s.s.c.a.a.c.InitializeAuthenticationProviderBeanManagerConfigurer$InitializeAuthenticationProviderManagerConfigurer - Global AuthenticationManager configured with AuthenticationProvider bean with name authenticationProvider
+2025-05-09 17:01:56 [restartedMain] WARN  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used by Spring Security for automatically configuring username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider. If the current configuration is intentional, to turn off this warning, increase the logging level of 'org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer' to ERROR
+2025-05-09 17:01:56 [restartedMain] INFO  o.s.d.j.r.query.QueryEnhancerFactory - Hibernate is in classpath; If applicable, HQL parser will be used.
+2025-05-09 17:01:56 [restartedMain] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2025-05-09 17:01:57 [restartedMain] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - 52 mappings in 'requestMappingHandlerMapping'
+2025-05-09 17:01:57 [restartedMain] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/webjars/**, /**, /swagger-ui*/*swagger-initializer.js, /swagger-ui*/**] in 'resourceHandlerMapping'
+2025-05-09 17:01:57 [restartedMain] DEBUG o.s.s.web.DefaultSecurityFilterChain - Will secure any request with filters: DisableEncodeUrlFilter, WebAsyncManagerIntegrationFilter, SecurityContextHolderFilter, HeaderWriterFilter, CorsFilter, LogoutFilter, AuthTokenFilter, RequestCacheAwareFilter, SecurityContextHolderAwareRequestFilter, AnonymousAuthenticationFilter, SessionManagementFilter, ExceptionTranslationFilter, AuthorizationFilter
+2025-05-09 17:01:57 [restartedMain] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerAdapter - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2025-05-09 17:01:57 [restartedMain] WARN  o.s.b.a.t.ThymeleafAutoConfiguration$DefaultTemplateResolverConfiguration - Cannot find template location: classpath:/templates/ (please add some templates, check your Thymeleaf configuration, or set spring.thymeleaf.check-template-location=false)
+2025-05-09 17:01:57 [restartedMain] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - ControllerAdvice beans: 1 @ExceptionHandler, 1 ResponseBodyAdvice
+2025-05-09 17:01:57 [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+2025-05-09 17:01:58 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
+2025-05-09 17:01:58 [restartedMain] INFO  com.hungtv.toeic.be.BeApplication - Started BeApplication in 5.829 seconds (process running for 6.104)
+2025-05-09 17:01:58 [restartedMain] DEBUG org.hibernate.SQL - 
+    select
+        count(*) 
+    from
+        roles r1_0
+2025-05-09 17:01:58 [restartedMain] DEBUG org.hibernate.SQL - 
+    select
+        u1_0.id 
+    from
+        users u1_0 
+    where
+        u1_0.username=? 
+    limit
+        ?
+2025-05-09 17:01:58 [restartedMain] INFO  c.h.toeic.be.config.DatabaseSeeder - Bắt đầu khởi tạo dữ liệu ban đầu...
+2025-05-09 17:01:58 [restartedMain] DEBUG org.hibernate.SQL - 
+    select
+        count(*) 
+    from
+        roles r1_0
+2025-05-09 17:01:58 [restartedMain] INFO  c.h.toeic.be.config.DatabaseSeeder - Các vai trò đã tồn tại, bỏ qua bước khởi tạo.
+2025-05-09 17:01:58 [restartedMain] DEBUG org.hibernate.SQL - 
+    select
+        u1_0.id 
+    from
+        users u1_0 
+    where
+        u1_0.username=? 
+    limit
+        ?
+2025-05-09 17:01:58 [restartedMain] INFO  c.h.toeic.be.config.DatabaseSeeder - Tài khoản admin đã tồn tại, bỏ qua bước khởi tạo.
+2025-05-09 17:01:58 [restartedMain] INFO  c.h.toeic.be.config.DatabaseSeeder - Hoàn tất khởi tạo dữ liệu ban đầu!
+2025-05-09 17:02:01 [http-nio-8080-exec-2] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-05-09 17:02:01 [http-nio-8080-exec-2] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2025-05-09 17:02:01 [http-nio-8080-exec-2] DEBUG o.s.web.servlet.DispatcherServlet - Detected StandardServletMultipartResolver
+2025-05-09 17:02:01 [http-nio-8080-exec-2] DEBUG o.s.web.servlet.DispatcherServlet - Detected AcceptHeaderLocaleResolver
+2025-05-09 17:02:01 [http-nio-8080-exec-2] DEBUG o.s.web.servlet.DispatcherServlet - Detected FixedThemeResolver
+2025-05-09 17:02:01 [http-nio-8080-exec-2] DEBUG o.s.web.servlet.DispatcherServlet - Detected org.springframework.web.servlet.view.DefaultRequestToViewNameTranslator@711906a0
+2025-05-09 17:02:02 [http-nio-8080-exec-2] DEBUG o.s.web.servlet.DispatcherServlet - Detected org.springframework.web.servlet.support.SessionFlashMapManager@27b9345e
+2025-05-09 17:02:02 [http-nio-8080-exec-2] DEBUG o.s.web.servlet.DispatcherServlet - enableLoggingRequestDetails='false': request parameters and headers will be masked to prevent unsafe logging of potentially sensitive data
+2025-05-09 17:02:02 [http-nio-8080-exec-2] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 2 ms
+2025-05-09 17:02:02 [http-nio-8080-exec-1] DEBUG o.s.security.web.FilterChainProxy - Securing OPTIONS /api/auth/me?_=1746784921932
+2025-05-09 17:02:02 [http-nio-8080-exec-2] DEBUG o.s.security.web.FilterChainProxy - Securing OPTIONS /api/auth/me?_=1746784921926
+2025-05-09 17:02:02 [http-nio-8080-exec-4] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/auth/me?_=1746784921932
+2025-05-09 17:02:02 [http-nio-8080-exec-3] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/auth/me?_=1746784921926
+2025-05-09 17:02:02 [http-nio-8080-exec-3] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - JWT từ cookie: Có
+2025-05-09 17:02:02 [http-nio-8080-exec-4] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - JWT từ cookie: Có
+2025-05-09 17:02:02 [http-nio-8080-exec-3] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Username từ JWT: admin
+2025-05-09 17:02:02 [http-nio-8080-exec-4] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Username từ JWT: admin
+2025-05-09 17:02:02 [http-nio-8080-exec-4] DEBUG org.hibernate.SQL - 
+    select
+        u1_0.id,
+        u1_0.active,
+        u1_0.created_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.password,
+        u1_0.token_expiry_date,
+        u1_0.updated_at,
+        u1_0.username,
+        u1_0.verification_token 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2025-05-09 17:02:02 [http-nio-8080-exec-3] DEBUG org.hibernate.SQL - 
+    select
+        u1_0.id,
+        u1_0.active,
+        u1_0.created_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.password,
+        u1_0.token_expiry_date,
+        u1_0.updated_at,
+        u1_0.username,
+        u1_0.verification_token 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2025-05-09 17:02:02 [http-nio-8080-exec-4] DEBUG org.hibernate.SQL - 
+    select
+        r1_0.user_id,
+        r1_1.id,
+        r1_1.name 
+    from
+        user_roles r1_0 
+    join
+        roles r1_1 
+            on r1_1.id=r1_0.role_id 
+    where
+        r1_0.user_id=?
+2025-05-09 17:02:02 [http-nio-8080-exec-3] DEBUG org.hibernate.SQL - 
+    select
+        r1_0.user_id,
+        r1_1.id,
+        r1_1.name 
+    from
+        user_roles r1_0 
+    join
+        roles r1_1 
+            on r1_1.id=r1_0.role_id 
+    where
+        r1_0.user_id=?
+2025-05-09 17:02:02 [http-nio-8080-exec-3] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Đã tải thông tin người dùng: admin
+2025-05-09 17:02:02 [http-nio-8080-exec-4] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Đã tải thông tin người dùng: admin
+2025-05-09 17:02:02 [http-nio-8080-exec-4] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Đã thiết lập xác thực cho: admin
+2025-05-09 17:02:02 [http-nio-8080-exec-3] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Đã thiết lập xác thực cho: admin
+2025-05-09 17:02:02 [http-nio-8080-exec-4] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/auth/me?_=1746784921932
+2025-05-09 17:02:02 [http-nio-8080-exec-3] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/auth/me?_=1746784921926
+2025-05-09 17:02:02 [http-nio-8080-exec-4] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/auth/me?_=1746784921932", parameters={masked}
+2025-05-09 17:02:02 [http-nio-8080-exec-3] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/auth/me?_=1746784921926", parameters={masked}
+2025-05-09 17:02:02 [http-nio-8080-exec-4] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.hungtv.toeic.be.controllers.AuthController#getCurrentUser()
+2025-05-09 17:02:02 [http-nio-8080-exec-3] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.hungtv.toeic.be.controllers.AuthController#getCurrentUser()
+2025-05-09 17:02:02 [http-nio-8080-exec-3] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/yaml]
+2025-05-09 17:02:02 [http-nio-8080-exec-4] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/yaml]
+2025-05-09 17:02:02 [http-nio-8080-exec-3] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [UserStatusResponse{username='admin', authenticated=true, role='ROLE_ADMIN'}]
+2025-05-09 17:02:02 [http-nio-8080-exec-4] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [UserStatusResponse{username='admin', authenticated=true, role='ROLE_ADMIN'}]
+2025-05-09 17:02:02 [http-nio-8080-exec-3] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-05-09 17:02:02 [http-nio-8080-exec-4] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-05-09 17:02:03 [http-nio-8080-exec-5] DEBUG o.s.security.web.FilterChainProxy - Securing OPTIONS /api/toeic-questions/question-groups
+2025-05-09 17:02:03 [http-nio-8080-exec-6] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/toeic-questions/question-groups
+2025-05-09 17:02:03 [http-nio-8080-exec-6] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - JWT từ cookie: Có
+2025-05-09 17:02:03 [http-nio-8080-exec-6] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Username từ JWT: admin
+2025-05-09 17:02:03 [http-nio-8080-exec-6] DEBUG org.hibernate.SQL - 
+    select
+        u1_0.id,
+        u1_0.active,
+        u1_0.created_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.password,
+        u1_0.token_expiry_date,
+        u1_0.updated_at,
+        u1_0.username,
+        u1_0.verification_token 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2025-05-09 17:02:03 [http-nio-8080-exec-6] DEBUG org.hibernate.SQL - 
+    select
+        r1_0.user_id,
+        r1_1.id,
+        r1_1.name 
+    from
+        user_roles r1_0 
+    join
+        roles r1_1 
+            on r1_1.id=r1_0.role_id 
+    where
+        r1_0.user_id=?
+2025-05-09 17:02:03 [http-nio-8080-exec-6] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Đã tải thông tin người dùng: admin
+2025-05-09 17:02:03 [http-nio-8080-exec-6] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Đã thiết lập xác thực cho: admin
+2025-05-09 17:02:03 [http-nio-8080-exec-6] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/toeic-questions/question-groups
+2025-05-09 17:02:03 [http-nio-8080-exec-6] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/toeic-questions/question-groups", parameters={}
+2025-05-09 17:02:03 [http-nio-8080-exec-6] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.hungtv.toeic.be.controllers.ToeicQuestionController#getAllQuestionGroups()
+2025-05-09 17:02:03 [http-nio-8080-exec-6] DEBUG org.hibernate.SQL - 
+    select
+        qg1_0.id,
+        qg1_0.audio_url,
+        qg1_0.image_url,
+        qg1_0.part,
+        qg1_0.passage,
+        qg1_0.question_type,
+        qg1_0.test_id 
+    from
+        question_groups qg1_0
+2025-05-09 17:02:03 [http-nio-8080-exec-6] DEBUG org.hibernate.SQL - 
+    select
+        tq1_0.id,
+        tq1_0.correct_answer,
+        tq1_0.difficulty_level,
+        tq1_0.explanation,
+        tq1_0.question,
+        tq1_0.question_group_id,
+        tq1_0.question_order 
+    from
+        toeic_questions tq1_0 
+    left join
+        question_groups qg1_0 
+            on qg1_0.id=tq1_0.question_group_id 
+    where
+        qg1_0.id=? 
+    order by
+        tq1_0.question_order
+2025-05-09 17:02:03 [http-nio-8080-exec-6] DEBUG org.hibernate.SQL - 
+    select
+        o1_0.question_id,
+        o1_0.id,
+        o1_0.option_key,
+        o1_0.option_text 
+    from
+        toeic_options o1_0 
+    where
+        o1_0.question_id=?
+2025-05-09 17:02:03 [http-nio-8080-exec-6] DEBUG org.hibernate.SQL - 
+    select
+        tq1_0.id,
+        tq1_0.correct_answer,
+        tq1_0.difficulty_level,
+        tq1_0.explanation,
+        tq1_0.question,
+        tq1_0.question_group_id,
+        tq1_0.question_order 
+    from
+        toeic_questions tq1_0 
+    left join
+        question_groups qg1_0 
+            on qg1_0.id=tq1_0.question_group_id 
+    where
+        qg1_0.id=? 
+    order by
+        tq1_0.question_order
+2025-05-09 17:02:03 [http-nio-8080-exec-6] DEBUG org.hibernate.SQL - 
+    select
+        o1_0.question_id,
+        o1_0.id,
+        o1_0.option_key,
+        o1_0.option_text 
+    from
+        toeic_options o1_0 
+    where
+        o1_0.question_id=?
+2025-05-09 17:02:03 [http-nio-8080-exec-6] DEBUG org.hibernate.SQL - 
+    select
+        o1_0.question_id,
+        o1_0.id,
+        o1_0.option_key,
+        o1_0.option_text 
+    from
+        toeic_options o1_0 
+    where
+        o1_0.question_id=?
+2025-05-09 17:02:03 [http-nio-8080-exec-6] DEBUG org.hibernate.SQL - 
+    select
+        tq1_0.id,
+        tq1_0.correct_answer,
+        tq1_0.difficulty_level,
+        tq1_0.explanation,
+        tq1_0.question,
+        tq1_0.question_group_id,
+        tq1_0.question_order 
+    from
+        toeic_questions tq1_0 
+    left join
+        question_groups qg1_0 
+            on qg1_0.id=tq1_0.question_group_id 
+    where
+        qg1_0.id=? 
+    order by
+        tq1_0.question_order
+2025-05-09 17:02:03 [http-nio-8080-exec-6] DEBUG org.hibernate.SQL - 
+    select
+        o1_0.question_id,
+        o1_0.id,
+        o1_0.option_key,
+        o1_0.option_text 
+    from
+        toeic_options o1_0 
+    where
+        o1_0.question_id=?
+2025-05-09 17:02:03 [http-nio-8080-exec-6] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/yaml]
+2025-05-09 17:02:03 [http-nio-8080-exec-6] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [[com.hungtv.toeic.be.payload.response.QuestionGroupResponse@4f2416f4, com.hungtv.toeic.be.payload.re (truncated)...]
+2025-05-09 17:02:03 [http-nio-8080-exec-6] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-05-09 17:02:03 [http-nio-8080-exec-7] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/toeic-questions/question-groups
+2025-05-09 17:02:03 [http-nio-8080-exec-7] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - JWT từ cookie: Có
+2025-05-09 17:02:03 [http-nio-8080-exec-7] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Username từ JWT: admin
+2025-05-09 17:02:04 [http-nio-8080-exec-8] DEBUG o.s.security.web.FilterChainProxy - Securing OPTIONS /api/toeic-questions/question-group/16
+2025-05-09 17:02:04 [http-nio-8080-exec-10] DEBUG o.s.security.web.FilterChainProxy - Securing OPTIONS /api/toeic-questions/question-group/19
+2025-05-09 17:02:04 [http-nio-8080-exec-7] DEBUG org.hibernate.SQL - 
+    select
+        u1_0.id,
+        u1_0.active,
+        u1_0.created_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.password,
+        u1_0.token_expiry_date,
+        u1_0.updated_at,
+        u1_0.username,
+        u1_0.verification_token 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2025-05-09 17:02:04 [http-nio-8080-exec-9] DEBUG o.s.security.web.FilterChainProxy - Securing OPTIONS /api/toeic-questions/question-group/17
+2025-05-09 17:02:04 [http-nio-8080-exec-7] DEBUG org.hibernate.SQL - 
+    select
+        r1_0.user_id,
+        r1_1.id,
+        r1_1.name 
+    from
+        user_roles r1_0 
+    join
+        roles r1_1 
+            on r1_1.id=r1_0.role_id 
+    where
+        r1_0.user_id=?
+2025-05-09 17:02:04 [http-nio-8080-exec-1] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/toeic-questions/question-group/17
+2025-05-09 17:02:04 [http-nio-8080-exec-2] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/toeic-questions/question-group/19
+2025-05-09 17:02:04 [http-nio-8080-exec-4] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/toeic-questions/question-group/16
+2025-05-09 17:02:04 [http-nio-8080-exec-2] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - JWT từ cookie: Có
+2025-05-09 17:02:04 [http-nio-8080-exec-4] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - JWT từ cookie: Có
+2025-05-09 17:02:04 [http-nio-8080-exec-1] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - JWT từ cookie: Có
+2025-05-09 17:02:04 [http-nio-8080-exec-7] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Đã tải thông tin người dùng: admin
+2025-05-09 17:02:04 [http-nio-8080-exec-7] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Đã thiết lập xác thực cho: admin
+2025-05-09 17:02:04 [http-nio-8080-exec-7] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/toeic-questions/question-groups
+2025-05-09 17:02:04 [http-nio-8080-exec-7] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/toeic-questions/question-groups", parameters={}
+2025-05-09 17:02:04 [http-nio-8080-exec-7] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.hungtv.toeic.be.controllers.ToeicQuestionController#getAllQuestionGroups()
+2025-05-09 17:02:04 [http-nio-8080-exec-2] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Username từ JWT: admin
+2025-05-09 17:02:04 [http-nio-8080-exec-1] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Username từ JWT: admin
+2025-05-09 17:02:04 [http-nio-8080-exec-4] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Username từ JWT: admin
+2025-05-09 17:02:04 [http-nio-8080-exec-7] DEBUG org.hibernate.SQL - 
+    select
+        qg1_0.id,
+        qg1_0.audio_url,
+        qg1_0.image_url,
+        qg1_0.part,
+        qg1_0.passage,
+        qg1_0.question_type,
+        qg1_0.test_id 
+    from
+        question_groups qg1_0
+2025-05-09 17:02:04 [http-nio-8080-exec-1] DEBUG org.hibernate.SQL - 
+    select
+        u1_0.id,
+        u1_0.active,
+        u1_0.created_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.password,
+        u1_0.token_expiry_date,
+        u1_0.updated_at,
+        u1_0.username,
+        u1_0.verification_token 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2025-05-09 17:02:04 [http-nio-8080-exec-2] DEBUG org.hibernate.SQL - 
+    select
+        u1_0.id,
+        u1_0.active,
+        u1_0.created_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.password,
+        u1_0.token_expiry_date,
+        u1_0.updated_at,
+        u1_0.username,
+        u1_0.verification_token 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2025-05-09 17:02:04 [http-nio-8080-exec-4] DEBUG org.hibernate.SQL - 
+    select
+        u1_0.id,
+        u1_0.active,
+        u1_0.created_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.password,
+        u1_0.token_expiry_date,
+        u1_0.updated_at,
+        u1_0.username,
+        u1_0.verification_token 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2025-05-09 17:02:04 [http-nio-8080-exec-4] DEBUG org.hibernate.SQL - 
+    select
+        r1_0.user_id,
+        r1_1.id,
+        r1_1.name 
+    from
+        user_roles r1_0 
+    join
+        roles r1_1 
+            on r1_1.id=r1_0.role_id 
+    where
+        r1_0.user_id=?
+2025-05-09 17:02:04 [http-nio-8080-exec-2] DEBUG org.hibernate.SQL - 
+    select
+        r1_0.user_id,
+        r1_1.id,
+        r1_1.name 
+    from
+        user_roles r1_0 
+    join
+        roles r1_1 
+            on r1_1.id=r1_0.role_id 
+    where
+        r1_0.user_id=?
+2025-05-09 17:02:04 [http-nio-8080-exec-1] DEBUG org.hibernate.SQL - 
+    select
+        r1_0.user_id,
+        r1_1.id,
+        r1_1.name 
+    from
+        user_roles r1_0 
+    join
+        roles r1_1 
+            on r1_1.id=r1_0.role_id 
+    where
+        r1_0.user_id=?
+2025-05-09 17:02:04 [http-nio-8080-exec-7] DEBUG org.hibernate.SQL - 
+    select
+        tq1_0.id,
+        tq1_0.correct_answer,
+        tq1_0.difficulty_level,
+        tq1_0.explanation,
+        tq1_0.question,
+        tq1_0.question_group_id,
+        tq1_0.question_order 
+    from
+        toeic_questions tq1_0 
+    left join
+        question_groups qg1_0 
+            on qg1_0.id=tq1_0.question_group_id 
+    where
+        qg1_0.id=? 
+    order by
+        tq1_0.question_order
+2025-05-09 17:02:04 [http-nio-8080-exec-7] DEBUG org.hibernate.SQL - 
+    select
+        o1_0.question_id,
+        o1_0.id,
+        o1_0.option_key,
+        o1_0.option_text 
+    from
+        toeic_options o1_0 
+    where
+        o1_0.question_id=?
+2025-05-09 17:02:04 [http-nio-8080-exec-4] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Đã tải thông tin người dùng: admin
+2025-05-09 17:02:04 [http-nio-8080-exec-4] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Đã thiết lập xác thực cho: admin
+2025-05-09 17:02:04 [http-nio-8080-exec-4] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/toeic-questions/question-group/16
+2025-05-09 17:02:04 [http-nio-8080-exec-2] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Đã tải thông tin người dùng: admin
+2025-05-09 17:02:04 [http-nio-8080-exec-2] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Đã thiết lập xác thực cho: admin
+2025-05-09 17:02:04 [http-nio-8080-exec-4] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/toeic-questions/question-group/16", parameters={}
+2025-05-09 17:02:04 [http-nio-8080-exec-2] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/toeic-questions/question-group/19
+2025-05-09 17:02:04 [http-nio-8080-exec-2] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/toeic-questions/question-group/19", parameters={}
+2025-05-09 17:02:04 [http-nio-8080-exec-4] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.hungtv.toeic.be.controllers.ToeicQuestionController#getQuestionsByGroupId(Long)
+2025-05-09 17:02:04 [http-nio-8080-exec-2] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.hungtv.toeic.be.controllers.ToeicQuestionController#getQuestionsByGroupId(Long)
+2025-05-09 17:02:04 [http-nio-8080-exec-7] DEBUG org.hibernate.SQL - 
+    select
+        tq1_0.id,
+        tq1_0.correct_answer,
+        tq1_0.difficulty_level,
+        tq1_0.explanation,
+        tq1_0.question,
+        tq1_0.question_group_id,
+        tq1_0.question_order 
+    from
+        toeic_questions tq1_0 
+    left join
+        question_groups qg1_0 
+            on qg1_0.id=tq1_0.question_group_id 
+    where
+        qg1_0.id=? 
+    order by
+        tq1_0.question_order
+2025-05-09 17:02:04 [http-nio-8080-exec-1] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Đã tải thông tin người dùng: admin
+2025-05-09 17:02:04 [http-nio-8080-exec-1] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Đã thiết lập xác thực cho: admin
+2025-05-09 17:02:04 [http-nio-8080-exec-1] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/toeic-questions/question-group/17
+2025-05-09 17:02:04 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/toeic-questions/question-group/17", parameters={}
+2025-05-09 17:02:04 [http-nio-8080-exec-1] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.hungtv.toeic.be.controllers.ToeicQuestionController#getQuestionsByGroupId(Long)
+2025-05-09 17:02:04 [http-nio-8080-exec-7] DEBUG org.hibernate.SQL - 
+    select
+        o1_0.question_id,
+        o1_0.id,
+        o1_0.option_key,
+        o1_0.option_text 
+    from
+        toeic_options o1_0 
+    where
+        o1_0.question_id=?
+2025-05-09 17:02:04 [http-nio-8080-exec-7] DEBUG org.hibernate.SQL - 
+    select
+        o1_0.question_id,
+        o1_0.id,
+        o1_0.option_key,
+        o1_0.option_text 
+    from
+        toeic_options o1_0 
+    where
+        o1_0.question_id=?
+2025-05-09 17:02:04 [http-nio-8080-exec-7] DEBUG org.hibernate.SQL - 
+    select
+        tq1_0.id,
+        tq1_0.correct_answer,
+        tq1_0.difficulty_level,
+        tq1_0.explanation,
+        tq1_0.question,
+        tq1_0.question_group_id,
+        tq1_0.question_order 
+    from
+        toeic_questions tq1_0 
+    left join
+        question_groups qg1_0 
+            on qg1_0.id=tq1_0.question_group_id 
+    where
+        qg1_0.id=? 
+    order by
+        tq1_0.question_order
+2025-05-09 17:02:04 [http-nio-8080-exec-7] DEBUG org.hibernate.SQL - 
+    select
+        o1_0.question_id,
+        o1_0.id,
+        o1_0.option_key,
+        o1_0.option_text 
+    from
+        toeic_options o1_0 
+    where
+        o1_0.question_id=?
+2025-05-09 17:02:04 [http-nio-8080-exec-4] DEBUG org.hibernate.SQL - 
+    select
+        qg1_0.id,
+        qg1_0.audio_url,
+        qg1_0.image_url,
+        qg1_0.part,
+        qg1_0.passage,
+        qg1_0.question_type,
+        t1_0.id,
+        t1_0.created_at,
+        t1_0.created_by,
+        t1_0.description,
+        t1_0.duration,
+        t1_0.instructions,
+        t1_0.is_active,
+        t1_0.title,
+        t1_0.type 
+    from
+        question_groups qg1_0 
+    left join
+        tests t1_0 
+            on t1_0.id=qg1_0.test_id 
+    where
+        qg1_0.id=?
+2025-05-09 17:02:04 [http-nio-8080-exec-1] DEBUG org.hibernate.SQL - 
+    select
+        qg1_0.id,
+        qg1_0.audio_url,
+        qg1_0.image_url,
+        qg1_0.part,
+        qg1_0.passage,
+        qg1_0.question_type,
+        t1_0.id,
+        t1_0.created_at,
+        t1_0.created_by,
+        t1_0.description,
+        t1_0.duration,
+        t1_0.instructions,
+        t1_0.is_active,
+        t1_0.title,
+        t1_0.type 
+    from
+        question_groups qg1_0 
+    left join
+        tests t1_0 
+            on t1_0.id=qg1_0.test_id 
+    where
+        qg1_0.id=?
+2025-05-09 17:02:04 [http-nio-8080-exec-2] DEBUG org.hibernate.SQL - 
+    select
+        qg1_0.id,
+        qg1_0.audio_url,
+        qg1_0.image_url,
+        qg1_0.part,
+        qg1_0.passage,
+        qg1_0.question_type,
+        t1_0.id,
+        t1_0.created_at,
+        t1_0.created_by,
+        t1_0.description,
+        t1_0.duration,
+        t1_0.instructions,
+        t1_0.is_active,
+        t1_0.title,
+        t1_0.type 
+    from
+        question_groups qg1_0 
+    left join
+        tests t1_0 
+            on t1_0.id=qg1_0.test_id 
+    where
+        qg1_0.id=?
+2025-05-09 17:02:04 [http-nio-8080-exec-7] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/yaml]
+2025-05-09 17:02:04 [http-nio-8080-exec-7] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [[com.hungtv.toeic.be.payload.response.QuestionGroupResponse@774ecd1b, com.hungtv.toeic.be.payload.re (truncated)...]
+2025-05-09 17:02:04 [http-nio-8080-exec-7] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-05-09 17:02:04 [http-nio-8080-exec-4] DEBUG org.hibernate.SQL - 
+    select
+        tq1_0.id,
+        tq1_0.correct_answer,
+        tq1_0.difficulty_level,
+        tq1_0.explanation,
+        tq1_0.question,
+        tq1_0.question_group_id,
+        tq1_0.question_order 
+    from
+        toeic_questions tq1_0 
+    left join
+        question_groups qg1_0 
+            on qg1_0.id=tq1_0.question_group_id 
+    where
+        qg1_0.id=? 
+    order by
+        tq1_0.question_order
+2025-05-09 17:02:04 [http-nio-8080-exec-1] DEBUG org.hibernate.SQL - 
+    select
+        tq1_0.id,
+        tq1_0.correct_answer,
+        tq1_0.difficulty_level,
+        tq1_0.explanation,
+        tq1_0.question,
+        tq1_0.question_group_id,
+        tq1_0.question_order 
+    from
+        toeic_questions tq1_0 
+    left join
+        question_groups qg1_0 
+            on qg1_0.id=tq1_0.question_group_id 
+    where
+        qg1_0.id=? 
+    order by
+        tq1_0.question_order
+2025-05-09 17:02:04 [http-nio-8080-exec-2] DEBUG org.hibernate.SQL - 
+    select
+        tq1_0.id,
+        tq1_0.correct_answer,
+        tq1_0.difficulty_level,
+        tq1_0.explanation,
+        tq1_0.question,
+        tq1_0.question_group_id,
+        tq1_0.question_order 
+    from
+        toeic_questions tq1_0 
+    left join
+        question_groups qg1_0 
+            on qg1_0.id=tq1_0.question_group_id 
+    where
+        qg1_0.id=? 
+    order by
+        tq1_0.question_order
+2025-05-09 17:02:04 [http-nio-8080-exec-2] DEBUG org.hibernate.SQL - 
+    select
+        o1_0.question_id,
+        o1_0.id,
+        o1_0.option_key,
+        o1_0.option_text 
+    from
+        toeic_options o1_0 
+    where
+        o1_0.question_id=?
+2025-05-09 17:02:04 [http-nio-8080-exec-4] DEBUG org.hibernate.SQL - 
+    select
+        o1_0.question_id,
+        o1_0.id,
+        o1_0.option_key,
+        o1_0.option_text 
+    from
+        toeic_options o1_0 
+    where
+        o1_0.question_id=?
+2025-05-09 17:02:04 [http-nio-8080-exec-1] DEBUG org.hibernate.SQL - 
+    select
+        o1_0.question_id,
+        o1_0.id,
+        o1_0.option_key,
+        o1_0.option_text 
+    from
+        toeic_options o1_0 
+    where
+        o1_0.question_id=?
+2025-05-09 17:02:04 [http-nio-8080-exec-1] DEBUG org.hibernate.SQL - 
+    select
+        o1_0.question_id,
+        o1_0.id,
+        o1_0.option_key,
+        o1_0.option_text 
+    from
+        toeic_options o1_0 
+    where
+        o1_0.question_id=?
+2025-05-09 17:02:04 [http-nio-8080-exec-4] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/yaml]
+2025-05-09 17:02:04 [http-nio-8080-exec-2] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/yaml]
+2025-05-09 17:02:04 [http-nio-8080-exec-1] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/yaml]
+2025-05-09 17:02:04 [http-nio-8080-exec-4] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [com.hungtv.toeic.be.payload.response.QuestionGroupResponse@72475d1c]
+2025-05-09 17:02:04 [http-nio-8080-exec-2] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [com.hungtv.toeic.be.payload.response.QuestionGroupResponse@70433917]
+2025-05-09 17:02:04 [http-nio-8080-exec-1] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [com.hungtv.toeic.be.payload.response.QuestionGroupResponse@64d29329]
+2025-05-09 17:02:04 [http-nio-8080-exec-1] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-05-09 17:02:04 [http-nio-8080-exec-4] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-05-09 17:02:04 [http-nio-8080-exec-2] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-05-09 17:02:04 [http-nio-8080-exec-3] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/toeic-questions/question-group/17
+2025-05-09 17:02:04 [http-nio-8080-exec-5] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/toeic-questions/question-group/16
+2025-05-09 17:02:04 [http-nio-8080-exec-6] DEBUG o.s.security.web.FilterChainProxy - Securing GET /api/toeic-questions/question-group/19
+2025-05-09 17:02:04 [http-nio-8080-exec-5] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - JWT từ cookie: Có
+2025-05-09 17:02:04 [http-nio-8080-exec-3] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - JWT từ cookie: Có
+2025-05-09 17:02:04 [http-nio-8080-exec-6] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - JWT từ cookie: Có
+2025-05-09 17:02:04 [http-nio-8080-exec-3] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Username từ JWT: admin
+2025-05-09 17:02:04 [http-nio-8080-exec-5] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Username từ JWT: admin
+2025-05-09 17:02:04 [http-nio-8080-exec-6] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Username từ JWT: admin
+2025-05-09 17:02:04 [http-nio-8080-exec-5] DEBUG org.hibernate.SQL - 
+    select
+        u1_0.id,
+        u1_0.active,
+        u1_0.created_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.password,
+        u1_0.token_expiry_date,
+        u1_0.updated_at,
+        u1_0.username,
+        u1_0.verification_token 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2025-05-09 17:02:04 [http-nio-8080-exec-6] DEBUG org.hibernate.SQL - 
+    select
+        u1_0.id,
+        u1_0.active,
+        u1_0.created_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.password,
+        u1_0.token_expiry_date,
+        u1_0.updated_at,
+        u1_0.username,
+        u1_0.verification_token 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2025-05-09 17:02:04 [http-nio-8080-exec-3] DEBUG org.hibernate.SQL - 
+    select
+        u1_0.id,
+        u1_0.active,
+        u1_0.created_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.password,
+        u1_0.token_expiry_date,
+        u1_0.updated_at,
+        u1_0.username,
+        u1_0.verification_token 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2025-05-09 17:02:04 [http-nio-8080-exec-6] DEBUG org.hibernate.SQL - 
+    select
+        r1_0.user_id,
+        r1_1.id,
+        r1_1.name 
+    from
+        user_roles r1_0 
+    join
+        roles r1_1 
+            on r1_1.id=r1_0.role_id 
+    where
+        r1_0.user_id=?
+2025-05-09 17:02:04 [http-nio-8080-exec-5] DEBUG org.hibernate.SQL - 
+    select
+        r1_0.user_id,
+        r1_1.id,
+        r1_1.name 
+    from
+        user_roles r1_0 
+    join
+        roles r1_1 
+            on r1_1.id=r1_0.role_id 
+    where
+        r1_0.user_id=?
+2025-05-09 17:02:04 [http-nio-8080-exec-3] DEBUG org.hibernate.SQL - 
+    select
+        r1_0.user_id,
+        r1_1.id,
+        r1_1.name 
+    from
+        user_roles r1_0 
+    join
+        roles r1_1 
+            on r1_1.id=r1_0.role_id 
+    where
+        r1_0.user_id=?
+2025-05-09 17:02:04 [http-nio-8080-exec-6] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Đã tải thông tin người dùng: admin
+2025-05-09 17:02:04 [http-nio-8080-exec-6] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Đã thiết lập xác thực cho: admin
+2025-05-09 17:02:04 [http-nio-8080-exec-6] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/toeic-questions/question-group/19
+2025-05-09 17:02:04 [http-nio-8080-exec-6] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/toeic-questions/question-group/19", parameters={}
+2025-05-09 17:02:04 [http-nio-8080-exec-6] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.hungtv.toeic.be.controllers.ToeicQuestionController#getQuestionsByGroupId(Long)
+2025-05-09 17:02:04 [http-nio-8080-exec-3] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Đã tải thông tin người dùng: admin
+2025-05-09 17:02:04 [http-nio-8080-exec-3] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Đã thiết lập xác thực cho: admin
+2025-05-09 17:02:04 [http-nio-8080-exec-3] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/toeic-questions/question-group/17
+2025-05-09 17:02:04 [http-nio-8080-exec-3] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/toeic-questions/question-group/17", parameters={}
+2025-05-09 17:02:04 [http-nio-8080-exec-5] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Đã tải thông tin người dùng: admin
+2025-05-09 17:02:04 [http-nio-8080-exec-5] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Đã thiết lập xác thực cho: admin
+2025-05-09 17:02:04 [http-nio-8080-exec-3] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.hungtv.toeic.be.controllers.ToeicQuestionController#getQuestionsByGroupId(Long)
+2025-05-09 17:02:04 [http-nio-8080-exec-5] DEBUG o.s.security.web.FilterChainProxy - Secured GET /api/toeic-questions/question-group/16
+2025-05-09 17:02:04 [http-nio-8080-exec-5] DEBUG o.s.web.servlet.DispatcherServlet - GET "/api/toeic-questions/question-group/16", parameters={}
+2025-05-09 17:02:04 [http-nio-8080-exec-5] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.hungtv.toeic.be.controllers.ToeicQuestionController#getQuestionsByGroupId(Long)
+2025-05-09 17:02:04 [http-nio-8080-exec-3] DEBUG org.hibernate.SQL - 
+    select
+        qg1_0.id,
+        qg1_0.audio_url,
+        qg1_0.image_url,
+        qg1_0.part,
+        qg1_0.passage,
+        qg1_0.question_type,
+        t1_0.id,
+        t1_0.created_at,
+        t1_0.created_by,
+        t1_0.description,
+        t1_0.duration,
+        t1_0.instructions,
+        t1_0.is_active,
+        t1_0.title,
+        t1_0.type 
+    from
+        question_groups qg1_0 
+    left join
+        tests t1_0 
+            on t1_0.id=qg1_0.test_id 
+    where
+        qg1_0.id=?
+2025-05-09 17:02:04 [http-nio-8080-exec-6] DEBUG org.hibernate.SQL - 
+    select
+        qg1_0.id,
+        qg1_0.audio_url,
+        qg1_0.image_url,
+        qg1_0.part,
+        qg1_0.passage,
+        qg1_0.question_type,
+        t1_0.id,
+        t1_0.created_at,
+        t1_0.created_by,
+        t1_0.description,
+        t1_0.duration,
+        t1_0.instructions,
+        t1_0.is_active,
+        t1_0.title,
+        t1_0.type 
+    from
+        question_groups qg1_0 
+    left join
+        tests t1_0 
+            on t1_0.id=qg1_0.test_id 
+    where
+        qg1_0.id=?
+2025-05-09 17:02:04 [http-nio-8080-exec-5] DEBUG org.hibernate.SQL - 
+    select
+        qg1_0.id,
+        qg1_0.audio_url,
+        qg1_0.image_url,
+        qg1_0.part,
+        qg1_0.passage,
+        qg1_0.question_type,
+        t1_0.id,
+        t1_0.created_at,
+        t1_0.created_by,
+        t1_0.description,
+        t1_0.duration,
+        t1_0.instructions,
+        t1_0.is_active,
+        t1_0.title,
+        t1_0.type 
+    from
+        question_groups qg1_0 
+    left join
+        tests t1_0 
+            on t1_0.id=qg1_0.test_id 
+    where
+        qg1_0.id=?
+2025-05-09 17:02:04 [http-nio-8080-exec-3] DEBUG org.hibernate.SQL - 
+    select
+        tq1_0.id,
+        tq1_0.correct_answer,
+        tq1_0.difficulty_level,
+        tq1_0.explanation,
+        tq1_0.question,
+        tq1_0.question_group_id,
+        tq1_0.question_order 
+    from
+        toeic_questions tq1_0 
+    left join
+        question_groups qg1_0 
+            on qg1_0.id=tq1_0.question_group_id 
+    where
+        qg1_0.id=? 
+    order by
+        tq1_0.question_order
+2025-05-09 17:02:04 [http-nio-8080-exec-6] DEBUG org.hibernate.SQL - 
+    select
+        tq1_0.id,
+        tq1_0.correct_answer,
+        tq1_0.difficulty_level,
+        tq1_0.explanation,
+        tq1_0.question,
+        tq1_0.question_group_id,
+        tq1_0.question_order 
+    from
+        toeic_questions tq1_0 
+    left join
+        question_groups qg1_0 
+            on qg1_0.id=tq1_0.question_group_id 
+    where
+        qg1_0.id=? 
+    order by
+        tq1_0.question_order
+2025-05-09 17:02:04 [http-nio-8080-exec-5] DEBUG org.hibernate.SQL - 
+    select
+        tq1_0.id,
+        tq1_0.correct_answer,
+        tq1_0.difficulty_level,
+        tq1_0.explanation,
+        tq1_0.question,
+        tq1_0.question_group_id,
+        tq1_0.question_order 
+    from
+        toeic_questions tq1_0 
+    left join
+        question_groups qg1_0 
+            on qg1_0.id=tq1_0.question_group_id 
+    where
+        qg1_0.id=? 
+    order by
+        tq1_0.question_order
+2025-05-09 17:02:04 [http-nio-8080-exec-6] DEBUG org.hibernate.SQL - 
+    select
+        o1_0.question_id,
+        o1_0.id,
+        o1_0.option_key,
+        o1_0.option_text 
+    from
+        toeic_options o1_0 
+    where
+        o1_0.question_id=?
+2025-05-09 17:02:04 [http-nio-8080-exec-3] DEBUG org.hibernate.SQL - 
+    select
+        o1_0.question_id,
+        o1_0.id,
+        o1_0.option_key,
+        o1_0.option_text 
+    from
+        toeic_options o1_0 
+    where
+        o1_0.question_id=?
+2025-05-09 17:02:04 [http-nio-8080-exec-5] DEBUG org.hibernate.SQL - 
+    select
+        o1_0.question_id,
+        o1_0.id,
+        o1_0.option_key,
+        o1_0.option_text 
+    from
+        toeic_options o1_0 
+    where
+        o1_0.question_id=?
+2025-05-09 17:02:04 [http-nio-8080-exec-3] DEBUG org.hibernate.SQL - 
+    select
+        o1_0.question_id,
+        o1_0.id,
+        o1_0.option_key,
+        o1_0.option_text 
+    from
+        toeic_options o1_0 
+    where
+        o1_0.question_id=?
+2025-05-09 17:02:04 [http-nio-8080-exec-6] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/yaml]
+2025-05-09 17:02:04 [http-nio-8080-exec-6] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [com.hungtv.toeic.be.payload.response.QuestionGroupResponse@5735f83e]
+2025-05-09 17:02:04 [http-nio-8080-exec-5] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/yaml]
+2025-05-09 17:02:04 [http-nio-8080-exec-5] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [com.hungtv.toeic.be.payload.response.QuestionGroupResponse@54b53f3f]
+2025-05-09 17:02:04 [http-nio-8080-exec-5] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-05-09 17:02:04 [http-nio-8080-exec-6] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-05-09 17:02:04 [http-nio-8080-exec-3] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/yaml]
+2025-05-09 17:02:04 [http-nio-8080-exec-3] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [com.hungtv.toeic.be.payload.response.QuestionGroupResponse@31db1557]
+2025-05-09 17:02:04 [http-nio-8080-exec-3] DEBUG o.s.web.servlet.DispatcherServlet - Completed 200 OK
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG o.s.security.web.FilterChainProxy - Securing DELETE /api/toeic-questions/question-group/17
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - JWT từ cookie: Có
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Username từ JWT: admin
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG org.hibernate.SQL - 
+    select
+        u1_0.id,
+        u1_0.active,
+        u1_0.created_at,
+        u1_0.email,
+        u1_0.full_name,
+        u1_0.password,
+        u1_0.token_expiry_date,
+        u1_0.updated_at,
+        u1_0.username,
+        u1_0.verification_token 
+    from
+        users u1_0 
+    where
+        u1_0.username=?
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG org.hibernate.SQL - 
+    select
+        r1_0.user_id,
+        r1_1.id,
+        r1_1.name 
+    from
+        user_roles r1_0 
+    join
+        roles r1_1 
+            on r1_1.id=r1_0.role_id 
+    where
+        r1_0.user_id=?
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Đã tải thông tin người dùng: admin
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Đã thiết lập xác thực cho: admin
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG o.s.security.web.FilterChainProxy - Secured DELETE /api/toeic-questions/question-group/17
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG o.s.web.servlet.DispatcherServlet - DELETE "/api/toeic-questions/question-group/17", parameters={}
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - Mapped to com.hungtv.toeic.be.controllers.ToeicQuestionController#deleteQuestionGroup(Long)
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG org.hibernate.SQL - 
+    select
+        qg1_0.id,
+        qg1_0.audio_url,
+        qg1_0.image_url,
+        qg1_0.part,
+        qg1_0.passage,
+        qg1_0.question_type,
+        t1_0.id,
+        t1_0.created_at,
+        t1_0.created_by,
+        t1_0.description,
+        t1_0.duration,
+        t1_0.instructions,
+        t1_0.is_active,
+        t1_0.title,
+        t1_0.type 
+    from
+        question_groups qg1_0 
+    left join
+        tests t1_0 
+            on t1_0.id=qg1_0.test_id 
+    where
+        qg1_0.id=?
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG org.hibernate.SQL - 
+    select
+        tq1_0.id,
+        tq1_0.correct_answer,
+        tq1_0.difficulty_level,
+        tq1_0.explanation,
+        tq1_0.question,
+        tq1_0.question_group_id,
+        tq1_0.question_order 
+    from
+        toeic_questions tq1_0 
+    left join
+        question_groups qg1_0 
+            on qg1_0.id=tq1_0.question_group_id 
+    where
+        qg1_0.id=? 
+    order by
+        tq1_0.question_order
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG org.hibernate.SQL - 
+    select
+        count(*) 
+    from
+        toeic_questions tq1_0 
+    where
+        tq1_0.id=?
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG org.hibernate.SQL - 
+    select
+        o1_0.question_id,
+        o1_0.id,
+        o1_0.option_key,
+        o1_0.option_text 
+    from
+        toeic_options o1_0 
+    where
+        o1_0.question_id=?
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG org.hibernate.SQL - 
+    delete 
+    from
+        toeic_options 
+    where
+        id=?
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG org.hibernate.SQL - 
+    delete 
+    from
+        toeic_options 
+    where
+        id=?
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG org.hibernate.SQL - 
+    delete 
+    from
+        toeic_options 
+    where
+        id=?
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG org.hibernate.SQL - 
+    delete 
+    from
+        toeic_options 
+    where
+        id=?
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG org.hibernate.SQL - 
+    delete 
+    from
+        toeic_questions 
+    where
+        id=?
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG org.hibernate.SQL - 
+    select
+        count(*) 
+    from
+        toeic_questions tq1_0 
+    where
+        tq1_0.id=?
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG org.hibernate.SQL - 
+    select
+        o1_0.question_id,
+        o1_0.id,
+        o1_0.option_key,
+        o1_0.option_text 
+    from
+        toeic_options o1_0 
+    where
+        o1_0.question_id=?
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG org.hibernate.SQL - 
+    select
+        q1_0.question_group_id,
+        q1_0.id,
+        q1_0.correct_answer,
+        q1_0.difficulty_level,
+        q1_0.explanation,
+        q1_0.question,
+        q1_0.question_order 
+    from
+        toeic_questions q1_0 
+    where
+        q1_0.question_group_id=?
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG org.hibernate.SQL - 
+    delete 
+    from
+        toeic_options 
+    where
+        id=?
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG org.hibernate.SQL - 
+    delete 
+    from
+        toeic_options 
+    where
+        id=?
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG org.hibernate.SQL - 
+    delete 
+    from
+        toeic_options 
+    where
+        id=?
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG org.hibernate.SQL - 
+    delete 
+    from
+        toeic_options 
+    where
+        id=?
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG org.hibernate.SQL - 
+    delete 
+    from
+        toeic_questions 
+    where
+        id=?
+2025-05-09 17:02:06 [http-nio-8080-exec-10] DEBUG org.hibernate.SQL - 
+    delete 
+    from
+        question_groups 
+    where
+        id=?
+2025-05-09 17:02:07 [http-nio-8080-exec-10] WARN  o.h.e.jdbc.spi.SqlExceptionHelper - SQL Error: 1451, SQLState: 23000
+2025-05-09 17:02:07 [http-nio-8080-exec-10] ERROR o.h.e.jdbc.spi.SqlExceptionHelper - Cannot delete or update a parent row: a foreign key constraint fails (`toeic_learning`.`test_question_groups`, CONSTRAINT `FK9q4s6itwarhmixi86gia1melu` FOREIGN KEY (`question_group_id`) REFERENCES `question_groups` (`id`))
+2025-05-09 17:02:07 [http-nio-8080-exec-10] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/yaml]
+2025-05-09 17:02:07 [http-nio-8080-exec-10] DEBUG o.s.w.s.m.m.a.HttpEntityMethodProcessor - Writing [com.hungtv.toeic.be.payload.response.ApiResponse@1f802c62]
+2025-05-09 17:02:07 [http-nio-8080-exec-10] DEBUG o.s.web.servlet.DispatcherServlet - Completed 400 BAD_REQUEST
+2025-05-09 17:02:51 [File Watcher] INFO  o.s.b.d.a.LocalDevToolsAutoConfiguration$RestartingClassPathChangeChangedEventListener - Restarting due to 75 class path changes (0 additions, 75 deletions, 0 modifications)
+2025-05-09 17:02:51 [Thread-5] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2025-05-09 17:02:51 [tomcat-shutdown] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Graceful shutdown complete
+2025-05-09 17:02:51 [Thread-5] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-05-09 17:02:51 [Thread-5] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2025-05-09 17:02:51 [Thread-5] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2025-05-09 17:03:06 [restartedMain] INFO  com.hungtv.toeic.be.BeApplication - Starting BeApplication using Java 21.0.7 with PID 85988 (/home/hwngtv/datn/be/target/classes started by hwngtv in /home/hwngtv/datn)
+2025-05-09 17:03:06 [restartedMain] DEBUG com.hungtv.toeic.be.BeApplication - Running with Spring Boot v3.4.4, Spring v6.2.5
+2025-05-09 17:03:06 [restartedMain] INFO  com.hungtv.toeic.be.BeApplication - No active profile set, falling back to 1 default profile: "default"
+2025-05-09 17:03:06 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-05-09 17:03:06 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 63 ms. Found 7 JPA repository interfaces.
+2025-05-09 17:03:07 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2025-05-09 17:03:07 [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-05-09 17:03:07 [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.39]
+2025-05-09 17:03:07 [restartedMain] INFO  o.a.c.c.C.[Tomcat-1].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2025-05-09 17:03:07 [restartedMain] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1343 ms
+2025-05-09 17:03:07 [restartedMain] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-05-09 17:03:07 [restartedMain] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-05-09 17:03:07 [restartedMain] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-05-09 17:03:07 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Starting...
+2025-05-09 17:03:07 [restartedMain] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-2 - Added connection com.mysql.cj.jdbc.ConnectionImpl@343e00c7
+2025-05-09 17:03:07 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Start completed.
+2025-05-09 17:03:07 [restartedMain] WARN  org.hibernate.orm.deprecation - HHH90000025: MySQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2025-05-09 17:03:07 [restartedMain] INFO  o.hibernate.orm.connections.pooling - HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-2)']
+	Database driver: undefined/unknown
+	Database version: 8.0.41
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2025-05-09 17:03:08 [restartedMain] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-05-09 17:03:08 [restartedMain] DEBUG org.hibernate.SQL - 
+    alter table roles 
+       modify column name enum ('ROLE_ADMIN','ROLE_MODERATOR','ROLE_USER')
+2025-05-09 17:03:08 [restartedMain] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-05-09 17:03:08 [restartedMain] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Filter 'authenticationJwtTokenFilter' configured for use
+2025-05-09 17:03:09 [restartedMain] INFO  o.s.s.c.a.a.c.InitializeAuthenticationProviderBeanManagerConfigurer$InitializeAuthenticationProviderManagerConfigurer - Global AuthenticationManager configured with AuthenticationProvider bean with name authenticationProvider
+2025-05-09 17:03:09 [restartedMain] WARN  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used by Spring Security for automatically configuring username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider. If the current configuration is intentional, to turn off this warning, increase the logging level of 'org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer' to ERROR
+2025-05-09 17:03:09 [restartedMain] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2025-05-09 17:03:10 [restartedMain] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - 52 mappings in 'requestMappingHandlerMapping'
+2025-05-09 17:03:10 [restartedMain] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/webjars/**, /**, /swagger-ui*/*swagger-initializer.js, /swagger-ui*/**] in 'resourceHandlerMapping'
+2025-05-09 17:03:10 [restartedMain] DEBUG o.s.s.web.DefaultSecurityFilterChain - Will secure any request with filters: DisableEncodeUrlFilter, WebAsyncManagerIntegrationFilter, SecurityContextHolderFilter, HeaderWriterFilter, CorsFilter, LogoutFilter, AuthTokenFilter, RequestCacheAwareFilter, SecurityContextHolderAwareRequestFilter, AnonymousAuthenticationFilter, SessionManagementFilter, ExceptionTranslationFilter, AuthorizationFilter
+2025-05-09 17:03:10 [restartedMain] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerAdapter - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2025-05-09 17:03:10 [restartedMain] WARN  o.s.b.a.t.ThymeleafAutoConfiguration$DefaultTemplateResolverConfiguration - Cannot find template location: classpath:/templates/ (please add some templates, check your Thymeleaf configuration, or set spring.thymeleaf.check-template-location=false)
+2025-05-09 17:03:10 [restartedMain] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - ControllerAdvice beans: 1 @ExceptionHandler, 1 ResponseBodyAdvice
+2025-05-09 17:03:10 [restartedMain] INFO  o.s.b.d.a.OptionalLiveReloadServer - LiveReload server is running on port 35729
+2025-05-09 17:03:10 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
+2025-05-09 17:03:10 [restartedMain] INFO  com.hungtv.toeic.be.BeApplication - Started BeApplication in 5.034 seconds (process running for 78.907)
+2025-05-09 17:03:10 [restartedMain] INFO  c.h.toeic.be.config.DatabaseSeeder - Bắt đầu khởi tạo dữ liệu ban đầu...
+2025-05-09 17:03:10 [restartedMain] DEBUG org.hibernate.SQL - 
+    select
+        count(*) 
+    from
+        roles r1_0
+2025-05-09 17:03:11 [restartedMain] INFO  c.h.toeic.be.config.DatabaseSeeder - Các vai trò đã tồn tại, bỏ qua bước khởi tạo.
+2025-05-09 17:03:11 [restartedMain] DEBUG org.hibernate.SQL - 
+    select
+        u1_0.id 
+    from
+        users u1_0 
+    where
+        u1_0.username=? 
+    limit
+        ?
+2025-05-09 17:03:11 [restartedMain] INFO  c.h.toeic.be.config.DatabaseSeeder - Tài khoản admin đã tồn tại, bỏ qua bước khởi tạo.
+2025-05-09 17:03:11 [restartedMain] INFO  c.h.toeic.be.config.DatabaseSeeder - Hoàn tất khởi tạo dữ liệu ban đầu!
+2025-05-09 17:03:11 [restartedMain] DEBUG org.hibernate.SQL - 
+    select
+        count(*) 
+    from
+        roles r1_0
+2025-05-09 17:03:11 [restartedMain] DEBUG org.hibernate.SQL - 
+    select
+        u1_0.id 
+    from
+        users u1_0 
+    where
+        u1_0.username=? 
+    limit
+        ?
+2025-05-09 17:03:11 [restartedMain] INFO  o.s.b.d.a.ConditionEvaluationDeltaLoggingListener - Condition evaluation unchanged
+2025-05-09 17:03:28 [SpringApplicationShutdownHook] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2025-05-09 17:03:28 [tomcat-shutdown] INFO  o.s.b.w.e.tomcat.GracefulShutdown - Graceful shutdown complete
+2025-05-09 17:03:28 [SpringApplicationShutdownHook] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-05-09 17:03:28 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Shutdown initiated...
+2025-05-09 17:03:28 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-2 - Shutdown completed.
+2025-05-09 17:05:37 [restartedMain] INFO  com.hungtv.toeic.be.BeApplication - Starting BeApplication using Java 21.0.7 with PID 90506 (/home/hwngtv/datn/be/target/classes started by hwngtv in /home/hwngtv/datn)
+2025-05-09 17:05:37 [restartedMain] DEBUG com.hungtv.toeic.be.BeApplication - Running with Spring Boot v3.4.4, Spring v6.2.5
+2025-05-09 17:05:37 [restartedMain] INFO  com.hungtv.toeic.be.BeApplication - No active profile set, falling back to 1 default profile: "default"
+2025-05-09 17:05:37 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2025-05-09 17:05:37 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2025-05-09 17:05:39 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-05-09 17:05:39 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 82 ms. Found 7 JPA repository interfaces.
+2025-05-09 17:05:40 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2025-05-09 17:05:40 [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-05-09 17:05:40 [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.39]
+2025-05-09 17:05:40 [restartedMain] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2025-05-09 17:05:40 [restartedMain] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 3083 ms
+2025-05-09 17:05:41 [restartedMain] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-05-09 17:05:41 [restartedMain] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.6.11.Final
+2025-05-09 17:05:41 [restartedMain] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-05-09 17:05:41 [restartedMain] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-05-09 17:05:41 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2025-05-09 17:05:41 [restartedMain] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@3cb8abdb
+2025-05-09 17:05:41 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2025-05-09 17:05:41 [restartedMain] WARN  org.hibernate.orm.deprecation - HHH90000025: MySQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2025-05-09 17:05:41 [restartedMain] INFO  o.hibernate.orm.connections.pooling - HHH10001005: Database info:
+	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
+	Database driver: undefined/unknown
+	Database version: 8.0.41
+	Autocommit mode: undefined/unknown
+	Isolation level: undefined/unknown
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2025-05-09 17:05:43 [restartedMain] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-05-09 17:05:43 [restartedMain] DEBUG org.hibernate.SQL - 
+    alter table roles 
+       modify column name enum ('ROLE_ADMIN','ROLE_MODERATOR','ROLE_USER')
+2025-05-09 17:05:43 [restartedMain] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-05-09 17:05:44 [restartedMain] DEBUG c.h.t.b.security.jwt.AuthTokenFilter - Filter 'authenticationJwtTokenFilter' configured for use
+2025-05-09 17:05:44 [restartedMain] INFO  o.s.s.c.a.a.c.InitializeAuthenticationProviderBeanManagerConfigurer$InitializeAuthenticationProviderManagerConfigurer - Global AuthenticationManager configured with AuthenticationProvider bean with name authenticationProvider
+2025-05-09 17:05:44 [restartedMain] WARN  o.s.s.c.a.a.c.InitializeUserDetailsBeanManagerConfigurer$InitializeUserDetailsManagerConfigurer - Global AuthenticationManager configured with an AuthenticationProvider bean. UserDetailsService beans will not be used by Spring Security for automatically configuring username/password login. Consider removing the AuthenticationProvider bean. Alternatively, consider using the UserDetailsService in a manually instantiated DaoAuthenticationProvider. If the current configuration is intentional, to turn off this warning, increase the logging level of 'org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer' to ERROR
+2025-05-09 17:05:44 [restartedMain] INFO  o.s.d.j.r.query.QueryEnhancerFactory - Hibernate is in classpath; If applicable, HQL parser will be used.
+2025-05-09 17:05:46 [restartedMain] WARN  o.s.b.a.o.j.JpaBaseConfiguration$JpaWebConfiguration - spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2025-05-09 17:05:46 [restartedMain] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerMapping - 52 mappings in 'requestMappingHandlerMapping'
+2025-05-09 17:05:46 [restartedMain] DEBUG o.s.w.s.h.SimpleUrlHandlerMapping - Patterns [/webjars/**, /**, /swagger-ui*/*swagger-initializer.js, /swagger-ui*/**] in 'resourceHandlerMapping'
+2025-05-09 17:05:46 [restartedMain] DEBUG o.s.s.web.DefaultSecurityFilterChain - Will secure any request with filters: DisableEncodeUrlFilter, WebAsyncManagerIntegrationFilter, SecurityContextHolderFilter, HeaderWriterFilter, CorsFilter, LogoutFilter, AuthTokenFilter, RequestCacheAwareFilter, SecurityContextHolderAwareRequestFilter, AnonymousAuthenticationFilter, SessionManagementFilter, ExceptionTranslationFilter, AuthorizationFilter
+2025-05-09 17:05:47 [restartedMain] DEBUG o.s.w.s.m.m.a.RequestMappingHandlerAdapter - ControllerAdvice beans: 0 @ModelAttribute, 0 @InitBinder, 1 RequestBodyAdvice, 1 ResponseBodyAdvice
+2025-05-09 17:05:47 [restartedMain] WARN  o.s.b.a.t.ThymeleafAutoConfiguration$DefaultTemplateResolverConfiguration - Cannot find template location: classpath:/templates/ (please add some templates, check your Thymeleaf configuration, or set spring.thymeleaf.check-template-location=false)
+2025-05-09 17:05:47 [restartedMain] DEBUG o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - ControllerAdvice beans: 1 @ExceptionHandler, 1 ResponseBodyAdvice
+2025-05-09 17:05:47 [restartedMain] WARN  o.s.b.d.a.OptionalLiveReloadServer - Unable to start LiveReload server
+2025-05-09 17:05:47 [restartedMain] WARN  o.s.b.w.s.c.AnnotationConfigServletWebServerApplicationContext - Exception encountered during context initialization - cancelling refresh attempt: org.springframework.context.ApplicationContextException: Failed to start bean 'webServerStartStop'
+2025-05-09 17:05:47 [restartedMain] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-05-09 17:05:47 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2025-05-09 17:05:47 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2025-05-09 17:05:47 [restartedMain] INFO  o.s.b.a.l.ConditionEvaluationReportLogger - 
+
+Error starting ApplicationContext. To display the condition evaluation report re-run your application with 'debug' enabled.
+2025-05-09 17:05:47 [restartedMain] ERROR o.s.b.d.LoggingFailureAnalysisReporter - 
+
+***************************
+APPLICATION FAILED TO START
+***************************
+
+Description:
+
+Web server failed to start. Port 8080 was already in use.
+
+Action:
+
+Identify and stop the process that's listening on port 8080 or configure this application to listen on another port.
+
