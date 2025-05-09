@@ -21,6 +21,7 @@ public class QuestionResponse {
     private String explanation;
     private String difficultyLevel;
     private Long testId;
+    private String category;
     private List<OptionResponse> options = new ArrayList<>();
     
     public QuestionResponse() {
@@ -42,6 +43,11 @@ public class QuestionResponse {
             // Lấy testId từ entity Test nếu có
             if (group.getTest() != null) {
                 this.testId = group.getTest().getId();
+            }
+        } else {
+            // Nếu không thuộc group nào, thì set category
+            if (question.getCategory() != null) {
+                this.category = question.getCategory().name();
             }
         }
         
@@ -161,6 +167,14 @@ public class QuestionResponse {
     
     public void setTestId(Long testId) {
         this.testId = testId;
+    }
+    
+    public String getCategory() {
+        return category;
+    }
+    
+    public void setCategory(String category) {
+        this.category = category;
     }
     
     public List<OptionResponse> getOptions() {

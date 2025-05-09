@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { QuestionType, DifficultyLevel } from '@/types/toeic';
+import { QuestionType, DifficultyLevel, QuestionCategory } from '@/types/toeic';
 import { TokenStorage } from '../utils/token-storage';
 import { API_URL } from '../config/constants';
 import authModule from '../modules/auth';
@@ -42,18 +42,45 @@ const noAuthAxios = axios.create({
   }
 });
 
-// Interface cho câu trả lời
+// Interface cho phân trang
+export interface Page<T> {
+  content: T[];
+  pageable: {
+    pageNumber: number;
+    pageSize: number;
+    sort: {
+      sorted: boolean;
+      unsorted: boolean;
+      empty: boolean;
+    }
+  };
+  totalElements: number;
+  totalPages: number;
+  last: boolean;
+  size: number;
+  number: number;
+  sort: {
+    sorted: boolean;
+    unsorted: boolean;
+    empty: boolean;
+  };
+  numberOfElements: number;
+  first: boolean;
+  empty: boolean;
+}
+
+// Interface cho tùy chọn của câu hỏi TOEIC
 export interface ToeicOptionDTO {
   id?: number;
-  optionKey: string;  // A, B, C, D
+  optionKey: string;
   optionText: string;
 }
 
 // Interface cho câu hỏi TOEIC
 export interface ToeicQuestionDTO {
   id?: number;
-  type: QuestionType;
-  part: number;
+  type?: QuestionType;
+  part?: number;
   question: string;
   correctAnswer: string;
   difficultyLevel: DifficultyLevel;
@@ -65,6 +92,7 @@ export interface ToeicQuestionDTO {
   passage?: string;
   createdAt?: string;
   updatedAt?: string;
+  category?: QuestionCategory;
   options: ToeicOptionDTO[];
 }
 
@@ -91,6 +119,17 @@ export interface QuestionGroupResponse {
   count: number;
   createdAt: string;
   updatedAt: string;
+}
+
+// Interface cho response của câu hỏi
+export interface QuestionResponse {
+  id: number;
+  question: string;
+  correctAnswer: string;
+  explanation?: string;
+  difficultyLevel: DifficultyLevel;
+  category?: QuestionCategory;
+  options: ToeicOptionDTO[];
 }
 
 // Hàm thiết lập header xác thực
@@ -415,10 +454,87 @@ export const deleteQuestionGroup = async (id: number): Promise<void> => {
   }
 };
 
+// Lấy danh sách câu hỏi độc lập (không thuộc nhóm nào)
+export const getStandaloneQuestions = async (params: any): Promise<Page<ToeicQuestionDTO>> => {
+  try {
+    const response = await axios.get(`${API_URL}/toeic-questions/standalone`, { params });
+    return response.data;
+  } catch (error) {
+    console.error('Lỗi khi lấy danh sách câu hỏi độc lập:', error);
+    throw error;
+  }
+};
+
+// Lấy danh sách câu hỏi độc lập theo category
+export const getStandaloneQuestionsByCategory = async (category: QuestionCategory, params: any): Promise<Page<ToeicQuestionDTO>> => {
+  try {
+    const response = await axios.get(`${API_URL}/toeic-questions/standalone/category/${category}`, { params });
+    return response.data;
+  } catch (error) {
+    console.error(`Lỗi khi lấy danh sách câu hỏi độc lập theo category ${category}:`, error);
+    throw error;
+  }
+};
+
+// Lấy danh sách câu hỏi theo category
+export const getQuestionsByCategory = async (category: QuestionCategory, params: any): Promise<Page<ToeicQuestionDTO>> => {
+  try {
+    const response = await axios.get(`${API_URL}/toeic-questions/category/${category}`, { params });
+    return response.data;
+  } catch (error) {
+    console.error(`Lỗi khi lấy danh sách câu hỏi theo category ${category}:`, error);
+    throw error;
+  }
+};
+
+// Tìm kiếm câu hỏi độc lập
+export const searchStandaloneQuestions = async (keyword: string, params: any): Promise<Page<ToeicQuestionDTO>> => {
+  try {
+    const response = await axios.get(`${API_URL}/toeic-questions/standalone/search`, { 
+      params: { ...params, keyword } 
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Lỗi khi tìm kiếm câu hỏi độc lập với từ khóa "${keyword}":`, error);
+    throw error;
+  }
+};
+
+// Cập nhật câu hỏi
+export async function updateQuestion(question: ToeicQuestionDTO): Promise<QuestionResponse> {
+  console.log('Dữ liệu gửi đi khi cập nhật câu hỏi:', JSON.stringify(question, null, 2));
+  
+  // Đảm bảo category được gửi đúng cách
+  const requestData: any = { ...question };
+  
+  // Luôn gửi questionGroupId trong params, ngay cả khi nó là null
+  const questionGroupId = question.questionGroupId === undefined ? null : question.questionGroupId;
+  console.log('questionGroupId được gửi:', questionGroupId);
+  
+  try {
+    const response = await axios.put(
+      `${TOEIC_QUESTIONS_API_URL}/${question.id}?questionGroupId=${questionGroupId}`, 
+      requestData,
+      authModule.createAuthConfig()
+    );
+    console.log('Phản hồi từ server khi cập nhật câu hỏi:', response.data);
+    return response.data;
+  } catch (error: any) {
+    console.error('Lỗi khi cập nhật câu hỏi:', error);
+    console.error('Chi tiết lỗi:', error.response?.data);
+    throw error;
+  }
+}
+
 // Service cho ToeicQuestion
 class ToeicQuestionService {
-  private baseUrl = `${API_URL_LOCAL}/toeic-questions`;
-  private groupUrl = `${API_URL_LOCAL}/toeic-questions/question-groups`;
+  private baseUrl: string;
+  private groupUrl: string;
+  
+  constructor() {
+    this.baseUrl = `${API_URL}/toeic-questions`;
+    this.groupUrl = `${API_URL}/toeic-questions/question-groups`;
+  }
   
   // Lấy danh sách các câu hỏi
   async getQuestions(params?: any): Promise<ToeicQuestionDTO[]> {
@@ -440,8 +556,57 @@ class ToeicQuestionService {
   
   // Cập nhật câu hỏi
   async updateQuestion(question: ToeicQuestionDTO): Promise<ToeicQuestionDTO> {
-    const response = await axios.put(`${this.baseUrl}/${question.id}`, question);
-    return response.data;
+    if (!question.id) {
+      throw new Error('Câu hỏi cần có ID để cập nhật');
+    }
+    
+    try {
+      // Kiểm tra các giá trị enum trước khi gửi
+      const validCategories = Object.values(QuestionCategory);
+      const validDifficulties = Object.values(DifficultyLevel);
+      
+      // Clone để tránh thay đổi tham chiếu gốc
+      const cleanedQuestion = { ...question };
+      
+      // Đảm bảo category là giá trị hợp lệ
+      if (!cleanedQuestion.category || !validCategories.includes(cleanedQuestion.category as QuestionCategory)) {
+        cleanedQuestion.category = QuestionCategory.GRAMMAR;
+        console.log(`Đã sửa category thành giá trị mặc định: ${cleanedQuestion.category}`);
+      }
+      
+      // Đảm bảo difficultyLevel là giá trị hợp lệ
+      if (!cleanedQuestion.difficultyLevel || !validDifficulties.includes(cleanedQuestion.difficultyLevel as DifficultyLevel)) {
+        cleanedQuestion.difficultyLevel = DifficultyLevel.MEDIUM;
+        console.log(`Đã sửa difficultyLevel thành giá trị mặc định: ${cleanedQuestion.difficultyLevel}`);
+      }
+      
+      console.log('Dữ liệu câu hỏi đã được làm sạch trước khi gửi:', JSON.stringify(cleanedQuestion, null, 2));
+      
+      // Tạo URL có thể chứa questionGroupId trong query parameters nếu có
+      let url = `${this.baseUrl}/${cleanedQuestion.id}`;
+      let queryParams: Record<string, any> = {};
+      
+      // Luôn gửi questionGroupId trong params, kể cả khi nó là null
+      // Như vậy backend sẽ nhận được questionGroupId=null cho câu hỏi độc lập
+      queryParams.questionGroupId = cleanedQuestion.questionGroupId || null;
+      console.log(`Đã thêm questionGroupId=${queryParams.questionGroupId} vào params`);
+      
+      console.log(`Gửi PUT request đến: ${url}`, { queryParams });
+      
+      const response = await axios.put(url, cleanedQuestion, { params: queryParams });
+      console.log('Cập nhật thành công, phản hồi:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error(`Lỗi khi cập nhật câu hỏi ID=${question.id}:`, error);
+      if (axios.isAxiosError(error)) {
+        console.error('Chi tiết lỗi:', {
+          status: error.response?.status,
+          data: error.response?.data,
+          headers: error.response?.headers
+        });
+      }
+      throw error;
+    }
   }
   
   // Xóa câu hỏi
@@ -614,6 +779,32 @@ class ToeicQuestionService {
   // Xóa nhóm câu hỏi
   async deleteQuestionGroup(id: number): Promise<void> {
     await axios.delete(`${this.groupUrl}/${id}`);
+  }
+
+  // Lấy danh sách câu hỏi độc lập
+  async getStandaloneQuestions(params: any = {}): Promise<Page<ToeicQuestionDTO>> {
+    const response = await axios.get(`${this.baseUrl}/standalone`, { params });
+    return response.data;
+  }
+
+  // Lấy danh sách câu hỏi độc lập theo category
+  async getStandaloneQuestionsByCategory(category: QuestionCategory, params: any = {}): Promise<Page<ToeicQuestionDTO>> {
+    const response = await axios.get(`${this.baseUrl}/standalone/category/${category}`, { params });
+    return response.data;
+  }
+
+  // Lấy danh sách câu hỏi theo category
+  async getQuestionsByCategory(category: QuestionCategory, params: any = {}): Promise<Page<ToeicQuestionDTO>> {
+    const response = await axios.get(`${this.baseUrl}/category/${category}`, { params });
+    return response.data;
+  }
+
+  // Tìm kiếm câu hỏi độc lập
+  async searchStandaloneQuestions(keyword: string, params: any = {}): Promise<Page<ToeicQuestionDTO>> {
+    const response = await axios.get(`${this.baseUrl}/standalone/search`, { 
+      params: { ...params, keyword } 
+    });
+    return response.data;
   }
 }
 

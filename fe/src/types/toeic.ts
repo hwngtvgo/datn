@@ -18,6 +18,14 @@ export enum ExamType {
   PRACTICE = 'PRACTICE'
 }
 
+// Enum định nghĩa các danh mục câu hỏi độc lập
+export enum QuestionCategory {
+  GRAMMAR = 'GRAMMAR',
+  VOCABULARY = 'VOCABULARY',
+  PRACTICE = 'PRACTICE',
+  OTHER = 'OTHER'
+}
+
 // Interface định nghĩa cấu trúc một tùy chọn (lựa chọn) cho câu hỏi
 export interface ToeicQuestionOption {
   id: number;
@@ -38,13 +46,14 @@ export interface ToeicQuestion {
   imageUrl?: string; // URL đến hình ảnh (nếu có)
   passage?: string; // Đoạn văn (cho phần Reading)
   groupId?: number; // ID nhóm câu hỏi (nếu câu hỏi thuộc một nhóm)
+  category?: QuestionCategory; // Danh mục cho câu hỏi độc lập
 }
 
 // Interface định nghĩa phản hồi API trả về cho câu hỏi TOEIC
 export interface ToeicQuestionDTO {
   id: number;
-  type: QuestionType;
-  part: number;
+  type?: QuestionType;
+  part?: number;
   question: string;
   correctAnswer: string;
   difficultyLevel: DifficultyLevel;
@@ -53,6 +62,7 @@ export interface ToeicQuestionDTO {
   imageUrl?: string;
   passage?: string;
   groupId?: number;
+  category?: QuestionCategory; // Danh mục cho câu hỏi độc lập
 }
 
 // Interface định nghĩa cấu trúc một đề thi TOEIC
@@ -115,6 +125,7 @@ export interface QuestionResponse {
   difficultyLevel: DifficultyLevel;
   options: OptionResponse[];
   questionOrder?: number;
+  category?: string; // Danh mục cho câu hỏi độc lập
 }
 
 // Định nghĩa phản hồi cho lựa chọn câu hỏi

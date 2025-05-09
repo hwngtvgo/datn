@@ -65,6 +65,33 @@ public class ToeicQuestionController {
         }
     }
 
+    // Lấy câu hỏi độc lập (không thuộc question group nào)
+    @GetMapping("/standalone")
+    public ResponseEntity<Page<QuestionResponse>> getStandaloneQuestions(Pageable pageable) {
+        return ResponseEntity.ok(questionService.getStandaloneQuestions(pageable));
+    }
+    
+    // Lấy câu hỏi độc lập theo category
+    @GetMapping("/standalone/category/{category}")
+    public ResponseEntity<Page<QuestionResponse>> getStandaloneQuestionsByCategory(
+            @PathVariable ToeicQuestion.QuestionCategory category, Pageable pageable) {
+        return ResponseEntity.ok(questionService.getStandaloneQuestionsByCategory(category, pageable));
+    }
+    
+    // Lấy tất cả câu hỏi theo category
+    @GetMapping("/category/{category}")
+    public ResponseEntity<Page<QuestionResponse>> getQuestionsByCategory(
+            @PathVariable ToeicQuestion.QuestionCategory category, Pageable pageable) {
+        return ResponseEntity.ok(questionService.getQuestionsByCategory(category, pageable));
+    }
+    
+    // Tìm kiếm câu hỏi độc lập theo từ khóa
+    @GetMapping("/standalone/search")
+    public ResponseEntity<Page<QuestionResponse>> searchStandaloneQuestions(
+            @RequestParam String keyword, Pageable pageable) {
+        return ResponseEntity.ok(questionService.searchStandaloneQuestions(keyword, pageable));
+    }
+
     // Tạo câu hỏi mới
     @PostMapping
     public ResponseEntity<QuestionResponse> createQuestion(
@@ -80,15 +107,24 @@ public class ToeicQuestionController {
 
     // Cập nhật câu hỏi
     @PutMapping("/{id}")
-    public ResponseEntity<QuestionResponse> updateQuestion(
+    public ResponseEntity<?> updateQuestion(
             @PathVariable Long id, 
             @Valid @RequestBody ToeicQuestion questionRequest,
             @RequestParam(value = "questionGroupId", required = false) Long questionGroupId) {
         try {
+            // In ra log để kiểm tra dữ liệu
+            System.out.println("ToeicQuestionController.updateQuestion: Đang cập nhật câu hỏi ID=" + id);
+            System.out.println("- questionGroupId=" + questionGroupId);
+            System.out.println("- category=" + (questionRequest.getCategory() != null ? questionRequest.getCategory().name() : "null"));
+            System.out.println("- difficultyLevel=" + (questionRequest.getDifficultyLevel() != null ? questionRequest.getDifficultyLevel().name() : "null"));
+            
             QuestionResponse updatedQuestion = questionService.updateQuestion(id, questionRequest, questionGroupId);
             return ResponseEntity.ok(updatedQuestion);
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
+            System.out.println("Lỗi khi cập nhật câu hỏi: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(false, "Lỗi khi cập nhật câu hỏi: " + e.getMessage()));
         }
     }
 

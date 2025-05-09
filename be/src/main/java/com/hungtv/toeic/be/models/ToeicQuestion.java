@@ -45,9 +45,14 @@ public class ToeicQuestion {
     @Column(name = "difficulty_level")
     private DifficultyLevel difficultyLevel;
     
-    // Quan hệ với QuestionGroup
-    @ManyToOne
-    @JoinColumn(name = "question_group_id")
+    // Thêm trường category cho các câu hỏi không thuộc nhóm
+    @Enumerated(EnumType.STRING)
+    @Column(name = "category")
+    private QuestionCategory category;
+    
+    // Quan hệ với QuestionGroup - có thể null
+    @ManyToOne(optional = true)
+    @JoinColumn(name = "question_group_id", nullable = true)
     private QuestionGroup questionGroup;
     
     @OneToMany(mappedBy = "question", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -56,6 +61,11 @@ public class ToeicQuestion {
     // Enum cho độ khó
     public enum DifficultyLevel {
         EASY, MEDIUM, HARD
+    }
+    
+    // Enum cho phân loại câu hỏi
+    public enum QuestionCategory {
+        GRAMMAR, VOCABULARY, PRACTICE, OTHER
     }
     
     // Constructors
@@ -72,6 +82,20 @@ public class ToeicQuestion {
         this.explanation = explanation;
         this.difficultyLevel = difficultyLevel;
         this.questionGroup = questionGroup;
+        this.options = options;
+    }
+    
+    // Constructor với category
+    public ToeicQuestion(Long id, String question, Integer questionOrder, 
+                         String correctAnswer, String explanation, DifficultyLevel difficultyLevel,
+                         QuestionCategory category, Set<ToeicOption> options) {
+        this.id = id;
+        this.question = question;
+        this.questionOrder = questionOrder;
+        this.correctAnswer = correctAnswer;
+        this.explanation = explanation;
+        this.difficultyLevel = difficultyLevel;
+        this.category = category;
         this.options = options;
     }
     
@@ -123,6 +147,14 @@ public class ToeicQuestion {
     public void setDifficultyLevel(DifficultyLevel difficultyLevel) {
         this.difficultyLevel = difficultyLevel;
     }
+    
+    public QuestionCategory getCategory() {
+        return category;
+    }
+    
+    public void setCategory(QuestionCategory category) {
+        this.category = category;
+    }
 
     public QuestionGroup getQuestionGroup() {
         return questionGroup;
@@ -173,6 +205,7 @@ public class ToeicQuestion {
                ", question='" + question + '\'' +
                ", questionOrder=" + questionOrder +
                ", difficultyLevel=" + difficultyLevel +
+               ", category=" + category +
                '}';
     }
 }

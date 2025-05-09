@@ -13,6 +13,7 @@ import {
   Home,
   DollarSign,
   Layers,
+  Book,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -49,6 +50,11 @@ const AdminSidebar: React.FC = () => {
       title: 'Câu hỏi TOEIC',
       path: '/admin/toeic-questions',
       icon: <HelpCircle className="w-5 h-5" />,
+    },
+    {
+      title: 'Câu hỏi độc lập',
+      path: '/admin/standalone-questions',
+      icon: <Book className="w-5 h-5" />,
     },
     {
       title: 'Khóa học',

@@ -40,9 +40,14 @@ const sidebarItems = [
     href: "/admin/exams",
   },
   {
-    title: "Questions",
+    title: "Question Groups",
     icon: <HelpCircle className="h-5 w-5" />,
     href: "/admin/toeic-questions",
+  },
+  {
+    title: "Standalone Questions",
+    icon: <HelpCircle className="h-5 w-5" />,
+    href: "/admin/standalone-questions",
   },
   {
     title: "Finance",

@@ -14,7 +14,7 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent } from "@/components/ui/card";
 import { Plus, Trash2 } from 'lucide-react';
-import { DifficultyLevel } from '@/types/toeic';
+import { DifficultyLevel, QuestionCategory } from '@/types/toeic';
 
 export interface QuestionEditorProps {
   question: ToeicQuestionDTO;
@@ -23,215 +23,224 @@ export interface QuestionEditorProps {
 }
 
 const QuestionEditor: React.FC<QuestionEditorProps> = ({ question, onSave, onCancel }) => {
-  const [questionData, setQuestionData] = useState<ToeicQuestionDTO>({...question});
+  const [questionText, setQuestionText] = useState<string>(question.question || '');
+  const [options, setOptions] = useState<ToeicOptionDTO[]>(question.options || []);
+  const [correctAnswer, setCorrectAnswer] = useState<string>(question.correctAnswer || '');
+  const [explanation, setExplanation] = useState<string>(question.explanation || '');
+  const [difficultyLevel, setDifficultyLevel] = useState<DifficultyLevel>(
+    question.difficultyLevel || DifficultyLevel.MEDIUM
+  );
+  const [category, setCategory] = useState<QuestionCategory>(() => {
+    // Nếu category hiện tại là PRACTICE hoặc OTHER, sử dụng GRAMMAR
+    if (question.category === QuestionCategory.PRACTICE || question.category === QuestionCategory.OTHER) {
+      return QuestionCategory.GRAMMAR;
+    }
+    // Nếu không có giá trị hoặc giá trị không hợp lệ, sử dụng GRAMMAR
+    return question.category || QuestionCategory.GRAMMAR;
+  });
   
-  // Xử lý khi thay đổi trường câu hỏi
-  const handleFieldChange = (field: keyof ToeicQuestionDTO, value: any) => {
-    setQuestionData({
-      ...questionData,
-      [field]: value
-    });
-  };
-  
-  // Xử lý khi thay đổi trường của option
-  const handleOptionChange = (index: number, field: keyof ToeicOptionDTO, value: string) => {
-    const updatedOptions = [...questionData.options];
-    updatedOptions[index] = {
-      ...updatedOptions[index],
-      [field]: value
-    };
-    
-    setQuestionData({
-      ...questionData,
-      options: updatedOptions
-    });
-  };
-  
-  // Thêm option mới
+  // Thêm tùy chọn mới
   const addOption = () => {
-    const newOptionKey = String.fromCharCode(65 + questionData.options.length); // A, B, C, D, ...
+    const optionKeys = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'];
+    const nextKey = optionKeys[options.length] || '';
     
-    const newOption: ToeicOptionDTO = {
-      optionKey: newOptionKey,
-      optionText: ""
-    };
-    
-    setQuestionData({
-      ...questionData,
-      options: [...questionData.options, newOption]
-    });
+    if (options.length < 8) {
+      setOptions([...options, { optionKey: nextKey, optionText: '' }]);
+    }
   };
   
-  // Xóa option
+  // Xóa tùy chọn
   const removeOption = (index: number) => {
-    if (questionData.options.length <= 2) {
-      alert("Câu hỏi phải có ít nhất 2 lựa chọn");
-      return;
+    const updatedOptions = [...options];
+    updatedOptions.splice(index, 1);
+    setOptions(updatedOptions);
+    
+    // Nếu xóa tùy chọn đang chọn làm đáp án đúng
+    if (options[index].optionKey === correctAnswer) {
+      setCorrectAnswer('');
     }
-    
-    const optionToRemove = questionData.options[index];
-    
-    // Nếu xóa đáp án đúng, cần cập nhật correctAnswer
-    if (optionToRemove.optionKey === questionData.correctAnswer) {
-      // Đặt đáp án đúng về lựa chọn đầu tiên còn lại
-      const newCorrectAnswer = index === 0 ? 
-        questionData.options[1].optionKey : 
-        questionData.options[0].optionKey;
-      
-      setQuestionData({
-        ...questionData,
-        correctAnswer: newCorrectAnswer
-      });
-    }
-    
-    const updatedOptions = questionData.options.filter((_, i) => i !== index);
-    setQuestionData({
-      ...questionData,
-      options: updatedOptions
-    });
   };
   
-  // Xử lý khi lưu
+  // Cập nhật tùy chọn
+  const updateOption = (index: number, text: string) => {
+    const updatedOptions = [...options];
+    updatedOptions[index] = { ...updatedOptions[index], optionText: text };
+    setOptions(updatedOptions);
+  };
+  
+  // Lưu câu hỏi
   const handleSave = () => {
     // Kiểm tra dữ liệu trước khi lưu
-    if (!questionData.question?.trim()) {
-      alert("Vui lòng nhập nội dung câu hỏi");
+    if (!questionText.trim()) {
+      alert('Vui lòng nhập nội dung câu hỏi');
       return;
     }
     
-    if (!questionData.correctAnswer) {
-      alert("Vui lòng chọn đáp án đúng");
+    if (!correctAnswer) {
+      alert('Vui lòng chọn đáp án đúng');
       return;
     }
     
-    const emptyOptions = questionData.options.filter(opt => !opt.optionText.trim());
-    if (emptyOptions.length > 0) {
-      alert("Vui lòng nhập nội dung cho tất cả các lựa chọn");
-      return;
+    // Đảm bảo category là giá trị hợp lệ (chỉ GRAMMAR hoặc VOCABULARY)
+    let finalCategory = category;
+    if (finalCategory !== QuestionCategory.GRAMMAR && finalCategory !== QuestionCategory.VOCABULARY) {
+      finalCategory = QuestionCategory.GRAMMAR;
     }
     
-    onSave(questionData);
+    console.log('Lưu câu hỏi với thông tin:');
+    console.log('- Category:', finalCategory);
+    console.log('- Category type:', typeof finalCategory);
+    console.log('- DifficultyLevel:', difficultyLevel);
+    console.log('- DifficultyLevel type:', typeof difficultyLevel);
+    
+    // Kiểm tra xem các enum có hợp lệ không
+    console.log('- Kiểm tra enum Category:');
+    console.log('  + Các giá trị hợp lệ:', Object.values(QuestionCategory));
+    console.log('  + Giá trị hiện tại có thuộc enum không:', Object.values(QuestionCategory).includes(finalCategory as QuestionCategory));
+    
+    console.log('- Kiểm tra enum DifficultyLevel:');
+    console.log('  + Các giá trị hợp lệ:', Object.values(DifficultyLevel));
+    console.log('  + Giá trị hiện tại có thuộc enum không:', Object.values(DifficultyLevel).includes(difficultyLevel as DifficultyLevel));
+    
+    // Kiểm tra JSON stringified
+    try {
+      const testJson = JSON.stringify({category: finalCategory});
+      console.log('- JSON test for category:', testJson);
+    } catch (e) {
+      console.error('- Không thể chuyển category thành JSON:', e);
+    }
+    
+    const updatedQuestion: ToeicQuestionDTO = {
+      ...question,
+      question: questionText,
+      options: options,
+      correctAnswer: correctAnswer,
+      explanation: explanation,
+      difficultyLevel: difficultyLevel as DifficultyLevel,
+      category: finalCategory as QuestionCategory,
+    };
+    
+    console.log('Câu hỏi đã cập nhật trước khi lưu:', JSON.stringify(updatedQuestion, null, 2));
+    console.log('Câu hỏi gốc trước khi cập nhật:', JSON.stringify(question, null, 2));
+    onSave(updatedQuestion);
   };
   
   return (
-    <div className="space-y-6">
-      <div className="grid gap-4">
-        <div className="space-y-2">
-          <Label htmlFor="question">Nội dung câu hỏi</Label>
-          <Textarea
-            id="question"
-            value={questionData.question}
-            onChange={(e) => handleFieldChange('question', e.target.value)}
-            placeholder="Nhập nội dung câu hỏi..."
-            className="min-h-[100px]"
-          />
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="difficultyLevel">Độ khó</Label>
-            <Select
-              value={questionData.difficultyLevel}
-              onValueChange={(value) => handleFieldChange('difficultyLevel', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Chọn độ khó" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value={DifficultyLevel.EASY}>Dễ</SelectItem>
-                <SelectItem value={DifficultyLevel.MEDIUM}>Trung bình</SelectItem>
-                <SelectItem value={DifficultyLevel.HARD}>Khó</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <div className="space-y-2">
-            <Label htmlFor="explanation">Giải thích (không bắt buộc)</Label>
-            <Input
-              id="explanation"
-              value={questionData.explanation || ""}
-              onChange={(e) => handleFieldChange('explanation', e.target.value)}
-              placeholder="Giải thích cho đáp án đúng"
-            />
-          </div>
-        </div>
-        
-        <div className="space-y-2 mt-4">
-          <div className="flex justify-between items-center">
-            <Label>Các lựa chọn</Label>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={addOption}
-              disabled={questionData.options.length >= 6}
-            >
-              <Plus className="mr-1 h-4 w-4" />
-              Thêm lựa chọn
-            </Button>
-          </div>
-          
-          <Card>
-            <CardContent className="p-4">
-              <RadioGroup
-                value={questionData.correctAnswer}
-                onValueChange={(value) => handleFieldChange('correctAnswer', value)}
-                className="space-y-4"
-              >
-                {questionData.options.map((option, index) => (
-                  <div key={index} className="flex items-start space-x-3 pt-3">
-                    <RadioGroupItem 
-                      value={option.optionKey} 
-                      id={`option-${index}`} 
-                      className="mt-1" 
-                    />
-                    
-                    <div className="flex-1">
-                      <div className="flex gap-2 mb-2">
-                        <Input
-                          value={option.optionKey}
-                          onChange={(e) => handleOptionChange(index, 'optionKey', e.target.value)}
-                          className="w-16"
-                          placeholder="A, B, C..."
-                        />
-                        
-                        <Input
-                          value={option.optionText}
-                          onChange={(e) => handleOptionChange(index, 'optionText', e.target.value)}
-                          className="flex-1"
-                          placeholder={`Nội dung lựa chọn ${option.optionKey}`}
-                        />
-                        
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => removeOption(index)}
-                          disabled={questionData.options.length <= 2}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                      
-                      <Label htmlFor={`option-${index}`} className="text-sm text-muted-foreground">
-                        {option.optionKey === questionData.correctAnswer && 
-                          "Đây là đáp án đúng"}
-                      </Label>
-                    </div>
-                  </div>
-                ))}
-              </RadioGroup>
-            </CardContent>
-          </Card>
-        </div>
+    <div className="space-y-4">
+      {/* Nội dung câu hỏi */}
+      <div className="space-y-2">
+        <Label htmlFor="question">Nội dung câu hỏi <span className="text-destructive">*</span></Label>
+        <Textarea 
+          id="question" 
+          placeholder="Nhập nội dung câu hỏi" 
+          value={questionText}
+          onChange={(e) => setQuestionText(e.target.value)}
+          rows={3}
+        />
       </div>
       
-      <div className="flex justify-end gap-2">
+      {/* Danh mục câu hỏi */}
+      <div className="space-y-2">
+        <Label htmlFor="category">Danh mục <span className="text-destructive">*</span></Label>
+        <Select 
+          value={category} 
+          onValueChange={(value) => setCategory(value as QuestionCategory)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Chọn danh mục" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={QuestionCategory.GRAMMAR}>Ngữ pháp</SelectItem>
+            <SelectItem value={QuestionCategory.VOCABULARY}>Từ vựng</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      {/* Mức độ khó */}
+      <div className="space-y-2">
+        <Label htmlFor="difficultyLevel">Mức độ khó <span className="text-destructive">*</span></Label>
+        <Select 
+          value={difficultyLevel} 
+          onValueChange={(value) => setDifficultyLevel(value as DifficultyLevel)}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Chọn mức độ khó" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={DifficultyLevel.EASY}>Dễ (Easy)</SelectItem>
+            <SelectItem value={DifficultyLevel.MEDIUM}>Trung bình (Medium)</SelectItem>
+            <SelectItem value={DifficultyLevel.HARD}>Khó (Hard)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      
+      {/* Các tùy chọn */}
+      <div className="space-y-4">
+        <div className="flex justify-between items-center">
+          <Label>Các lựa chọn <span className="text-destructive">*</span></Label>
+          <Button 
+            type="button" 
+            variant="outline" 
+            size="sm" 
+            onClick={addOption}
+            disabled={options.length >= 8}
+          >
+            <Plus className="mr-2 h-4 w-4" />
+            Thêm lựa chọn
+          </Button>
+        </div>
+        
+        <RadioGroup value={correctAnswer} onValueChange={setCorrectAnswer}>
+          {options.map((option, index) => (
+            <Card key={index} className="mb-2">
+              <CardContent className="p-3">
+                <div className="flex items-start gap-2">
+                  <RadioGroupItem value={option.optionKey} id={`option-${index}`} />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-1">
+                      <div className="w-8 text-center font-medium">{option.optionKey}.</div>
+                      <Input
+                        value={option.optionText}
+                        onChange={(e) => updateOption(index, e.target.value)}
+                        placeholder={`Nội dung lựa chọn ${option.optionKey}`}
+                      />
+                    </div>
+                  </div>
+                  <Button 
+                    type="button" 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => removeOption(index)}
+                    disabled={options.length <= 2}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </RadioGroup>
+      </div>
+      
+      {/* Giải thích đáp án */}
+      <div className="space-y-2">
+        <Label htmlFor="explanation">Giải thích đáp án</Label>
+        <Textarea 
+          id="explanation" 
+          placeholder="Nhập giải thích cho đáp án đúng" 
+          value={explanation}
+          onChange={(e) => setExplanation(e.target.value)}
+          rows={3}
+        />
+      </div>
+      
+      {/* Nút thao tác */}
+      <div className="flex justify-end gap-2 pt-4">
         <Button type="button" variant="outline" onClick={onCancel}>
           Hủy
         </Button>
         <Button type="button" onClick={handleSave}>
-          Lưu câu hỏi
+          Lưu
         </Button>
       </div>
     </div>

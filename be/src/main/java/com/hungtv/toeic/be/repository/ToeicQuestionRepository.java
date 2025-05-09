@@ -40,4 +40,19 @@ public interface ToeicQuestionRepository extends JpaRepository<ToeicQuestion, Lo
     // Tìm câu hỏi thuộc một bài test (thông qua questionGroup)
     @Query("SELECT q FROM ToeicQuestion q WHERE q.questionGroup.test.id = :testId ORDER BY q.questionOrder")
     List<ToeicQuestion> findByTestIdOrderByQuestionOrder(@Param("testId") Long testId);
+    
+    // Tìm câu hỏi không thuộc nhóm nào (questionGroup là null)
+    @Query("SELECT q FROM ToeicQuestion q WHERE q.questionGroup IS NULL")
+    Page<ToeicQuestion> findStandaloneQuestions(Pageable pageable);
+    
+    // Tìm câu hỏi không thuộc nhóm nào và theo category
+    @Query("SELECT q FROM ToeicQuestion q WHERE q.questionGroup IS NULL AND q.category = :category")
+    Page<ToeicQuestion> findStandaloneQuestionsByCategory(@Param("category") ToeicQuestion.QuestionCategory category, Pageable pageable);
+    
+    // Tìm câu hỏi theo category
+    Page<ToeicQuestion> findByCategory(ToeicQuestion.QuestionCategory category, Pageable pageable);
+    
+    // Tìm kiếm câu hỏi không thuộc nhóm nào theo từ khóa
+    @Query("SELECT q FROM ToeicQuestion q WHERE q.questionGroup IS NULL AND (LOWER(q.question) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(q.explanation) LIKE LOWER(CONCAT('%', :keyword, '%')))")
+    Page<ToeicQuestion> searchStandaloneQuestions(@Param("keyword") String keyword, Pageable pageable);
 }

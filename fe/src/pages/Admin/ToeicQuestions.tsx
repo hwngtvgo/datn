@@ -29,6 +29,7 @@ import QuestionDetailView from "@/components/toeic/QuestionDetailView";
 import QuestionGroupForm from "@/components/toeic/QuestionGroupForm";
 import { Separator } from "@/components/ui/separator";
 import axios from "axios";
+import QuestionEditor from "@/components/toeic/QuestionEditor";
 
 const ToeicQuestions: React.FC = () => {
   const [questionGroups, setQuestionGroups] = useState<QuestionGroupDTO[]>([]);
@@ -259,7 +260,7 @@ const ToeicQuestions: React.FC = () => {
       }
     } catch (error) {
       console.error("Lỗi khi tải chi tiết nhóm câu hỏi:", error);
-      toast.error("Không thể tải chi tiết nhóm câu hỏi để sửa");
+      toast.error("Không thể tải chi tiết nhóm câu hỏi");
     }
   };
 

@@ -90,6 +90,11 @@ public class ToeicQuestionService {
             question.setExplanation(questionRequest.getExplanation());
             question.setDifficultyLevel(questionRequest.getDifficultyLevel());
             
+            // Nếu câu hỏi không thuộc về nhóm nào, set category
+            if (questionGroup == null && questionRequest.getCategory() != null) {
+                question.setCategory(questionRequest.getCategory());
+            }
+            
             // Liên kết với nhóm câu hỏi
             question.setQuestionGroup(questionGroup);
             
@@ -115,9 +120,23 @@ public class ToeicQuestionService {
     @Transactional
     public QuestionResponse updateQuestion(Long id, ToeicQuestion questionRequest, Long questionGroupId) {
         try {
+            // In log chi tiết cho việc debug
+            System.out.println("ToeicQuestionService.updateQuestion: Đang cập nhật câu hỏi ID=" + id);
+            System.out.println("- Thông tin đầu vào:");
+            System.out.println("  - questionGroupId: " + questionGroupId);
+            System.out.println("  - category: " + (questionRequest.getCategory() != null ? questionRequest.getCategory().name() : "null"));
+            System.out.println("  - difficultyLevel: " + (questionRequest.getDifficultyLevel() != null ? questionRequest.getDifficultyLevel().name() : "null"));
+            System.out.println("  - correctAnswer: " + questionRequest.getCorrectAnswer());
+            System.out.println("  - số lượng options: " + (questionRequest.getOptions() != null ? questionRequest.getOptions().size() : 0));
+            
             // Tìm câu hỏi hiện tại
             ToeicQuestion existingQuestion = questionRepository.findById(id)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy câu hỏi với ID: " + id));
+            
+            // In log thông tin câu hỏi hiện tại
+            System.out.println("- Thông tin câu hỏi hiện tại:");
+            System.out.println("  - questionGroup: " + (existingQuestion.getQuestionGroup() != null ? existingQuestion.getQuestionGroup().getId() : "null"));
+            System.out.println("  - category: " + (existingQuestion.getCategory() != null ? existingQuestion.getCategory().name() : "null"));
             
             // Cập nhật thông tin
             existingQuestion.setQuestion(questionRequest.getQuestion());
@@ -126,31 +145,76 @@ public class ToeicQuestionService {
             existingQuestion.setExplanation(questionRequest.getExplanation());
             existingQuestion.setDifficultyLevel(questionRequest.getDifficultyLevel());
             
+            // Cập nhật category nếu có
+            if (questionRequest.getCategory() != null) {
+                System.out.println("- Đang cập nhật category thành: " + questionRequest.getCategory().name());
+                existingQuestion.setCategory(questionRequest.getCategory());
+            } else {
+                System.out.println("- Không cập nhật category vì giá trị đầu vào là null");
+            }
+            
             // Cập nhật nhóm câu hỏi nếu có
             if (questionGroupId != null) {
+                System.out.println("- Đang cập nhật question group thành ID: " + questionGroupId);
                 QuestionGroup newGroup = questionGroupRepository.findById(questionGroupId)
                         .orElseThrow(() -> new RuntimeException("Không tìm thấy nhóm câu hỏi với ID: " + questionGroupId));
                 existingQuestion.setQuestionGroup(newGroup);
+            } else {
+                // Nếu questionGroupId là null, đây là câu hỏi độc lập
+                // Xóa liên kết với nhóm câu hỏi (nếu có)
+                System.out.println("- Đang đặt question group thành null (câu hỏi độc lập)");
+                existingQuestion.setQuestionGroup(null);
             }
             
-            // Lưu câu hỏi
+            // ===== XỬ LÝ CÁC TÙY CHỌN =====
+            // Phương pháp cải tiến: xóa tất cả options cũ và tạo mới options thay vì cập nhật
+            
+            // Lưu câu hỏi trước để đảm bảo có ID
+            System.out.println("- Đang lưu câu hỏi vào database");
             ToeicQuestion updatedQuestion = questionRepository.save(existingQuestion);
             
-            // Xóa các tùy chọn cũ
-            optionRepository.deleteAll(existingQuestion.getOptions());
-            existingQuestion.getOptions().clear();
+            // 1. Tạo bản sao của danh sách options hiện tại để tránh lỗi ConcurrentModificationException
+            List<ToeicOption> oldOptions = new ArrayList<>(existingQuestion.getOptions());
             
-            // Thêm các tùy chọn mới
+            // 2. Xóa tất cả options khỏi câu hỏi (xóa mối quan hệ)
+            System.out.println("- Đang xóa " + oldOptions.size() + " tùy chọn cũ");
+            existingQuestion.getOptions().clear();
+            // Lưu câu hỏi sau khi xóa các options
+            updatedQuestion = questionRepository.save(existingQuestion);
+            
+            // 3. Xóa các options cũ khỏi database
+            for (ToeicOption oldOption : oldOptions) {
+                optionRepository.delete(oldOption);
+            }
+            
+            // 4. Tạo và thêm các options mới
             if (questionRequest.getOptions() != null && !questionRequest.getOptions().isEmpty()) {
-                for (ToeicOption option : questionRequest.getOptions()) {
-                    option.setQuestion(updatedQuestion);
-                    optionRepository.save(option);
+                System.out.println("- Đang thêm " + questionRequest.getOptions().size() + " tùy chọn mới");
+                for (ToeicOption optionRequest : questionRequest.getOptions()) {
+                    // Tạo option mới thay vì cập nhật option cũ
+                    ToeicOption newOption = new ToeicOption();
+                    newOption.setOptionKey(optionRequest.getOptionKey());
+                    newOption.setOptionText(optionRequest.getOptionText());
+                    newOption.setQuestion(updatedQuestion);
+                    
+                    // Lưu option mới
+                    optionRepository.save(newOption);
                 }
             }
+            
+            // Tải lại câu hỏi từ database để đảm bảo có tất cả dữ liệu mới nhất
+            updatedQuestion = questionRepository.findById(id).orElse(updatedQuestion);
+            
+            System.out.println("- Cập nhật hoàn thành. Câu hỏi sau khi cập nhật:");
+            System.out.println("  - ID: " + updatedQuestion.getId());
+            System.out.println("  - category: " + (updatedQuestion.getCategory() != null ? updatedQuestion.getCategory().name() : "null"));
+            System.out.println("  - questionGroup: " + (updatedQuestion.getQuestionGroup() != null ? updatedQuestion.getQuestionGroup().getId() : "null"));
             
             return new QuestionResponse(updatedQuestion);
             
         } catch (Exception e) {
+            System.out.println("- LỖI: " + e.getMessage());
+            e.printStackTrace();
             throw new RuntimeException("Lỗi khi cập nhật câu hỏi: " + e.getMessage(), e);
         }
     }
@@ -308,7 +372,7 @@ public class ToeicQuestionService {
     // Phương thức updateQuestionGroup cải tiến
     @Transactional
     public QuestionGroupResponse updateQuestionGroup(Long groupId, String questionsJson, Integer part,
-                                                  MultipartFile audioFile, MultipartFile imageFile, String passage) {
+                                                    MultipartFile audioFile, MultipartFile imageFile, String passage) {
         try {
             // Lấy thông tin nhóm câu hỏi hiện tại
             QuestionGroup group = questionGroupRepository.findById(groupId)
@@ -325,9 +389,9 @@ public class ToeicQuestionService {
             List<ToeicQuestion> questionsRequest;
             try {
                 questionsRequest = objectMapper.readValue(
-                        questionsJson, 
-                        objectMapper.getTypeFactory().constructCollectionType(List.class, ToeicQuestion.class)
-                );
+                    questionsJson, 
+                    objectMapper.getTypeFactory().constructCollectionType(List.class, ToeicQuestion.class)
+            );
                 System.out.println("Đã parse " + questionsRequest.size() + " câu hỏi từ JSON");
             } catch (Exception e) {
                 System.out.println("Lỗi khi parse JSON: " + e.getMessage());
@@ -552,6 +616,30 @@ public class ToeicQuestionService {
                     return response;
                 })
                 .collect(Collectors.toList());
+    }
+    
+    // Lấy câu hỏi độc lập (standalone) theo phân trang
+    public Page<QuestionResponse> getStandaloneQuestions(Pageable pageable) {
+        return questionRepository.findStandaloneQuestions(pageable)
+                .map(QuestionResponse::new);
+    }
+    
+    // Lấy câu hỏi độc lập theo category với phân trang
+    public Page<QuestionResponse> getStandaloneQuestionsByCategory(ToeicQuestion.QuestionCategory category, Pageable pageable) {
+        return questionRepository.findStandaloneQuestionsByCategory(category, pageable)
+                .map(QuestionResponse::new);
+    }
+    
+    // Lấy tất cả câu hỏi theo category với phân trang
+    public Page<QuestionResponse> getQuestionsByCategory(ToeicQuestion.QuestionCategory category, Pageable pageable) {
+        return questionRepository.findByCategory(category, pageable)
+                .map(QuestionResponse::new);
+    }
+    
+    // Tìm kiếm câu hỏi độc lập theo từ khóa
+    public Page<QuestionResponse> searchStandaloneQuestions(String keyword, Pageable pageable) {
+        return questionRepository.searchStandaloneQuestions(keyword, pageable)
+                .map(QuestionResponse::new);
     }
     
     // Helper methods
