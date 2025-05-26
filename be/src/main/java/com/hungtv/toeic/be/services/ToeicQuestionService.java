@@ -236,6 +236,7 @@ public class ToeicQuestionService {
                                                     MultipartFile imageFile,
                                                     String passage,
                                                     Integer part,
+                                                    String title,
                                                     Long testId) {
         try {
             // Parse JSON string to ToeicQuestion list
@@ -273,6 +274,14 @@ public class ToeicQuestionService {
             questionGroup.setImageUrl(imageUrl);
             questionGroup.setPassage(passage);
             
+            // Thiết lập title cho group
+            if (title == null || title.trim().isEmpty()) {
+                // Nếu không có title, tạo title mặc định
+                questionGroup.setTitle("Part " + part + " - " + questionType.name());
+            } else {
+                questionGroup.setTitle(title);
+            }
+            
             // Nếu có testId, liên kết với test
             if (testId != null) {
                 // Tìm Test theo ID
@@ -309,6 +318,7 @@ public class ToeicQuestionService {
             // Tạo response
             QuestionGroupResponse response = new QuestionGroupResponse();
             response.setId(savedGroup.getId());
+            response.setTitle(savedGroup.getTitle());
             response.setQuestionType(savedGroup.getQuestionType().name());
             response.setPart(savedGroup.getPart());
             response.setAudioUrl(savedGroup.getAudioUrl());
@@ -336,6 +346,7 @@ public class ToeicQuestionService {
         // Tạo response
         QuestionGroupResponse response = new QuestionGroupResponse();
         response.setId(group.getId());
+        response.setTitle(group.getTitle());
         response.setQuestionType(group.getQuestionType().name());
         response.setPart(group.getPart());
         response.setAudioUrl(group.getAudioUrl());
@@ -372,7 +383,8 @@ public class ToeicQuestionService {
     // Phương thức updateQuestionGroup cải tiến
     @Transactional
     public QuestionGroupResponse updateQuestionGroup(Long groupId, String questionsJson, Integer part,
-                                                    MultipartFile audioFile, MultipartFile imageFile, String passage) {
+                                                    String title, MultipartFile audioFile, 
+                                                    MultipartFile imageFile, String passage) {
         try {
             // Lấy thông tin nhóm câu hỏi hiện tại
             QuestionGroup group = questionGroupRepository.findById(groupId)
@@ -383,6 +395,12 @@ public class ToeicQuestionService {
                 group.setPart(part);
                 // Cập nhật questionType dựa trên part mới
                 group.setQuestionType(determineQuestionType(part));
+            }
+            
+            // Cập nhật title nếu được cung cấp
+            if (title != null) {
+                group.setTitle(title);
+                System.out.println("Cập nhật title thành: " + title);
             }
             
             // Parse JSON string to ToeicQuestion list
@@ -543,6 +561,7 @@ public class ToeicQuestionService {
             // Tạo response
             QuestionGroupResponse response = new QuestionGroupResponse();
             response.setId(savedGroup.getId());
+            response.setTitle(savedGroup.getTitle());
             response.setQuestionType(savedGroup.getQuestionType().name());
             response.setPart(savedGroup.getPart());
             response.setAudioUrl(savedGroup.getAudioUrl());
@@ -603,6 +622,7 @@ public class ToeicQuestionService {
                     
                     QuestionGroupResponse response = new QuestionGroupResponse();
                     response.setId(group.getId());
+                    response.setTitle(group.getTitle());
                     response.setQuestionType(group.getQuestionType().name());
                     response.setPart(group.getPart());
                     response.setAudioUrl(group.getAudioUrl());

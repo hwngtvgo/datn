@@ -144,6 +144,7 @@ public class ToeicQuestionController {
     public ResponseEntity<QuestionGroupResponse> createQuestionGroup(
             @RequestParam("questionsJson") String questionsJson,
             @RequestParam("part") Integer part,
+            @RequestParam(value = "title", required = false) String title,
             @RequestParam(value = "testId", required = false) Long testId,
             @RequestParam(value = "audioFile", required = false) MultipartFile audioFile,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
@@ -151,7 +152,7 @@ public class ToeicQuestionController {
         
         try {
             QuestionGroupResponse createdGroupResponse = questionService.createQuestionGroup(
-                    questionsJson, audioFile, imageFile, passage, part, testId);
+                    questionsJson, audioFile, imageFile, passage, part, title, testId);
             
             return new ResponseEntity<>(createdGroupResponse, HttpStatus.CREATED);
         } catch (Exception e) {
@@ -195,6 +196,7 @@ public class ToeicQuestionController {
             @PathVariable Long groupId,
             @RequestParam("questionsJson") String questionsJson,
             @RequestParam("part") Integer part,
+            @RequestParam(value = "title", required = false) String title,
             @RequestParam(value = "audioFile", required = false) MultipartFile audioFile,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
             @RequestParam(value = "passage", required = false) String passage) {
@@ -202,6 +204,7 @@ public class ToeicQuestionController {
         try {
             System.out.println("ToeicQuestionController.updateQuestionGroup: Đang cập nhật nhóm câu hỏi ID=" + groupId);
             System.out.println("- part=" + part);
+            System.out.println("- title=" + (title != null ? title : "null"));
             System.out.println("- passage=" + (passage != null ? "Có dữ liệu, độ dài: " + passage.length() : "null"));
             
             // Kiểm tra chi tiết file âm thanh
@@ -248,7 +251,7 @@ public class ToeicQuestionController {
             
             try {
                 QuestionGroupResponse updatedGroupResponse = questionService.updateQuestionGroup(
-                        groupId, questionsJson, part, audioFile, imageFile, passage);
+                        groupId, questionsJson, part, title, audioFile, imageFile, passage);
                 
                 System.out.println("Cập nhật nhóm câu hỏi thành công, trả về kết quả");
                 return ResponseEntity.ok(updatedGroupResponse);

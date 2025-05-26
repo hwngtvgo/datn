@@ -20,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Info, Play, Plus, RefreshCw, FileAudio, FileText, Pencil, Trash2, MoreHorizontal, Search, AlertCircle, CheckCircle, Eye, Edit, Headphones, BookOpen } from "lucide-react";
+import { Info, Play, Plus, RefreshCw, FileAudio, FileText, Pencil, Trash2, MoreHorizontal, Search, AlertCircle, CheckCircle, Eye, Edit, Headphones, BookOpen, X, FileImage } from "lucide-react";
 import { toast } from "sonner";
 import { QuestionGroupDTO, ToeicQuestionDTO, getQuestionGroups, getQuestionGroupById, deleteQuestionGroup } from "@/services/toeicQuestionService";
 import ToeicQuestionService from "@/services/toeicQuestionService";
@@ -236,7 +236,8 @@ const ToeicQuestions: React.FC = () => {
       group.questions?.some(q => 
         q.question.toLowerCase().includes(searchQuery.toLowerCase())
       ) ||
-      (group.passage && group.passage.toLowerCase().includes(searchQuery.toLowerCase()));
+      (group.passage && group.passage.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (group.title && group.title.toLowerCase().includes(searchQuery.toLowerCase()));
     
     const isListening = group.part <= 4;
     const isReading = group.part >= 5;
@@ -285,157 +286,248 @@ const ToeicQuestions: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto py-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Quản lý câu hỏi TOEIC</h1>
-        <Button onClick={() => setShowCreateDialog(true)}>
-          <Plus className="mr-2 h-4 w-4" />
-          Tạo nhóm câu hỏi
-        </Button>
-      </div>
+    <div className="container p-4">
+      <h1 className="text-2xl font-bold mb-4">Quản lý câu hỏi TOEIC</h1>
       
-      <Separator className="my-6" />
-      
-      {/* Tìm kiếm và lọc */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Tìm kiếm câu hỏi..."
-            className="pl-8"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+      <Tabs defaultValue="all-groups">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="all-groups">Tất cả nhóm câu hỏi</TabsTrigger>
+          <TabsTrigger value="card-view">Xem dạng thẻ</TabsTrigger>
+        </TabsList>
+        
+        <div className="my-4 flex flex-col md:flex-row justify-between gap-4">
+          <div className="flex flex-wrap gap-2">
+            <Select 
+              value={typeFilter} 
+              onValueChange={setTypeFilter}
+            >
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Loại câu hỏi" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Tất cả</SelectItem>
+                <SelectItem value="LISTENING">Listening</SelectItem>
+                <SelectItem value="READING">Reading</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            <Select 
+              value={partFilter} 
+              onValueChange={setPartFilter}
+            >
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Part" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">Tất cả Part</SelectItem>
+                <SelectItem value="1">Part 1</SelectItem>
+                <SelectItem value="2">Part 2</SelectItem>
+                <SelectItem value="3">Part 3</SelectItem>
+                <SelectItem value="4">Part 4</SelectItem>
+                <SelectItem value="5">Part 5</SelectItem>
+                <SelectItem value="6">Part 6</SelectItem>
+                <SelectItem value="7">Part 7</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="flex gap-2">
+            <div className="relative w-full md:w-[300px]">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Tìm kiếm câu hỏi hoặc nhóm..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-8"
+              />
+              {searchQuery && (
+                <X
+                  className="absolute right-2 top-2.5 h-4 w-4 cursor-pointer text-muted-foreground"
+                  onClick={() => setSearchQuery("")}
+                />
+              )}
+            </div>
+            
+            <Button onClick={() => setShowCreateDialog(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Tạo mới
+            </Button>
+          </div>
         </div>
         
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
-          <SelectTrigger>
-            <SelectValue placeholder="Loại câu hỏi" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">Tất cả loại</SelectItem>
-            <SelectItem value={QuestionType.LISTENING}>Nghe (Listening)</SelectItem>
-            <SelectItem value={QuestionType.READING}>Đọc (Reading)</SelectItem>
-          </SelectContent>
-        </Select>
+        <TabsContent value="all-groups" className="py-4">
+          <div className="rounded-md border">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[80px]">Part</TableHead>
+                  <TableHead className="w-[120px]">Loại</TableHead>
+                  <TableHead>Tiêu đề</TableHead>
+                  <TableHead className="w-[120px]">Tài liệu</TableHead>
+                  <TableHead className="w-[100px] text-right">Câu hỏi</TableHead>
+                  <TableHead className="w-[100px]">Ngày tạo</TableHead>
+                  <TableHead className="w-[130px] text-right">Hành động</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredGroups.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center">
+                      {loading ? 'Đang tải...' : 'Không có nhóm câu hỏi nào'}
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredGroups.map((group) => (
+                    <TableRow key={group.id}>
+                      <TableCell className="font-medium">Part {group.part}</TableCell>
+                      <TableCell>
+                        {group.type === QuestionType.LISTENING ? (
+                          <Badge className="bg-blue-500">Listening</Badge>
+                        ) : (
+                          <Badge className="bg-green-500">Reading</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {group.title || <span className="text-muted-foreground italic">Không có tiêu đề</span>}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {group.audioUrl && <FileAudio className="h-4 w-4 text-blue-500" />}
+                          {group.imageUrl && <FileImage className="h-4 w-4 text-green-500" />}
+                          {group.passage && <FileText className="h-4 w-4 text-amber-500" />}
+                          {!group.audioUrl && !group.imageUrl && !group.passage && 
+                            <span className="text-muted-foreground text-xs italic">Không có</span>
+                          }
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">{group.questions?.length || 0}</TableCell>
+                      <TableCell>{group.createdAt ? new Date(group.createdAt).toLocaleDateString('vi-VN') : 'N/A'}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleViewDetail(group.id!)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEdit(group.id!)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(group)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
         
-        <Select value={partFilter} onValueChange={setPartFilter}>
-          <SelectTrigger>
-            <SelectValue placeholder="Part" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ALL">Tất cả part</SelectItem>
-            <SelectItem value="1">Part 1</SelectItem>
-            <SelectItem value="2">Part 2</SelectItem>
-            <SelectItem value="3">Part 3</SelectItem>
-            <SelectItem value="4">Part 4</SelectItem>
-            <SelectItem value="5">Part 5</SelectItem>
-            <SelectItem value="6">Part 6</SelectItem>
-            <SelectItem value="7">Part 7</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      
-      {/* Danh sách nhóm câu hỏi */}
-      <div className="mt-6">
-        {loading ? (
-          <div className="flex justify-center py-10">
-            <div className="animate-pulse text-center">
-              <p className="text-muted-foreground">Đang tải dữ liệu...</p>
+        <TabsContent value="card-view" className="py-4">
+          {filteredGroups.length === 0 ? (
+            <div className="text-center py-10 border rounded-md">
+              <p className="text-muted-foreground">
+                {searchQuery || typeFilter !== "ALL" || partFilter !== "ALL"
+                  ? "Không tìm thấy nhóm câu hỏi phù hợp với điều kiện tìm kiếm."
+                  : "Chưa có nhóm câu hỏi nào. Hãy tạo nhóm câu hỏi mới."}
+              </p>
             </div>
-          </div>
-        ) : filteredGroups.length === 0 ? (
-          <div className="text-center py-10 border rounded-md">
-            <p className="text-muted-foreground">
-              {searchQuery || typeFilter !== "ALL" || partFilter !== "ALL"
-                ? "Không tìm thấy nhóm câu hỏi phù hợp với điều kiện tìm kiếm."
-                : "Chưa có nhóm câu hỏi nào. Hãy tạo nhóm câu hỏi mới."}
-            </p>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredGroups.map((group) => {
-              const isListening = group.part <= 4;
-              const hasQuestions = group.questions?.length > 0;
-              const questionCount = hasQuestions ? group.questions.length : 0;
-              const firstQuestion = hasQuestions ? group.questions[0] : null;
-              
-              return (
-                <Card key={group.id} className="overflow-hidden">
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <CardTitle className="text-lg">
-                          <div className="flex items-center">
-                            {isListening ? (
-                              <Headphones className="mr-2 h-4 w-4" />
-                            ) : (
-                              <BookOpen className="mr-2 h-4 w-4" />
-                            )}
-                            Part {group.part}
-                          </div>
-                        </CardTitle>
-                        <CardDescription>
-                          {isListening 
-                            ? 'Listening'
-                            : 'Reading'
-                          }
-                        </CardDescription>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {filteredGroups.map((group) => {
+                const isListening = group.part <= 4;
+                const hasQuestions = group.questions?.length > 0;
+                const questionCount = hasQuestions ? group.questions.length : 0;
+                const firstQuestion = hasQuestions ? group.questions[0] : null;
+                
+                return (
+                  <Card key={group.id} className="overflow-hidden">
+                    <CardHeader className="pb-2">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <CardTitle className="text-lg">
+                            <div className="flex items-center">
+                              {isListening ? (
+                                <Headphones className="mr-2 h-4 w-4" />
+                              ) : (
+                                <BookOpen className="mr-2 h-4 w-4" />
+                              )}
+                              {group.title ? group.title : `Part ${group.part}`}
+                            </div>
+                          </CardTitle>
+                          <CardDescription>
+                            {isListening 
+                              ? 'Listening'
+                              : 'Reading'
+                            } - Part {group.part}
+                          </CardDescription>
+                        </div>
+                        <Badge>
+                          {questionCount} câu hỏi
+                        </Badge>
                       </div>
-                      <Badge>
-                        {questionCount} câu hỏi
-                      </Badge>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="line-clamp-3 text-sm text-muted-foreground">
-                      {group.passage ? (
-                        `${group.passage.substring(0, 150)}${group.passage.length > 150 ? '...' : ''}`
-                      ) : (
-                        <span className="italic">
-                          {isListening
-                            ? 'Nhóm câu hỏi nghe' 
-                            : 'Nhóm câu hỏi đọc'
-                          }
-                        </span>
-                      )}
-                    </div>
-                  </CardContent>
-                  <CardFooter className="bg-muted/50 pt-2">
-                    <div className="flex justify-between w-full">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => handleViewDetail(group.id!)}
-                      >
-                        <Eye className="mr-1 h-4 w-4" />
-                        Chi tiết
-                      </Button>
-                      <div className="flex gap-1">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleEdit(group.id!)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => handleDelete(group)}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="line-clamp-3 text-sm text-muted-foreground">
+                        {group.passage ? (
+                          `${group.passage.substring(0, 150)}${group.passage.length > 150 ? '...' : ''}`
+                        ) : (
+                          <span className="italic">
+                            {isListening
+                              ? 'Nhóm câu hỏi nghe' 
+                              : 'Nhóm câu hỏi đọc'
+                            }
+                          </span>
+                        )}
                       </div>
-                    </div>
-                  </CardFooter>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-      </div>
+                    </CardContent>
+                    <CardFooter className="bg-muted/50 pt-2">
+                      <div className="flex justify-between w-full">
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleViewDetail(group.id!)}
+                        >
+                          <Eye className="mr-1 h-4 w-4" />
+                          Chi tiết
+                        </Button>
+                        <div className="flex gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleEdit(group.id!)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleDelete(group)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardFooter>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
       
       {/* Dialog chỉnh sửa nhóm câu hỏi */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
@@ -490,7 +582,7 @@ const ToeicQuestions: React.FC = () => {
                   ) : (
                     <BookOpen className="mr-2 h-5 w-5" />
                   )}
-                  {selectedGroup.part <= 4 ? 'Listening' : 'Reading'} - Part {selectedGroup.part}
+                  {selectedGroup.title ? selectedGroup.title : `${selectedGroup.part <= 4 ? 'Listening' : 'Reading'} - Part ${selectedGroup.part}`}
                 </div>
               ) : 'Chi tiết nhóm câu hỏi'}
             </DialogTitle>

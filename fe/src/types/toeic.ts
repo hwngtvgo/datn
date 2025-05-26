@@ -103,6 +103,7 @@ export interface ToeicExamAnswer {
 // Định nghĩa phản hồi cho nhóm câu hỏi
 export interface QuestionGroupResponse {
   id: number;
+  title?: string;
   questionType: string;
   part: number;
   passage?: string;

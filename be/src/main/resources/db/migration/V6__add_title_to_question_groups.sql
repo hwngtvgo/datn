@@ -1,0 +1,1 @@
+ALTER TABLE question_groups ADD COLUMN title VARCHAR(255) DEFAULT 'Nhóm câu hỏi' AFTER id; 

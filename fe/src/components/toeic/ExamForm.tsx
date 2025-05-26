@@ -473,7 +473,7 @@ const ExamForm: React.FC<ExamFormProps> = ({
                       <TableHead className="w-[50px]"></TableHead>
                       <TableHead>Part</TableHead>
                       <TableHead>Loại</TableHead>
-                      <TableHead>Mô tả</TableHead>
+                      <TableHead>Tiêu đề</TableHead>
                       <TableHead className="text-right">Số câu hỏi</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -517,10 +517,11 @@ const ExamForm: React.FC<ExamFormProps> = ({
                             )}
                           </TableCell>
                           <TableCell>
-                            {group.passage 
-                              ? group.passage.substring(0, 50) + (group.passage.length > 50 ? '...' : '')
-                              : getPartDescription(group.part)
-                            }
+                            {group.title ? (
+                              <span className="font-medium">{group.title}</span>
+                            ) : (
+                              <span className="text-muted-foreground text-xs italic">Không có tiêu đề</span>
+                            )}
                           </TableCell>
                           <TableCell className="text-right">{group.count || 0}</TableCell>
                         </TableRow>

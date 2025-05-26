@@ -36,6 +36,14 @@ const getFullUrl = (url?: string) => {
   return `${API_URL}/files/view/${url}`;
 };
 
+// Hàm để lấy tiêu đề hiển thị của nhóm câu hỏi
+const getGroupTitle = (group: QuestionGroupResponse) => {
+  if (group.title) {
+    return group.title;
+  }
+  return `Part ${group.part} - ${group.part <= 4 ? 'Listening' : 'Reading'}`;
+};
+
 export default function TestPage() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -456,7 +464,7 @@ export default function TestPage() {
                 {test.questionGroups.map((group, groupIndex) => (
                   <div key={group.id} className="border rounded-lg p-4">
                     <h3 className="font-semibold mb-2">
-                      {group.part <= 4 ? "Phần Nghe" : "Phần Đọc"} - Part {group.part}
+                      {getGroupTitle(group)}
                     </h3>
                     <div className="space-y-4">
                       {group.questions.map((question, qIndex) => {
@@ -524,8 +532,7 @@ export default function TestPage() {
           <div>
             <h1 className="text-2xl font-bold">{test.title}</h1>
             <p className="text-muted-foreground">
-              {isListeningPart ? "Phần Nghe" : "Phần Đọc"} - Part {currentGroup.part} - 
-              Nhóm {currentGroupIndex + 1}/{test.questionGroups.length}
+              {getGroupTitle(currentGroup)}
             </p>
           </div>
           <div className="flex items-center gap-2 bg-muted p-2 rounded-md">

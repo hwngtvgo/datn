@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowUp, ArrowDown, Plus, Copy, Trash2, Headphones, BookOpen } from 'lucide-react';
+import { ArrowUp, ArrowDown, Plus, Copy, Trash2, Headphones, BookOpen, FileAudio, FileImage } from 'lucide-react';
 import { QuestionType, DifficultyLevel } from '@/types/toeic';
 import QuestionEditor from './QuestionEditor';
 import { toast } from 'sonner';
@@ -18,13 +18,6 @@ export interface QuestionGroupFormProps {
   onSubmit: (data: QuestionGroupDTO, files: {audioFile?: File, imageFile?: File}) => Promise<void>;
   onCancel: () => void;
 }
-
-const defaultOption = [
-  { optionKey: 'A', optionText: '' },
-  { optionKey: 'B', optionText: '' },
-  { optionKey: 'C', optionText: '' },
-  { optionKey: 'D', optionText: '' }
-];
 
 const QuestionGroupForm: React.FC<QuestionGroupFormProps> = ({ 
   initialData, 
@@ -37,6 +30,9 @@ const QuestionGroupForm: React.FC<QuestionGroupFormProps> = ({
   );
   const [passageText, setPassageText] = useState<string>(
     initialData?.passage || ''
+  );
+  const [titleText, setTitleText] = useState<string>(
+    initialData?.title || ''
   );
   
   // Tự động xác định questionType dựa trên part
@@ -58,7 +54,6 @@ const QuestionGroupForm: React.FC<QuestionGroupFormProps> = ({
   );
   
   // Trạng thái UI
-  const [activeTab, setActiveTab] = useState("basic-info");
   const [editingQuestionIndex, setEditingQuestionIndex] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
@@ -81,24 +76,6 @@ const QuestionGroupForm: React.FC<QuestionGroupFormProps> = ({
       setImageUrl(getFullUrl(initialData.imageUrl));
     }
   }, [initialData]);
-  
-  // Khởi tạo câu hỏi mới
-  const initNewQuestion = useCallback((): ToeicQuestionDTO => {
-    return {
-      id: undefined,
-      type: questionType as QuestionType,
-      part: groupPart,
-      question: '',
-      audioUrl: undefined,
-      imageUrl: undefined,
-      passage: undefined,
-      questionOrder: questions.length + 1,
-      correctAnswer: 'A',
-      explanation: '',
-      difficultyLevel: DifficultyLevel.EASY,
-      options: JSON.parse(JSON.stringify(defaultOption)),
-    };
-  }, [questionType, groupPart, questions.length]);
   
   // Xử lý khi thay đổi file
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, fileType: 'audio' | 'image') => {
@@ -127,8 +104,49 @@ const QuestionGroupForm: React.FC<QuestionGroupFormProps> = ({
   
   // Thêm câu hỏi mới
   const addQuestion = () => {
-    const newQuestion = initNewQuestion();
-    setQuestions([...questions, newQuestion]);
+    try {
+      console.log("Đang thêm câu hỏi mới với:", {
+        questionType,
+        groupPart,
+        questionsLength: questions.length
+      });
+      
+      // Tạo câu hỏi mới với tất cả thuộc tính cần thiết
+      const newQuestion: ToeicQuestionDTO = {
+        id: undefined,
+        type: questionType,
+        part: groupPart,
+        question: '',
+        correctAnswer: 'A',
+        explanation: '',
+        difficultyLevel: DifficultyLevel.EASY,
+        questionOrder: questions.length + 1,
+        options: [
+          { optionKey: 'A', optionText: '' },
+          { optionKey: 'B', optionText: '' },
+          { optionKey: 'C', optionText: '' },
+          { optionKey: 'D', optionText: '' }
+        ],
+      };
+      
+      console.log("Câu hỏi mới tạo:", newQuestion);
+      
+      // Cập nhật state
+      setQuestions(prevQuestions => [...prevQuestions, newQuestion]);
+      
+      // Di chuyển đến cuối danh sách câu hỏi sau khi thêm
+      setTimeout(() => {
+        const questionsContainer = document.querySelector('.questions-container');
+        if (questionsContainer) {
+          questionsContainer.scrollTop = questionsContainer.scrollHeight;
+        }
+      }, 100);
+      
+      toast.success("Đã thêm câu hỏi mới");
+    } catch (error) {
+      console.error("Lỗi khi thêm câu hỏi mới:", error);
+      toast.error("Không thể thêm câu hỏi mới");
+    }
   };
   
   // Sửa câu hỏi
@@ -238,86 +256,40 @@ const QuestionGroupForm: React.FC<QuestionGroupFormProps> = ({
     e.preventDefault();
     
     try {
-      console.log("Bắt đầu kiểm tra và gửi form...");
-      
-      // Kiểm tra tính hợp lệ của dữ liệu
-      if (!groupPart) {
-        toast.error('Vui lòng chọn phần của nhóm câu hỏi');
-        return;
-      }
-      
-      if (questions.length === 0) {
-        toast.error('Nhóm câu hỏi phải có ít nhất 1 câu hỏi');
-        return;
-      }
-      
-      // Kiểm tra từng câu hỏi
-      for (const q of questions) {
-        if (!q.question?.trim()) {
-          toast.error('Các câu hỏi phải có nội dung');
-          return;
-        }
-        
-        if (!q.correctAnswer) {
-          toast.error('Các câu hỏi phải có đáp án đúng');
-          return;
-        }
-        
-        const emptyOptions = q.options.filter(opt => !opt.optionText.trim());
-        if (emptyOptions.length > 0) {
-          toast.error('Các lựa chọn trong câu hỏi không được để trống');
-          return;
-        }
-      }
-      
-      // Kiểm tra xem có file âm thanh hiện tại không (nếu đang cập nhật)
-      const hasExistingAudioFile = initialData?.audioUrl ? true : false;
-      console.log('hasExistingAudioFile:', hasExistingAudioFile, 'audioUrl:', initialData?.audioUrl);
-      
-      // Kiểm tra điều kiện đặc biệt theo part
-      if ((groupPart === 1 || groupPart === 2) && !audioFile && !hasExistingAudioFile) {
-        toast.error('Part 1 và 2 yêu cầu phải có file âm thanh');
-        return;
-      }
-      
-      if ((groupPart === 3 || groupPart === 4) && !audioFile && !hasExistingAudioFile) {
-        toast.error('Part 3 và 4 yêu cầu phải có file âm thanh');
-        return;
-      }
-      
-      if ((groupPart === 3 || groupPart === 4) && questions.length < 3) {
-        toast.error('Part 3 và 4 yêu cầu phải có ít nhất 3 câu hỏi');
-        return;
-      }
-      
-      if ((groupPart === 6 || groupPart === 7) && (!passageText || !passageText.trim())) {
-        toast.error('Part 6 và 7 yêu cầu phải có đoạn văn');
-        return;
-      }
-      
-      if ((groupPart === 6 || groupPart === 7) && questions.length < 2) {
-        toast.error('Part 6 và 7 yêu cầu phải có ít nhất 2 câu hỏi');
-        return;
-      }
-      
       setIsSubmitting(true);
       
-      // Gán loại câu hỏi dựa trên part
-      const questionType = groupPart <= 4 ? QuestionType.LISTENING : QuestionType.READING;
+      // Kiểm tra các điều kiện bắt buộc
+      if (!groupPart) {
+        toast.error("Vui lòng chọn Part cho nhóm câu hỏi");
+        return;
+      }
       
-      // Đảm bảo đúng định dạng dữ liệu
-      // Với Part 1-4, luôn cung cấp passage rỗng
-      // Với Part 5-7, nếu không có passageText, cung cấp chuỗi rỗng
-      let finalPassage = passageText || "";
+      // Kiểm tra yêu cầu audio cho part 1-4
+      if ((groupPart >= 1 && groupPart <= 4) && !audioFile && !audioUrl) {
+        toast.error("Part 1-4 (Listening) yêu cầu phải có file âm thanh");
+        return;
+      }
       
+      // Kiểm tra yêu cầu passage cho part 6-7
+      if ((groupPart === 6 || groupPart === 7) && (!passageText || passageText.trim() === '')) {
+        toast.error("Part 6-7 yêu cầu phải có đoạn văn");
+        return;
+      }
+      
+      // Tạo đối tượng dữ liệu để gửi
       const groupData: QuestionGroupDTO = {
         id: initialData?.id,
+        title: titleText,
         type: questionType,
         part: groupPart,
-        passage: finalPassage, // Luôn gửi passage, kể cả rỗng
+        passage: passageText || undefined,
         audioUrl: initialData?.audioUrl,
         imageUrl: initialData?.imageUrl,
-        questions: questions
+        questions: questions.map(q => ({
+          ...q,
+          type: questionType as QuestionType,
+          part: groupPart
+        }))
       };
       
       const files: {audioFile?: File, imageFile?: File} = {};
@@ -340,10 +312,10 @@ const QuestionGroupForm: React.FC<QuestionGroupFormProps> = ({
         audioFileSize: audioFile?.size || 0,
         hasNewImageFile: !!imageFile,
         imageFileSize: imageFile?.size || 0,
-        hasExistingAudio: hasExistingAudioFile,
+        hasExistingAudio: !!initialData?.audioUrl,
         existingAudioUrl: initialData?.audioUrl,
         existingImageUrl: initialData?.imageUrl ? 'Có' : 'Không',
-        passageLength: finalPassage.length,
+        passageLength: passageText?.length || 0,
         questionsCount: questions.length,
         questionsWithIds: questions.filter(q => q.id).length
       });
@@ -362,150 +334,197 @@ const QuestionGroupForm: React.FC<QuestionGroupFormProps> = ({
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="md:col-span-1">
-          <CardHeader>
-            <CardTitle>Thông tin cơ bản</CardTitle>
+          <CardHeader className="bg-muted/40">
+            <CardTitle className="text-lg">Thông tin cơ bản</CardTitle>
             <CardDescription>
               Thiết lập thông tin cho nhóm câu hỏi
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="part">Phần</Label>
-              <Select 
-                value={groupPart.toString()} 
-                onValueChange={(value) => setGroupPart(parseInt(value))}
-              >
-                <SelectTrigger id="part">
-                  <SelectValue placeholder="Chọn phần" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="1">
-                    <div className="flex items-center">
-                      <Headphones className="mr-2 h-4 w-4" />
-                      Part 1 - Listening
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="2">
-                    <div className="flex items-center">
-                      <Headphones className="mr-2 h-4 w-4" />
-                      Part 2 - Listening
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="3">
-                    <div className="flex items-center">
-                      <Headphones className="mr-2 h-4 w-4" />
-                      Part 3 - Listening
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="4">
-                    <div className="flex items-center">
-                      <Headphones className="mr-2 h-4 w-4" />
-                      Part 4 - Listening
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="5">
-                    <div className="flex items-center">
-                      <BookOpen className="mr-2 h-4 w-4" />
-                      Part 5 - Reading
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="6">
-                    <div className="flex items-center">
-                      <BookOpen className="mr-2 h-4 w-4" />
-                      Part 6 - Reading
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="7">
-                    <div className="flex items-center">
-                      <BookOpen className="mr-2 h-4 w-4" />
-                      Part 7 - Reading
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            {(groupPart === 3 || groupPart === 4 || groupPart === 6 || groupPart === 7) && (
-              <div className="space-y-2">
-                <Label htmlFor="passage">Đoạn văn</Label>
-                <Textarea
-                  id="passage"
-                  value={passageText}
-                  onChange={(e) => setPassageText(e.target.value)}
-                  placeholder="Nhập đoạn văn (nếu có)..."
-                  className="min-h-[200px]"
-                />
-              </div>
-            )}
+          <CardContent className="p-6 space-y-6">
+            <div className="space-y-5">
+              {/* Thông tin cơ bản */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="group-title" className="text-base font-medium">Tiêu đề nhóm câu hỏi</Label>
+                  <Input
+                    id="group-title"
+                    value={titleText}
+                    onChange={(e) => setTitleText(e.target.value)}
+                    placeholder="Nhập tiêu đề cho nhóm câu hỏi"
+                    className="h-10"
+                  />
+                </div>
 
-            {/* Audio file */}
-            <div className="space-y-2">
-              <Label htmlFor="audio">File âm thanh</Label>
-              <div className="grid gap-2">
-                <Input
-                  id="audio"
-                  type="file"
-                  accept="audio/*"
-                  onChange={(e) => handleFileChange(e, 'audio')}
-                />
-                {audioUrl && (
-                  <div className="p-2 border rounded-md">
-                    <audio controls src={audioUrl} className="w-full">
-                      <source src={audioUrl} type="audio/mpeg" />
-                      Trình duyệt của bạn không hỗ trợ phát audio.
-                    </audio>
-                  </div>
-                )}
+                <div className="space-y-2">
+                  <Label htmlFor="group-part" className="text-base font-medium">Part</Label>
+                  <Select 
+                    value={groupPart.toString()} 
+                    onValueChange={(value) => setGroupPart(parseInt(value))}
+                  >
+                    <SelectTrigger id="group-part" className="h-10">
+                      <SelectValue placeholder="Chọn part" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">
+                        <div className="flex items-center">
+                          <Headphones className="mr-2 h-4 w-4" />
+                          Part 1 - Listening
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="2">
+                        <div className="flex items-center">
+                          <Headphones className="mr-2 h-4 w-4" />
+                          Part 2 - Listening
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="3">
+                        <div className="flex items-center">
+                          <Headphones className="mr-2 h-4 w-4" />
+                          Part 3 - Listening
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="4">
+                        <div className="flex items-center">
+                          <Headphones className="mr-2 h-4 w-4" />
+                          Part 4 - Listening
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="5">
+                        <div className="flex items-center">
+                          <BookOpen className="mr-2 h-4 w-4" />
+                          Part 5 - Reading
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="6">
+                        <div className="flex items-center">
+                          <BookOpen className="mr-2 h-4 w-4" />
+                          Part 6 - Reading
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="7">
+                        <div className="flex items-center">
+                          <BookOpen className="mr-2 h-4 w-4" />
+                          Part 7 - Reading
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
-            
-            {/* Upload image */}
-            <div className="space-y-2">
-              <Label htmlFor="image">Hình ảnh</Label>
-              <div className="grid gap-2">
-                <Input
-                  id="image"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => handleFileChange(e, 'image')}
-                />
-                {imageUrl && (
-                  <div className="p-2 border rounded-md">
-                    <img 
-                      src={imageUrl} 
-                      alt="Preview" 
-                      className="max-h-60 mx-auto object-contain"
-                    />
+              
+              {(groupPart === 3 || groupPart === 4 || groupPart === 6 || groupPart === 7) && (
+                <div className="space-y-2">
+                  <Label htmlFor="passage" className="text-base font-medium">Đoạn văn</Label>
+                  <Textarea
+                    id="passage"
+                    value={passageText}
+                    onChange={(e) => setPassageText(e.target.value)}
+                    placeholder="Nhập đoạn văn (nếu có)..."
+                    className="min-h-[200px] resize-y"
+                  />
+                </div>
+              )}
+
+              {/* Audio file */}
+              <div className="space-y-3 border rounded-lg p-4 bg-muted/30">
+                <Label htmlFor="audio" className="text-base font-medium">File âm thanh</Label>
+                <div className="grid gap-3">
+                  <div className="flex items-center justify-center border-2 border-dashed rounded-md p-4 bg-background">
+                    <label htmlFor="audio" className="cursor-pointer flex flex-col items-center">
+                      <FileAudio className="h-10 w-10 text-muted-foreground mb-2" />
+                      <span className="text-sm font-medium">Chọn file âm thanh</span>
+                      <span className="text-xs text-muted-foreground mt-1">MP3, WAV, hoặc OGG</span>
+                      <Input
+                        id="audio"
+                        type="file"
+                        accept="audio/*"
+                        onChange={(e) => handleFileChange(e, 'audio')}
+                        className="hidden"
+                      />
+                    </label>
                   </div>
-                )}
+                  
+                  {audioFile && (
+                    <div className="text-sm font-medium text-center text-green-600">
+                      Đã chọn: {audioFile.name}
+                    </div>
+                  )}
+                  
+                  {audioUrl && (
+                    <div className="p-2 border rounded-md bg-background">
+                      <audio controls src={audioUrl} className="w-full">
+                        <source src={audioUrl} type="audio/mpeg" />
+                        Trình duyệt của bạn không hỗ trợ phát audio.
+                      </audio>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              {/* Upload image */}
+              <div className="space-y-3 border rounded-lg p-4 bg-muted/30">
+                <Label htmlFor="image" className="text-base font-medium">Hình ảnh</Label>
+                <div className="grid gap-3">
+                  <div className="flex items-center justify-center border-2 border-dashed rounded-md p-4 bg-background">
+                    <label htmlFor="image" className="cursor-pointer flex flex-col items-center">
+                      <FileImage className="h-10 w-10 text-muted-foreground mb-2" />
+                      <span className="text-sm font-medium">Chọn hình ảnh</span>
+                      <span className="text-xs text-muted-foreground mt-1">PNG, JPG hoặc GIF</span>
+                      <Input
+                        id="image"
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleFileChange(e, 'image')}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                  
+                  {imageFile && (
+                    <div className="text-sm font-medium text-center text-green-600">
+                      Đã chọn: {imageFile.name}
+                    </div>
+                  )}
+                  
+                  {imageUrl && (
+                    <div className="p-2 border rounded-md bg-background">
+                      <img 
+                        src={imageUrl} 
+                        alt="Preview" 
+                        className="max-h-60 mx-auto object-contain"
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
         <Card className="md:col-span-2">
-          <CardHeader>
-            <div className="flex justify-between items-center">
-              <CardTitle>Danh sách câu hỏi</CardTitle>
-              <Button
-                type="button"
-                onClick={addQuestion}
-                variant="outline"
-                size="sm"
-              >
-                <Plus className="mr-1 h-4 w-4" />
-                Thêm câu hỏi
-              </Button>
+          <CardHeader className="bg-muted/40 flex flex-row justify-between items-center">
+            <div>
+              <CardTitle className="text-lg">Danh sách câu hỏi</CardTitle>
+              <CardDescription>
+                {questions.length > 0 
+                  ? `Đã có ${questions.length} câu hỏi trong nhóm này.`
+                  : 'Chưa có câu hỏi nào. Hãy thêm câu hỏi mới.'}
+              </CardDescription>
             </div>
-            <CardDescription>
-              {questions.length > 0 
-                ? `Đã có ${questions.length} câu hỏi trong nhóm này.`
-                : 'Chưa có câu hỏi nào. Hãy thêm câu hỏi mới.'}
-            </CardDescription>
+            <Button
+              type="button"
+              onClick={addQuestion}
+              variant="outline"
+              size="sm"
+              className="gap-1"
+            >
+              <Plus className="h-4 w-4" />
+              Thêm câu hỏi
+            </Button>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-6 questions-container">
             {editingQuestionIndex !== null ? (
-              <div className="border rounded-md p-4">
+              <div className="border rounded-md p-4 bg-muted/30">
                 <h3 className="text-lg font-medium mb-4">Sửa câu hỏi #{editingQuestionIndex + 1}</h3>
                 <QuestionEditor
                   question={questions[editingQuestionIndex]}
@@ -515,12 +534,15 @@ const QuestionGroupForm: React.FC<QuestionGroupFormProps> = ({
               </div>
             ) : (
               questions.length > 0 ? (
-                <div className="space-y-3">
+                <div className="grid gap-4">
                   {questions.map((question, index) => (
-                    <Card key={index}>
-                      <CardHeader className="pb-2">
+                    <Card key={index} className="shadow-sm border-muted">
+                      <CardHeader className="p-4 pb-2 bg-muted/20">
                         <div className="flex justify-between items-start">
-                          <CardTitle className="text-base">
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-sm">
+                              {index + 1}
+                            </span>
                             Câu hỏi #{index + 1}
                           </CardTitle>
                           <div className="flex gap-1">
@@ -530,6 +552,7 @@ const QuestionGroupForm: React.FC<QuestionGroupFormProps> = ({
                               size="icon"
                               onClick={() => moveQuestionUp(index)}
                               disabled={index === 0}
+                              className="h-8 w-8"
                             >
                               <ArrowUp className="h-4 w-4" />
                             </Button>
@@ -539,6 +562,7 @@ const QuestionGroupForm: React.FC<QuestionGroupFormProps> = ({
                               size="icon"
                               onClick={() => moveQuestionDown(index)}
                               disabled={index === questions.length - 1}
+                              className="h-8 w-8"
                             >
                               <ArrowDown className="h-4 w-4" />
                             </Button>
@@ -547,6 +571,7 @@ const QuestionGroupForm: React.FC<QuestionGroupFormProps> = ({
                               variant="ghost"
                               size="icon"
                               onClick={() => duplicateQuestion(index)}
+                              className="h-8 w-8"
                             >
                               <Copy className="h-4 w-4" />
                             </Button>
@@ -555,18 +580,30 @@ const QuestionGroupForm: React.FC<QuestionGroupFormProps> = ({
                               variant="ghost"
                               size="icon"
                               onClick={() => removeQuestion(index)}
+                              className="h-8 w-8 text-destructive hover:bg-destructive/10"
                             >
-                              <Trash2 className="h-4 w-4 text-destructive" />
+                              <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
                       </CardHeader>
-                      <CardContent className="pb-2">
-                        <p className="line-clamp-2 text-sm text-muted-foreground">
+                      <CardContent className="p-4 pt-3">
+                        <p className="line-clamp-2 text-sm">
                           {question.question || "(Chưa có nội dung)"}
                         </p>
+                        <div className="mt-2 text-xs flex gap-2 text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <span className="font-medium">Đáp án:</span> {question.correctAnswer}
+                          </span>
+                          <span>•</span>
+                          <span className="flex items-center gap-1">
+                            <span className="font-medium">Độ khó:</span> 
+                            {question.difficultyLevel === "EASY" ? "Dễ" : 
+                            question.difficultyLevel === "MEDIUM" ? "Trung bình" : "Khó"}
+                          </span>
+                        </div>
                       </CardContent>
-                      <CardFooter>
+                      <CardFooter className="p-3 bg-muted/10 border-t">
                         <Button
                           type="button"
                           variant="outline"
@@ -581,16 +618,22 @@ const QuestionGroupForm: React.FC<QuestionGroupFormProps> = ({
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-8 border border-dashed rounded-md">
-                  <p className="text-muted-foreground mb-4">Chưa có câu hỏi nào</p>
-                  <Button
-                    type="button"
-                    onClick={addQuestion}
-                    variant="outline"
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Thêm câu hỏi đầu tiên
-                  </Button>
+                <div className="text-center py-10 border border-dashed rounded-md bg-muted/20">
+                  <div className="flex flex-col items-center gap-2">
+                    <div className="p-4 rounded-full bg-muted/50">
+                      <Plus className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <p className="text-muted-foreground mb-4">Chưa có câu hỏi nào</p>
+                    <Button
+                      type="button"
+                      onClick={addQuestion}
+                      variant="outline"
+                      className="gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Thêm câu hỏi đầu tiên
+                    </Button>
+                  </div>
                 </div>
               )
             )}
@@ -598,17 +641,30 @@ const QuestionGroupForm: React.FC<QuestionGroupFormProps> = ({
         </Card>
       </div>
       
-      <div className="flex justify-end gap-2">
+      <div className="flex justify-end gap-2 pt-4 border-t mt-6">
         <Button
           type="button"
           variant="outline"
           onClick={onCancel}
           disabled={isSubmitting}
+          className="min-w-[100px]"
         >
           Hủy
         </Button>
-        <Button type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Đang lưu...' : initialData ? 'Cập nhật' : 'Tạo mới'}
+        <Button 
+          type="submit" 
+          disabled={isSubmitting}
+          className="min-w-[120px]"
+        >
+          {isSubmitting ? (
+            <>
+              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Đang lưu...
+            </>
+          ) : initialData ? 'Cập nhật' : 'Tạo mới'}
         </Button>
       </div>
     </form>

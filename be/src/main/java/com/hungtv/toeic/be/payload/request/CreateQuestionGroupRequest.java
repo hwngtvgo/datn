@@ -7,6 +7,9 @@ import jakarta.validation.constraints.NotNull;
 
 public class CreateQuestionGroupRequest {
     
+    // Tiêu đề của nhóm câu hỏi
+    private String title;
+    
     // Kiểu của nhóm câu hỏi - LISTENING hoặc READING
     @NotNull(message = "Loại câu hỏi không được để trống")
     private String questionType;
@@ -35,9 +38,10 @@ public class CreateQuestionGroupRequest {
     public CreateQuestionGroupRequest() {
     }
     
-    public CreateQuestionGroupRequest(String questionType, String audioUrl, String imageUrl, 
+    public CreateQuestionGroupRequest(String title, String questionType, String audioUrl, String imageUrl, 
                                       String passage, List<CreateQuestionRequest> questions, 
                                       Long testId, Integer part) {
+        this.title = title;
         this.questionType = questionType;
         this.audioUrl = audioUrl;
         this.imageUrl = imageUrl;
@@ -48,6 +52,14 @@ public class CreateQuestionGroupRequest {
     }
     
     // Getters và Setters
+    public String getTitle() {
+        return title;
+    }
+    
+    public void setTitle(String title) {
+        this.title = title;
+    }
+    
     public String getQuestionType() {
         return questionType;
     }

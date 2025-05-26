@@ -26,6 +26,9 @@ public class QuestionGroup {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
+    @Column(name = "title")
+    private String title;
+    
     @NotNull
     @Enumerated(EnumType.STRING)
     @Column(name = "question_type")
@@ -59,9 +62,10 @@ public class QuestionGroup {
     public QuestionGroup() {
     }
     
-    public QuestionGroup(Long id, QuestionType questionType, Integer part, String audioUrl, 
+    public QuestionGroup(Long id, String title, QuestionType questionType, Integer part, String audioUrl, 
                         String imageUrl, String passage, Test test, Set<ToeicQuestion> questions) {
         this.id = id;
+        this.title = title;
         this.questionType = questionType;
         this.part = part;
         this.audioUrl = audioUrl;
@@ -78,6 +82,14 @@ public class QuestionGroup {
 
     public void setId(Long id) {
         this.id = id;
+    }
+    
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
     
     public QuestionType getQuestionType() {
@@ -167,6 +179,7 @@ public class QuestionGroup {
     public String toString() {
         return "QuestionGroup{" +
                "id=" + id +
+               ", title='" + title + '\'' +
                ", questionType=" + questionType +
                ", part=" + part +
                ", audioUrl='" + audioUrl + '\'' +

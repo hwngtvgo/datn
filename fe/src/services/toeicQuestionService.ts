@@ -99,6 +99,7 @@ export interface ToeicQuestionDTO {
 // Interface cho nhóm câu hỏi
 export interface QuestionGroupDTO {
   id?: number;
+  title?: string;
   type: QuestionType;
   part: number;
   passage?: string;
@@ -111,6 +112,7 @@ export interface QuestionGroupDTO {
 
 export interface QuestionGroupResponse {
   id: number;
+  title?: string;
   type: string;
   part: number;
   passage?: string;
@@ -290,6 +292,11 @@ export const createQuestionGroup = async (
     // Thêm thông tin nhóm câu hỏi
     formData.append('part', questionGroup.part.toString());
     
+    // Thêm title nếu có
+    if (questionGroup.title) {
+      formData.append('title', questionGroup.title);
+    }
+    
     if (questionGroup.passage) {
       formData.append('passage', questionGroup.passage);
     }
@@ -298,6 +305,7 @@ export const createQuestionGroup = async (
     formData.append('questionsJson', JSON.stringify(questionGroup.questions));
     
     console.log("Đang gửi dữ liệu tạo nhóm câu hỏi:", {
+      title: questionGroup.title || 'Không có tiêu đề',
       part: questionGroup.part,
       hasAudioFile: !!audioFile,
       hasImageFile: !!imageFile,
@@ -336,6 +344,12 @@ export const updateQuestionGroup = async (
   } else {
     console.error("Lỗi: thiếu part khi cập nhật nhóm câu hỏi");
     throw new Error("Part là bắt buộc");
+  }
+  
+  // Thêm title nếu có
+  if (groupData.title) {
+    formData.append("title", groupData.title);
+    console.log("title: " + groupData.title);
   }
   
   // Thêm passage nếu có
@@ -651,6 +665,11 @@ class ToeicQuestionService {
     // Thêm thông tin nhóm câu hỏi
     formData.append('part', data.part.toString());
     
+    // Thêm title nếu có
+    if (data.title) {
+      formData.append('title', data.title);
+    }
+    
     if (data.passage) {
       formData.append('passage', data.passage);
     }
@@ -659,6 +678,7 @@ class ToeicQuestionService {
     formData.append('questionsJson', JSON.stringify(data.questions));
     
     console.log("Đang gửi dữ liệu tạo nhóm câu hỏi:", {
+      title: data.title || 'Không có tiêu đề',
       part: data.part,
       hasAudioFile: !!files?.audioFile,
       hasImageFile: !!files?.imageFile,
@@ -705,6 +725,12 @@ class ToeicQuestionService {
       throw new Error('Part không được để trống cho cập nhật nhóm câu hỏi');
     }
     
+    // Thêm title nếu có
+    if (data.title) {
+      formData.append('title', data.title);
+      console.log('title: ' + data.title);
+    }
+    
     // Đảm bảo part là số nguyên và chuyển thành chuỗi
     const partValue = typeof data.part === 'number' ? data.part.toString() : String(data.part);
     formData.append('part', partValue);
@@ -729,6 +755,7 @@ class ToeicQuestionService {
     formData.append('questionsJson', questionsJson);
     
     console.log(`Đang gửi dữ liệu cập nhật nhóm câu hỏi ID=${data.id}:`, {
+      title: data.title || 'Không có tiêu đề',
       part: data.part,
       partAsString: partValue,
       hasNewAudioFile: !!files?.audioFile,

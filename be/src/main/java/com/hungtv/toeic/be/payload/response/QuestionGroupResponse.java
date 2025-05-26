@@ -4,6 +4,7 @@ import java.util.List;
 
 public class QuestionGroupResponse {
     private Long id;
+    private String title;
     private String questionType;
     private Integer part;
     private String audioUrl;
@@ -21,6 +22,14 @@ public class QuestionGroupResponse {
 
     public void setId(Long id) {
         this.id = id;
+    }
+    
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
     
     public String getQuestionType() {

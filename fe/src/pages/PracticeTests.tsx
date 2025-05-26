@@ -196,7 +196,9 @@ export default function PracticeTests() {
                     {test.questionGroups.map((group) => (
                       <div key={group.id} className="border rounded-md p-3 text-sm">
                         <div className="flex justify-between items-center mb-2">
-                          <div className="font-semibold">Part {group.part}</div>
+                          <div className="font-semibold">
+                            {group.title ? group.title : `Part ${group.part}`}
+                          </div>
                           <div className="flex gap-1">
                             {getQuestionTypeBadge(group.questionType)}
                             <Badge variant="outline">{group.questions?.length || 0} câu</Badge>
