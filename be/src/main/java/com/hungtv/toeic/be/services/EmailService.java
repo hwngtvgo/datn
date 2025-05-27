@@ -25,6 +25,11 @@ public class EmailService {
     @Value("${app.frontend-url}")
     private String frontendUrl;
 
+    /**
+     * Gửi email đặt lại mật khẩu
+     * @param toEmail Địa chỉ email người nhận
+     * @param token Token đặt lại mật khẩu
+     */
     @Async
     public void sendPasswordResetEmail(String toEmail, String token) {
         try {
@@ -49,6 +54,30 @@ public class EmailService {
             logger.info("Email đặt lại mật khẩu đã được gửi đến: {}", toEmail);
         } catch (MessagingException e) {
             logger.error("Không thể gửi email đặt lại mật khẩu", e);
+        }
+    }
+    
+    /**
+     * Gửi email với nội dung HTML
+     * @param toEmail Địa chỉ email người nhận
+     * @param subject Tiêu đề email
+     * @param htmlContent Nội dung HTML của email
+     */
+    @Async
+    public void sendHtmlEmail(String toEmail, String subject, String htmlContent) {
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, true, "UTF-8");
+
+            helper.setFrom(fromEmail);
+            helper.setTo(toEmail);
+            helper.setSubject(subject);
+            helper.setText(htmlContent, true);
+            
+            mailSender.send(message);
+            logger.info("Email đã được gửi đến: {}", toEmail);
+        } catch (MessagingException e) {
+            logger.error("Không thể gửi email", e);
         }
     }
 } 

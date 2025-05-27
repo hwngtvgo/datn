@@ -29,7 +29,7 @@ export interface UpdateUserRequest {
 }
 
 export interface UpdatePasswordRequest {
-  oldPassword: string;
+  currentPassword: string;
   newPassword: string;
   confirmPassword: string;
 }
@@ -80,12 +80,37 @@ class UserService {
     }
   }
 
-  // Cập nhật mật khẩu người dùng
-  async updatePassword(id: number, passwordData: UpdatePasswordRequest): Promise<void> {
+  // Cập nhật thông tin cá nhân của người dùng hiện tại
+  async updateCurrentUserProfile(userData: {fullName: string; email: string}): Promise<any> {
     try {
-      await axios.put(`${API_URL}/users/${id}/password`, passwordData, authModule.createAuthConfig());
+      const response = await axios.put<UserResponse>(`${API_URL}/users/profile`, userData, authModule.createAuthConfig());
+      
+      // Cập nhật thông tin người dùng trong authModule
+      if (response.data) {
+        const currentUser = authModule.getUser();
+        if (currentUser) {
+          const updatedUser = {
+            ...currentUser,
+            email: response.data.email,
+            fullName: response.data.fullName
+          };
+          authModule.setUser(updatedUser);
+        }
+      }
+      
+      return response.data;
     } catch (error) {
-      console.error(`Lỗi khi cập nhật mật khẩu cho người dùng với ID ${id}:`, error);
+      console.error('Lỗi khi cập nhật thông tin cá nhân:', error);
+      throw error;
+    }
+  }
+
+  // Cập nhật mật khẩu người dùng
+  async updatePassword(passwordData: UpdatePasswordRequest): Promise<void> {
+    try {
+      await axios.put(`${API_URL}/users/password`, passwordData, authModule.createAuthConfig());
+    } catch (error) {
+      console.error(`Lỗi khi cập nhật mật khẩu:`, error);
       throw error;
     }
   }

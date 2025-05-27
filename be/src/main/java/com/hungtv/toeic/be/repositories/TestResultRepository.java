@@ -50,4 +50,13 @@ public interface TestResultRepository extends JpaRepository<TestResult, Long> {
            "AVG(tr.vocabularyScore) as avgVocabulary " +
            "FROM TestResult tr WHERE tr.user = :user")
     List<Object[]> getScoreStatisticsByUser(@Param("user") User user);
+
+    /**
+     * Đếm số lượng bài thi đã hoàn thành của một người dùng sau một thời điểm nhất định
+     * 
+     * @param user Người dùng
+     * @param date Thời điểm bắt đầu tính
+     * @return Số lượng bài thi
+     */
+    int countByUserAndCreatedAtAfter(User user, LocalDateTime date);
 } 

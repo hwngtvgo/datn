@@ -15,6 +15,7 @@ import com.hungtv.toeic.be.models.ERole;
 import com.hungtv.toeic.be.models.Role;
 import com.hungtv.toeic.be.models.User;
 import com.hungtv.toeic.be.payload.request.CreateUserRequest;
+import com.hungtv.toeic.be.payload.request.UpdatePasswordRequest;
 import com.hungtv.toeic.be.payload.request.UpdateUserRequest;
 import com.hungtv.toeic.be.payload.response.UserResponse;
 import com.hungtv.toeic.be.repositories.RoleRepository;
@@ -188,5 +189,61 @@ public class UserService {
         response.setRole(role);
 
         return response;
+    }
+    
+    /**
+     * Cập nhật thông tin cá nhân của người dùng hiện tại
+     * @param user Người dùng hiện tại
+     * @param request Thông tin cập nhật
+     * @return UserResponse của người dùng đã cập nhật
+     */
+    @Transactional
+    public UserResponse updateCurrentUserProfile(User currentUser, UpdateUserRequest request) {
+        // Kiểm tra xem email mới đã tồn tại chưa (nếu khác email hiện tại)
+        if (!currentUser.getEmail().equals(request.getEmail()) && 
+                userRepository.existsByEmail(request.getEmail())) {
+            throw new RuntimeException("Email đã tồn tại");
+        }
+
+        // Chỉ cho phép cập nhật email và fullName, giữ nguyên username và role
+        currentUser.setEmail(request.getEmail());
+        currentUser.setFullName(request.getFullName());
+
+        // Lưu thông tin cập nhật
+        User updatedUser = userRepository.save(currentUser);
+
+        return convertToUserResponse(updatedUser);
+    }
+    
+    /**
+     * Cập nhật mật khẩu của người dùng hiện tại
+     * @param currentUser Người dùng hiện tại
+     * @param request Thông tin mật khẩu mới
+     * @throws RuntimeException nếu mật khẩu hiện tại không đúng hoặc mật khẩu mới không khớp
+     */
+    @Transactional
+    public void updatePassword(User currentUser, UpdatePasswordRequest request) {
+        // Kiểm tra mật khẩu hiện tại có đúng không
+        if (!passwordEncoder.matches(request.getCurrentPassword(), currentUser.getPassword())) {
+            throw new RuntimeException("Mật khẩu hiện tại không đúng");
+        }
+        
+        // Kiểm tra mật khẩu mới và xác nhận có khớp nhau không
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new RuntimeException("Mật khẩu mới và xác nhận mật khẩu không khớp");
+        }
+        
+        // Mã hóa và lưu mật khẩu mới
+        currentUser.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(currentUser);
+    }
+
+    /**
+     * Lấy thông tin người dùng theo username
+     * @param username Tên đăng nhập cần tìm
+     * @return Optional<User> chứa người dùng nếu tìm thấy
+     */
+    public Optional<User> getUserByUsername(String username) {
+        return userRepository.findByUsername(username);
     }
 } 
