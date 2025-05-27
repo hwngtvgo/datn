@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Menu, User, BookOpen, FileText, ChevronDown, LogOut } from "lucide-react"
+import { Menu, User, BookOpen, FileText, ChevronDown, LogOut, History } from "lucide-react"                                       
 import { ModeToggle } from "./ModeToggle.tsx"
 import { useAuth } from "@/contexts/AuthContext"
 import { toast } from "sonner"
@@ -82,6 +82,12 @@ export default function Header() {
                           Tài khoản
                         </Button>
                       </Link>
+                      <Link to="/test-history">
+                        <Button variant="outline" className="w-full hover:bg-accent/50 transition-colors">
+                          <History className="h-4 w-4 mr-2" />
+                          Lịch sử bài thi
+                        </Button>
+                      </Link>
                       <Button 
                         onClick={handleLogout}
                         variant="destructive" 
@@ -144,6 +150,12 @@ export default function Header() {
                   <Button variant="ghost" size="sm" className="hover:bg-accent/50 transition-colors">
                     <User className="h-4 w-4 mr-2" />
                     {user.username}
+                  </Button>
+                </Link>
+                <Link to="/test-history">
+                  <Button variant="ghost" size="sm" className="hover:bg-accent/50 transition-colors">
+                    <History className="h-4 w-4 mr-2" />
+                    Lịch sử
                   </Button>
                 </Link>
                 <Button 

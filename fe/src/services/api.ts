@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { API_URL } from '../config/constants';
-import authService from './authService';
+import authModule from '../modules/auth';
 
 const api = axios.create({
   baseURL: API_URL,
@@ -12,7 +12,7 @@ const api = axios.create({
 // Interceptor để thêm token vào header
 api.interceptors.request.use(
   (config) => {
-    const token = authService.getToken();
+    const token = authModule.getToken();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -28,7 +28,7 @@ api.interceptors.response.use(
     if (error.response) {
       // Xử lý lỗi 401 Unauthorized - token hết hạn
       if (error.response.status === 401) {
-        authService.logout();
+        authModule.logout();
         window.location.href = '/login';
       }
     }

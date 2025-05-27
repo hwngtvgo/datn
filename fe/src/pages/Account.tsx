@@ -103,56 +103,7 @@ export default function Account() {
                   <Button>Save Changes</Button>
                 </CardFooter>
               </Card>
-            </TabsContent>
-
-            <TabsContent value="subscription" className="mt-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Subscription Plan</CardTitle>
-                  <CardDescription>Manage your subscription</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-medium">Current Plan: Premium</h3>
-                        <p className="text-sm text-muted-foreground">Renews on October 15, 2023</p>
-                      </div>
-                      <Badge>Active</Badge>
-                    </div>
-
-                    <div className="border rounded-lg p-4">
-                      <div className="flex justify-between items-center mb-4">
-                        <div>
-                          <h4 className="font-medium">Premium Plan</h4>
-                          <p className="text-sm text-muted-foreground">$15.99 per month</p>
-                        </div>
-                        <Badge variant="outline">Current</Badge>
-                      </div>
-                      <ul className="space-y-2 text-sm">
-                        <li className="flex items-center gap-2">
-                          <div className="h-2 w-2 rounded-full bg-primary"></div>
-                          <span>Unlimited practice tests</span>
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <div className="h-2 w-2 rounded-full bg-primary"></div>
-                          <span>Detailed performance analytics</span>
-                        </li>
-                        <li className="flex items-center gap-2">
-                          <div className="h-2 w-2 rounded-full bg-primary"></div>
-                          <span>Access to all learning materials</span>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="flex justify-between">
-                  <Button variant="outline">Cancel Subscription</Button>
-                  <Button>Change Plan</Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-
+            </TabsContent>                              
             <TabsContent value="notifications" className="mt-6">
               <Card>
                 <CardHeader>

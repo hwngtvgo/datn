@@ -11,6 +11,9 @@ import ListeningPage from "./pages/Learning/ListeningPage";
 import FillInBlanksPage from "./pages/Learning/FillInBlanksPage";
 import VocabularyStoriesPage from "./pages/Learning/VocabularyStoriesPage";
 import VocabularyStoryDetail from "./pages/Learning/VocabularyStoryDetail";
+import TestHistory from "./pages/User/TestHistory";
+import TestStatistics from "./pages/User/TestStatistics";
+import TestResultDetail from "./pages/User/TestResultDetail";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Account from "./pages/Account";
@@ -33,6 +36,9 @@ const router = createBrowserRouter([
       { path: "learning/:level/fill-in-blanks", element: <FillInBlanksPage /> },
       { path: "learning/:level/vocabulary-stories", element: <VocabularyStoriesPage /> },
       { path: "learning/:level/vocabulary-stories/:id", element: <VocabularyStoryDetail /> },
+      { path: "test-history", element: <TestHistory /> },
+      { path: "test-statistics", element: <TestStatistics /> },
+      { path: "test-results/:id", element: <TestResultDetail /> },
       { path: "login", element: <Login /> },
       { path: "register", element: <Register /> },
       { path: "account", element: <Account /> },

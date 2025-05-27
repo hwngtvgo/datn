@@ -23,6 +23,9 @@ import ListeningPage from "./pages/Learning/ListeningPage"
 import FillInBlanksPage from "./pages/Learning/FillInBlanksPage"
 import VocabularyStoriesPage from "./pages/Learning/VocabularyStoriesPage"
 import VocabularyStoryDetail from "./pages/Learning/VocabularyStoryDetail"
+import TestHistory from "@/pages/User/TestHistory"
+import TestResultDetail from "@/pages/User/TestResultDetail"
+import TestStatistics from "@/pages/User/TestStatistics"
 
 // Admin pages
 import AdminDashboard from "./pages/Admin/Dashboard"
@@ -265,6 +268,9 @@ function App() {
                 <Account />
               </PrivateRoute>
             } />
+          <Route path="/test-history" element={<PrivateRoute><TestHistory /></PrivateRoute>} />
+          <Route path="/test-result/:resultId" element={<PrivateRoute><TestResultDetail /></PrivateRoute>} />
+          <Route path="/test-statistics" element={<PrivateRoute><TestStatistics /></PrivateRoute>} />
         </Route>
 
           {/* Trang quản trị */}

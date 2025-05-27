@@ -12,6 +12,7 @@ import { toast } from "sonner"
 
 // Services
 import * as toeicExamService from "@/services/toeicExamService"
+import { submitTestResult } from "@/services/testResultService"
 import { QuestionGroupResponse, QuestionResponse } from "@/types/toeic"
 import { API_URL } from "@/config/constants"
 
@@ -356,10 +357,47 @@ export default function TestPage() {
   }
 
   // Xử lý hoàn thành bài thi
-  const handleFinishTest = () => {
-    // Có thể gửi kết quả lên server ở đây
-    setIsCompleted(true)
-    // navigate(`/test-results/${id}`)
+  const handleFinishTest = async () => {
+    setIsCompleted(true);
+    
+    if (!test || !id) return;
+    
+    try {
+      // Tính toán thời gian hoàn thành (phút)
+      const totalTestTimeInSeconds = test.duration * 60;
+      const completionTimeInMinutes = Math.round((totalTestTimeInSeconds - timeLeft) / 60);
+      
+      // Chuẩn bị danh sách câu trả lời để gửi lên server
+      const userAnswers = Object.entries(answers).map(([questionId, userAnswer]) => ({
+        questionId: parseInt(questionId),
+        userAnswer: userAnswer
+      }));
+      
+      // Tạo request object
+      const saveRequest = {
+        testId: parseInt(id),
+        completionTimeInMinutes,
+        userAnswers
+      };
+      
+      // Gọi API lưu kết quả bài thi
+      console.log("Đang lưu kết quả bài thi:", saveRequest);
+      const result = await submitTestResult(saveRequest);
+      console.log("Kết quả đã được lưu:", result);
+      
+      // Hiển thị thông báo
+      toast.success("Kết quả bài thi đã được lưu vào lịch sử", {
+        duration: 3000,
+        position: "top-center"
+      });
+      
+    } catch (error) {
+      console.error("Lỗi khi lưu kết quả bài thi:", error);
+      toast.error("Không thể lưu kết quả bài thi. Vui lòng thử lại sau.", {
+        duration: 3000,
+        position: "top-center"
+      });
+    }
   }
 
   // Kiểm tra có thể chuyển tiếp hay không
@@ -500,9 +538,14 @@ export default function TestPage() {
               </div>
             </div>
             
-            <Button className="w-full" onClick={() => navigate("/practice-tests")}>
-              Quay lại danh sách bài thi
-            </Button>
+            <div className="flex gap-4 mt-6">
+              <Button className="w-full" onClick={() => navigate("/practice-tests")}>
+                Quay lại danh sách bài thi
+              </Button>
+              <Button className="w-full" onClick={() => navigate("/test-history")}>
+                Xem lịch sử bài làm
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

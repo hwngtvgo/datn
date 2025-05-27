@@ -23,8 +23,8 @@ import com.hungtv.toeic.be.payload.response.QuestionGroupResponse;
 import com.hungtv.toeic.be.payload.response.QuestionResponse;
 import com.hungtv.toeic.be.repositories.QuestionGroupRepository;
 import com.hungtv.toeic.be.repositories.TestRepository;
-import com.hungtv.toeic.be.repository.ToeicOptionRepository;
-import com.hungtv.toeic.be.repository.ToeicQuestionRepository;
+import com.hungtv.toeic.be.repositories.ToeicOptionRepository;
+import com.hungtv.toeic.be.repositories.ToeicQuestionRepository;
 
 import jakarta.transaction.Transactional;
 

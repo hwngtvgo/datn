@@ -1,4 +1,4 @@
-package com.hungtv.toeic.be.repository;
+package com.hungtv.toeic.be.repositories;
 
 import java.util.List;
 
@@ -11,9 +11,20 @@ import org.springframework.stereotype.Repository;
 
 import com.hungtv.toeic.be.models.QuestionGroup;
 import com.hungtv.toeic.be.models.ToeicQuestion;
+import com.hungtv.toeic.be.models.ToeicQuestion.QuestionCategory;
 
 @Repository
 public interface ToeicQuestionRepository extends JpaRepository<ToeicQuestion, Long> {
+    
+    // Tìm các câu hỏi theo QuestionGroup
+    List<ToeicQuestion> findByQuestionGroupOrderByQuestionOrder(QuestionGroup questionGroup);
+    
+    // Tìm các câu hỏi theo Category
+    List<ToeicQuestion> findByCategory(QuestionCategory category);
+    
+    // Tìm các câu hỏi theo nhiều ID
+    @Query("SELECT q FROM ToeicQuestion q WHERE q.id IN :ids")
+    List<ToeicQuestion> findByIds(@Param("ids") List<Long> ids);
     
     // Tìm câu hỏi theo questionGroup, sắp xếp theo thứ tự câu hỏi
     List<ToeicQuestion> findByQuestionGroupIdOrderByQuestionOrder(Long questionGroupId);
@@ -49,10 +60,10 @@ public interface ToeicQuestionRepository extends JpaRepository<ToeicQuestion, Lo
     @Query("SELECT q FROM ToeicQuestion q WHERE q.questionGroup IS NULL AND q.category = :category")
     Page<ToeicQuestion> findStandaloneQuestionsByCategory(@Param("category") ToeicQuestion.QuestionCategory category, Pageable pageable);
     
-    // Tìm câu hỏi theo category
+    // Tìm câu hỏi theo category với phân trang
     Page<ToeicQuestion> findByCategory(ToeicQuestion.QuestionCategory category, Pageable pageable);
     
     // Tìm kiếm câu hỏi không thuộc nhóm nào theo từ khóa
     @Query("SELECT q FROM ToeicQuestion q WHERE q.questionGroup IS NULL AND (LOWER(q.question) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(q.explanation) LIKE LOWER(CONCAT('%', :keyword, '%')))")
     Page<ToeicQuestion> searchStandaloneQuestions(@Param("keyword") String keyword, Pageable pageable);
-}
+} 

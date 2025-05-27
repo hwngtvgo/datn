@@ -1,10 +1,11 @@
-package com.hungtv.toeic.be.repository;
+package com.hungtv.toeic.be.repositories;
 
-import com.hungtv.toeic.be.models.ToeicOption;
+import java.util.List;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import com.hungtv.toeic.be.models.ToeicOption;
 
 @Repository
 public interface ToeicOptionRepository extends JpaRepository<ToeicOption, Long> {
