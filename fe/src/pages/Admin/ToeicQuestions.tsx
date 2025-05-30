@@ -7,29 +7,21 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Info, Play, Plus, RefreshCw, FileAudio, FileText, Pencil, Trash2, MoreHorizontal, Search, AlertCircle, CheckCircle, Eye, Edit, Headphones, BookOpen, X, FileImage } from "lucide-react";
+import { Info, Play, Plus, RefreshCw, FileAudio, FileText, Pencil, Trash2, MoreHorizontal, Search, AlertCircle, CheckCircle, Eye, Edit, Headphones, BookOpen, X, FileImage, Book, GraduationCap } from "lucide-react";
 import { toast } from "sonner";
 import { QuestionGroupDTO, ToeicQuestionDTO, getQuestionGroups, getQuestionGroupById, deleteQuestionGroup } from "@/services/toeicQuestionService";
 import ToeicQuestionService from "@/services/toeicQuestionService";
 import { QuestionType } from "@/types/toeic";
 import QuestionDetailView from "@/components/toeic/QuestionDetailView";
 import QuestionGroupForm from "@/components/toeic/QuestionGroupForm";
-import { Separator } from "@/components/ui/separator";
+// import { Separator } from "@/components/ui/separator";
 import axios from "axios";
-import QuestionEditor from "@/components/toeic/QuestionEditor";
+// import QuestionEditor from "@/components/toeic/QuestionEditor";
 
 const ToeicQuestions: React.FC = () => {
   const [questionGroups, setQuestionGroups] = useState<QuestionGroupDTO[]>([]);
@@ -51,6 +43,15 @@ const ToeicQuestions: React.FC = () => {
     loadQuestionGroups();
   }, []);
 
+  // Hàm chuyển đổi từ string sang QuestionType enum
+  const mapStringToQuestionType = (typeString: string): QuestionType => {
+    if (typeString === 'LISTENING') return QuestionType.LISTENING;
+    if (typeString === 'READING') return QuestionType.READING;
+    if (typeString === 'VOCABULARY') return QuestionType.VOCABULARY;
+    if (typeString === 'GRAMMAR') return QuestionType.GRAMMAR;
+    return QuestionType.VOCABULARY; // Mặc định
+  };
+
   const loadQuestionGroups = async () => {
     try {
       // TODO: Tạm thời bỏ qua kiểm tra đăng nhập trong quá trình phát triển
@@ -70,18 +71,72 @@ const ToeicQuestions: React.FC = () => {
         return;
       }
       
+      // Tạo mapping từ ID -> questionType từ danh sách ban đầu
+      const questionTypeMap = new Map();
+      data.forEach(group => {
+        if (group.id && group.questionType) {
+          questionTypeMap.set(group.id, group.questionType);
+        }
+      });
+      
+      console.log("Mapping ID -> questionType:", Object.fromEntries(questionTypeMap));
+      
       // Fetch details for each group to get questions
       const groupsWithDetails = await Promise.all(
         data.map(async (groupResponse) => {
           try {
             const groupDetails = await getQuestionGroupById(groupResponse.id);
-            return groupDetails as QuestionGroupDTO;
+            
+            // Lấy questionType từ data ban đầu
+            const originalQuestionType = groupResponse.questionType || "VOCABULARY";
+            console.log(`Chi tiết nhóm câu hỏi ID=${groupResponse.id}:`, {
+              id: groupDetails.id,
+              type: groupDetails.type,
+              originalQuestionType: originalQuestionType,
+              part: groupDetails.part
+            });
+            
+            // Chuyển đổi questionType thành enum QuestionType
+            let mappedType;
+            if (originalQuestionType === 'LISTENING') {
+              mappedType = QuestionType.LISTENING;
+            } else if (originalQuestionType === 'READING') {
+              mappedType = QuestionType.READING;
+            } else if (originalQuestionType === 'VOCABULARY') {
+              mappedType = QuestionType.VOCABULARY;
+            } else if (originalQuestionType === 'GRAMMAR') {
+              mappedType = QuestionType.GRAMMAR;
+            } else {
+              // Fallback nếu không xác định được loại
+              mappedType = QuestionType.VOCABULARY;
+            }
+            
+            return {
+              ...groupDetails,
+              type: mappedType
+            } as QuestionGroupDTO;
           } catch (error) {
             console.error(`Lỗi khi tải chi tiết nhóm câu hỏi ID=${groupResponse.id}:`, error);
             // Return a minimal valid structure with correct type
+            // Sử dụng questionType từ data ban đầu
+            const originalQuestionType = groupResponse.questionType || "VOCABULARY";
+            let mappedType;
+            if (originalQuestionType === 'LISTENING') {
+              mappedType = QuestionType.LISTENING;
+            } else if (originalQuestionType === 'READING') {
+              mappedType = QuestionType.READING;
+            } else if (originalQuestionType === 'VOCABULARY') {
+              mappedType = QuestionType.VOCABULARY;
+            } else if (originalQuestionType === 'GRAMMAR') {
+              mappedType = QuestionType.GRAMMAR;
+            } else {
+              // Fallback nếu không xác định được loại
+              mappedType = QuestionType.VOCABULARY;
+            }
+            
             return {
               id: groupResponse.id,
-              type: (groupResponse.type === 'LISTENING' ? QuestionType.LISTENING : QuestionType.READING),
+              type: mappedType,
               part: groupResponse.part,
               passage: groupResponse.passage,
               audioUrl: groupResponse.audioUrl,
@@ -126,6 +181,7 @@ const ToeicQuestions: React.FC = () => {
     try {
       console.log("Đang cập nhật nhóm câu hỏi với data:", {
         id: groupData.id,
+        type: groupData.type,
         part: groupData.part,
         questionsCount: groupData.questions?.length || 0,
         hasAudioFile: !!files?.audioFile,
@@ -133,10 +189,52 @@ const ToeicQuestions: React.FC = () => {
         passage: groupData.passage ? 'Có dữ liệu passage' : 'Không có passage'
       });
       
-      if (!groupData.part) {
-        console.error("Error: Part không được để trống khi cập nhật nhóm câu hỏi");
-        toast.error("Lỗi: Part không được để trống");
-        return;
+      // Đảm bảo part luôn là số
+      if (groupData.part === null || groupData.part === undefined) {
+        if (groupData.type === QuestionType.LISTENING) {
+          groupData.part = 1;
+        } else if (groupData.type === QuestionType.READING) {
+          groupData.part = 5;
+        } else {
+          groupData.part = 0;
+        }
+      }
+      
+      // Đảm bảo mỗi câu hỏi trong nhóm có type, part và category đúng
+      if (groupData.questions && groupData.questions.length > 0) {
+        groupData.questions = groupData.questions.map(q => {
+          // Nếu là nhóm câu hỏi từ vựng hoặc ngữ pháp, thì câu hỏi phải cùng loại
+          // Nếu là nhóm câu hỏi nghe, thì câu hỏi phải là nghe
+          // Nếu là nhóm câu hỏi đọc, thì câu hỏi có thể là đọc, từ vựng hoặc ngữ pháp
+          let updatedType = q.type;
+          
+          if (groupData.type === QuestionType.VOCABULARY || groupData.type === QuestionType.GRAMMAR) {
+            updatedType = groupData.type;
+          } else if (groupData.type === QuestionType.LISTENING) {
+            updatedType = QuestionType.LISTENING;
+          }
+          
+          console.log(`Câu hỏi "${q.question?.substring(0, 20) || 'Chưa có nội dung'}..." - type: ${q.type} -> ${updatedType}, part: ${q.part} -> ${groupData.part}`);
+          
+          // Thiết lập category dựa vào type
+          let updatedCategory: any;
+          if (updatedType === QuestionType.VOCABULARY) {
+            updatedCategory = "VOCABULARY";
+          } else if (updatedType === QuestionType.GRAMMAR) {
+            updatedCategory = "GRAMMAR"; 
+          } else if (updatedType === QuestionType.LISTENING) {
+            updatedCategory = "LISTENING";
+          } else {
+            updatedCategory = "VOCABULARY"; // Mặc định nếu là Reading
+          }
+          
+          return {
+            ...q,
+            type: updatedType,
+            part: groupData.part,
+            category: updatedCategory
+          };
+        });
       }
       
       // Thực hiện kiểm tra tồn tại audio/image trước khi gửi
@@ -210,6 +308,13 @@ const ToeicQuestions: React.FC = () => {
     try {
       const detail = await ToeicQuestionService.getQuestionGroup(groupId);
       if (detail) {
+        console.log("Chi tiết nhóm câu hỏi:", {
+          id: detail.id,
+          type: detail.type,
+          questionType: detail.type, // Log questionType
+          part: detail.part,
+          title: detail.title
+        });
         setSelectedGroup(detail);
         setShowDetailDialog(true);
       }
@@ -239,29 +344,89 @@ const ToeicQuestions: React.FC = () => {
       (group.passage && group.passage.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (group.title && group.title.toLowerCase().includes(searchQuery.toLowerCase()));
     
-    const isListening = group.part <= 4;
-    const isReading = group.part >= 5;
-    
+    // Cập nhật logic lọc theo loại câu hỏi mới
     const matchesType = 
       typeFilter === "ALL" || 
-      (typeFilter === QuestionType.LISTENING && isListening) ||
-      (typeFilter === QuestionType.READING && isReading);
+      typeFilter === group.type;
     
-    const matchesPart = partFilter === "ALL" || group.part.toString() === partFilter;
+    // Cập nhật logic lọc theo part
+    const matchesPart = 
+      partFilter === "ALL" || 
+      (group.part && group.part.toString() === partFilter);
     
     return matchesSearch && matchesType && matchesPart;
   });
 
   const handleEdit = async (groupId: number) => {
     try {
+      setLoading(true);
       const detail = await ToeicQuestionService.getQuestionGroup(groupId);
       if (detail) {
+        console.log("Dữ liệu nhóm câu hỏi nhận được:", {
+          id: detail.id,
+          type: detail.type,
+          part: detail.part,
+          title: detail.title,
+          passageLength: detail.passage?.length || 0,
+          questionCount: detail.questions?.length || 0,
+          audioUrl: detail.audioUrl ? 'Có' : 'Không',
+          imageUrl: detail.imageUrl ? 'Có' : 'Không'
+        });
+        
+        // Đảm bảo part luôn là số
+        if (detail.part === null || detail.part === undefined) {
+          if (detail.type === QuestionType.LISTENING) {
+            detail.part = 1;
+          } else if (detail.type === QuestionType.READING) {
+            detail.part = 5;
+          } else {
+            detail.part = 0;
+          }
+        }
+        
+        // Đảm bảo mỗi câu hỏi trong nhóm có type, part và category đúng
+        if (detail.questions && detail.questions.length > 0) {
+          detail.questions = detail.questions.map(q => {
+            // Nếu là nhóm câu hỏi từ vựng hoặc ngữ pháp, thì câu hỏi phải cùng loại
+            // Nếu là nhóm câu hỏi nghe, thì câu hỏi phải là nghe
+            // Nếu là nhóm câu hỏi đọc, thì câu hỏi có thể là đọc, từ vựng hoặc ngữ pháp
+            let updatedType = q.type;
+            
+            if (detail.type === QuestionType.VOCABULARY || detail.type === QuestionType.GRAMMAR) {
+              updatedType = detail.type;
+            } else if (detail.type === QuestionType.LISTENING) {
+              updatedType = QuestionType.LISTENING;
+            }
+            
+            // Thiết lập category dựa vào type
+            let updatedCategory: any;
+            if (updatedType === QuestionType.VOCABULARY) {
+              updatedCategory = "VOCABULARY";
+            } else if (updatedType === QuestionType.GRAMMAR) {
+              updatedCategory = "GRAMMAR"; 
+            } else if (updatedType === QuestionType.LISTENING) {
+              updatedCategory = "LISTENING";
+            } else {
+              updatedCategory = "VOCABULARY"; // Mặc định nếu là Reading
+            }
+            
+            return {
+              ...q,
+              type: updatedType,
+              part: detail.part,
+              category: updatedCategory
+            };
+          });
+        }
+        
         setSelectedGroup(detail);
         setShowEditDialog(true);
       }
     } catch (error) {
       console.error("Lỗi khi tải chi tiết nhóm câu hỏi:", error);
       toast.error("Không thể tải chi tiết nhóm câu hỏi");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -290,9 +455,8 @@ const ToeicQuestions: React.FC = () => {
       <h1 className="text-2xl font-bold mb-4">Quản lý câu hỏi TOEIC</h1>
       
       <Tabs defaultValue="all-groups">
-        <TabsList className="grid w-full max-w-md grid-cols-2">
+        <TabsList className="grid w-full max-w-md grid-cols-1">
           <TabsTrigger value="all-groups">Tất cả nhóm câu hỏi</TabsTrigger>
-          <TabsTrigger value="card-view">Xem dạng thẻ</TabsTrigger>
         </TabsList>
         
         <div className="my-4 flex flex-col md:flex-row justify-between gap-4">
@@ -306,27 +470,38 @@ const ToeicQuestions: React.FC = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Tất cả</SelectItem>
-                <SelectItem value="LISTENING">Listening</SelectItem>
-                <SelectItem value="READING">Reading</SelectItem>
+                <SelectItem value="LISTENING">Nghe</SelectItem>
+                <SelectItem value="READING">Đọc</SelectItem>
+                <SelectItem value="VOCABULARY">Từ vựng</SelectItem>
+                <SelectItem value="GRAMMAR">Ngữ pháp</SelectItem>
               </SelectContent>
             </Select>
             
             <Select 
               value={partFilter} 
               onValueChange={setPartFilter}
+              disabled={typeFilter === "VOCABULARY" || typeFilter === "GRAMMAR"}
             >
               <SelectTrigger className="w-[140px]">
                 <SelectValue placeholder="Part" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ALL">Tất cả Part</SelectItem>
-                <SelectItem value="1">Part 1</SelectItem>
-                <SelectItem value="2">Part 2</SelectItem>
-                <SelectItem value="3">Part 3</SelectItem>
-                <SelectItem value="4">Part 4</SelectItem>
-                <SelectItem value="5">Part 5</SelectItem>
-                <SelectItem value="6">Part 6</SelectItem>
-                <SelectItem value="7">Part 7</SelectItem>
+                {(typeFilter === "LISTENING" || typeFilter === "ALL") && (
+                  <>
+                    <SelectItem value="1">Part 1</SelectItem>
+                    <SelectItem value="2">Part 2</SelectItem>
+                    <SelectItem value="3">Part 3</SelectItem>
+                    <SelectItem value="4">Part 4</SelectItem>
+                  </>
+                )}
+                {(typeFilter === "READING" || typeFilter === "ALL") && (
+                  <>
+                    <SelectItem value="5">Part 5</SelectItem>
+                    <SelectItem value="6">Part 6</SelectItem>
+                    <SelectItem value="7">Part 7</SelectItem>
+                  </>
+                )}
               </SelectContent>
             </Select>
           </div>
@@ -360,8 +535,8 @@ const ToeicQuestions: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-[80px]">Part</TableHead>
-                  <TableHead className="w-[120px]">Loại</TableHead>
+                  <TableHead className="w-[130px]">Loại</TableHead>
+                  <TableHead className="w-[100px]">Part</TableHead>
                   <TableHead>Tiêu đề</TableHead>
                   <TableHead className="w-[120px]">Tài liệu</TableHead>
                   <TableHead className="w-[100px] text-right">Câu hỏi</TableHead>
@@ -379,13 +554,25 @@ const ToeicQuestions: React.FC = () => {
                 ) : (
                   filteredGroups.map((group) => (
                     <TableRow key={group.id}>
-                      <TableCell className="font-medium">Part {group.part}</TableCell>
                       <TableCell>
-                        {group.type === QuestionType.LISTENING ? (
-                          <Badge className="bg-blue-500">Listening</Badge>
-                        ) : (
-                          <Badge className="bg-green-500">Reading</Badge>
+                        {group.type === QuestionType.LISTENING && (
+                          <Badge className="bg-blue-500">Nghe</Badge>
                         )}
+                        {group.type === QuestionType.READING && (
+                          <Badge className="bg-green-500">Đọc</Badge>
+                        )}
+                        {group.type === QuestionType.VOCABULARY && (
+                          <Badge className="bg-purple-500">Từ vựng</Badge>
+                        )}
+                        {group.type === QuestionType.GRAMMAR && (
+                          <Badge className="bg-amber-500">Ngữ pháp</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {group.type === QuestionType.VOCABULARY || group.type === QuestionType.GRAMMAR 
+                          ? '-'
+                          : `Part ${group.part}`
+                        }
                       </TableCell>
                       <TableCell>
                         {group.title || <span className="text-muted-foreground italic">Không có tiêu đề</span>}
@@ -433,99 +620,6 @@ const ToeicQuestions: React.FC = () => {
               </TableBody>
             </Table>
           </div>
-        </TabsContent>
-        
-        <TabsContent value="card-view" className="py-4">
-          {filteredGroups.length === 0 ? (
-            <div className="text-center py-10 border rounded-md">
-              <p className="text-muted-foreground">
-                {searchQuery || typeFilter !== "ALL" || partFilter !== "ALL"
-                  ? "Không tìm thấy nhóm câu hỏi phù hợp với điều kiện tìm kiếm."
-                  : "Chưa có nhóm câu hỏi nào. Hãy tạo nhóm câu hỏi mới."}
-              </p>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredGroups.map((group) => {
-                const isListening = group.part <= 4;
-                const hasQuestions = group.questions?.length > 0;
-                const questionCount = hasQuestions ? group.questions.length : 0;
-                const firstQuestion = hasQuestions ? group.questions[0] : null;
-                
-                return (
-                  <Card key={group.id} className="overflow-hidden">
-                    <CardHeader className="pb-2">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <CardTitle className="text-lg">
-                            <div className="flex items-center">
-                              {isListening ? (
-                                <Headphones className="mr-2 h-4 w-4" />
-                              ) : (
-                                <BookOpen className="mr-2 h-4 w-4" />
-                              )}
-                              {group.title ? group.title : `Part ${group.part}`}
-                            </div>
-                          </CardTitle>
-                          <CardDescription>
-                            {isListening 
-                              ? 'Listening'
-                              : 'Reading'
-                            } - Part {group.part}
-                          </CardDescription>
-                        </div>
-                        <Badge>
-                          {questionCount} câu hỏi
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="line-clamp-3 text-sm text-muted-foreground">
-                        {group.passage ? (
-                          `${group.passage.substring(0, 150)}${group.passage.length > 150 ? '...' : ''}`
-                        ) : (
-                          <span className="italic">
-                            {isListening
-                              ? 'Nhóm câu hỏi nghe' 
-                              : 'Nhóm câu hỏi đọc'
-                            }
-                          </span>
-                        )}
-                      </div>
-                    </CardContent>
-                    <CardFooter className="bg-muted/50 pt-2">
-                      <div className="flex justify-between w-full">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => handleViewDetail(group.id!)}
-                        >
-                          <Eye className="mr-1 h-4 w-4" />
-                          Chi tiết
-                        </Button>
-                        <div className="flex gap-1">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleEdit(group.id!)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => handleDelete(group)}
-                          >
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
-                        </div>
-                      </div>
-                    </CardFooter>
-                  </Card>
-                );
-              })}
-            </div>
-          )}
         </TabsContent>
       </Tabs>
       
@@ -577,12 +671,26 @@ const ToeicQuestions: React.FC = () => {
             <DialogTitle>
               {selectedGroup ? (
                 <div className="flex items-center">
-                  {selectedGroup.part <= 4 ? (
+                  {selectedGroup.type === QuestionType.LISTENING && (
                     <Headphones className="mr-2 h-5 w-5" />
-                  ) : (
+                  )}
+                  {selectedGroup.type === QuestionType.READING && (
                     <BookOpen className="mr-2 h-5 w-5" />
                   )}
-                  {selectedGroup.title ? selectedGroup.title : `${selectedGroup.part <= 4 ? 'Listening' : 'Reading'} - Part ${selectedGroup.part}`}
+                  {selectedGroup.type === QuestionType.VOCABULARY && (
+                    <Book className="mr-2 h-5 w-5" />
+                  )}
+                  {selectedGroup.type === QuestionType.GRAMMAR && (
+                    <GraduationCap className="mr-2 h-5 w-5" />
+                  )}
+                  {selectedGroup.title ? selectedGroup.title : (
+                    selectedGroup.type === QuestionType.LISTENING ? 
+                      `Nghe - Part ${selectedGroup.part}` : 
+                    selectedGroup.type === QuestionType.READING ? 
+                      `Đọc - Part ${selectedGroup.part}` :
+                    selectedGroup.type === QuestionType.VOCABULARY ? 
+                      "Từ vựng" : "Ngữ pháp"
+                  )}
                 </div>
               ) : 'Chi tiết nhóm câu hỏi'}
             </DialogTitle>
@@ -597,7 +705,7 @@ const ToeicQuestions: React.FC = () => {
                 questions={selectedGroup.questions}
                 groupInfo={{
                   part: selectedGroup.part.toString(),
-                  type: selectedGroup.part <= 4 ? QuestionType.LISTENING : QuestionType.READING,
+                  type: selectedGroup.type,
                   count: selectedGroup.questions.length,
                   audioUrl: selectedGroup.audioUrl,
                   imageUrl: selectedGroup.imageUrl,
@@ -639,7 +747,10 @@ const ToeicQuestions: React.FC = () => {
               {selectedGroup && (
                 <div className="mt-2">
                   <p className="font-medium">
-                    {selectedGroup.part <= 4 ? 'Listening' : 'Reading'} - Part {selectedGroup.part}
+                    {selectedGroup.type === QuestionType.LISTENING && `Nghe - Part ${selectedGroup.part}`}
+                    {selectedGroup.type === QuestionType.READING && `Đọc - Part ${selectedGroup.part}`}
+                    {selectedGroup.type === QuestionType.VOCABULARY && "Từ vựng"}
+                    {selectedGroup.type === QuestionType.GRAMMAR && "Ngữ pháp"}
                   </p>
                   <p className="text-sm text-muted-foreground">
                     Nhóm này có {selectedGroup.questions.length} câu hỏi. Tất cả các câu hỏi trong nhóm sẽ bị xóa.

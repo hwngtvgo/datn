@@ -338,12 +338,12 @@ export default function Account() {
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Bài thi đã làm</span>
                     <span className="font-medium">{getActualTestsTaken()}</span>
-                  </div>
-                  <div className="flex justify-between">
+                </div>
+                <div className="flex justify-between">
                     <span className="text-muted-foreground">Điểm TOEIC trung bình</span>
                     <span className="font-medium">{calculateAverageToeicScore()}/990</span>
-                  </div>
-                  <div className="flex justify-between">
+                </div>
+                <div className="flex justify-between">
                     <span className="text-muted-foreground">Thời gian đăng ký</span>
                     <span className="font-medium">
                       {user?.lastChecked 
@@ -372,12 +372,12 @@ export default function Account() {
             <TabsContent value="profile" className="mt-6">
               <Card>
                 <form onSubmit={handleSubmit}>
-                  <CardHeader>
+                <CardHeader>
                     <CardTitle>Thông tin hồ sơ</CardTitle>
                     <CardDescription>Cập nhật thông tin tài khoản</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
                       <Label htmlFor="fullName">Họ và tên</Label>
                       <Input 
                         id="fullName"
@@ -389,9 +389,9 @@ export default function Account() {
                       {formErrors.fullName && (
                         <p className="text-sm text-red-500">{formErrors.fullName}</p>
                       )}
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="email">Email</Label>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email</Label>
                       <Input 
                         id="email" 
                         name="email"
@@ -403,9 +403,9 @@ export default function Account() {
                       {formErrors.email && (
                         <p className="text-sm text-red-500">{formErrors.email}</p>
                       )}
-                    </div>
-                  </CardContent>
-                  <CardFooter>
+                  </div>
+                </CardContent>
+                <CardFooter>
                     <Button type="submit" disabled={isSubmitting}>
                       {isSubmitting ? (
                         <>
@@ -417,17 +417,17 @@ export default function Account() {
                     {formSuccess && (
                       <span className="ml-4 text-sm text-green-600">Cập nhật thành công!</span>
                     )}
-                  </CardFooter>
+                </CardFooter>
                 </form>
               </Card>
 
               {/* Phần đổi mật khẩu */}
               <Card className="mt-6">
                 <form onSubmit={handlePasswordSubmit}>
-                  <CardHeader>
+                <CardHeader>
                     <CardTitle>Đổi mật khẩu</CardTitle>
                     <CardDescription>Cập nhật mật khẩu đăng nhập</CardDescription>
-                  </CardHeader>
+                </CardHeader>
                   <CardContent className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="current-password">Mật khẩu hiện tại</Label>
@@ -470,8 +470,8 @@ export default function Account() {
                       {formErrors.confirmPassword && (
                         <p className="text-sm text-red-500">{formErrors.confirmPassword}</p>
                       )}
-                    </div>
-                  </CardContent>
+                  </div>
+                </CardContent>
                   <CardFooter>
                     <Button type="submit" disabled={isSubmitting}>
                       {isSubmitting ? (
@@ -481,10 +481,10 @@ export default function Account() {
                         </>
                       ) : "Đổi mật khẩu"}
                     </Button>
-                  </CardFooter>
+                </CardFooter>
                 </form>
               </Card>
-            </TabsContent>                              
+            </TabsContent>
             <TabsContent value="notifications" className="mt-6">
               <NotificationTab />
             </TabsContent>

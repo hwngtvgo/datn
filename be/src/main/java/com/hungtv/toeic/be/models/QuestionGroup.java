@@ -55,7 +55,7 @@ public class QuestionGroup {
     
     // Enum cho phân loại listening/reading
     public enum QuestionType {
-        LISTENING, READING
+        LISTENING, READING, VOCABULARY, GRAMMAR
     }
     
     // Constructors

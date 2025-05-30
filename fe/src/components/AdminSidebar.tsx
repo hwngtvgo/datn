@@ -56,31 +56,8 @@ const AdminSidebar: React.FC = () => {
       path: '/admin/standalone-questions',
       icon: <Book className="w-5 h-5" />,
     },
-    {
-      title: 'Khóa học',
-      path: '/admin/courses',
-      icon: <BookOpen className="w-5 h-5" />,
-    },
-    {
-      title: 'Modal Examples',
-      path: '/admin/modal-examples',
-      icon: <Layers className="w-5 h-5" />,
-    },
-    {
-      title: 'Phản hồi',
-      path: '/admin/feedback',
-      icon: <MessageCircle className="w-5 h-5" />,
-    },
-    {
-      title: 'Tài chính',
-      path: '/admin/finance',
-      icon: <DollarSign className="w-5 h-5" />,
-    },
-    {
-      title: 'Cài đặt',
-      path: '/admin/settings',
-      icon: <Settings className="w-5 h-5" />,
-    },
+
+
   ];
 
   const isActive = (path: string) => {

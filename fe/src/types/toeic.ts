@@ -8,7 +8,9 @@ export enum DifficultyLevel {
 // Enum định nghĩa các loại câu hỏi
 export enum QuestionType {
   LISTENING = 'LISTENING',
-  READING = 'READING'
+  READING = 'READING',
+  GRAMMAR = 'GRAMMAR',
+  VOCABULARY = 'VOCABULARY'
 }
 
 // Enum định nghĩa các loại đề thi
@@ -22,7 +24,7 @@ export enum ExamType {
 export enum QuestionCategory {
   GRAMMAR = 'GRAMMAR',
   VOCABULARY = 'VOCABULARY',
-
+  LISTENING = 'LISTENING'
 }
 
 // Interface định nghĩa cấu trúc một tùy chọn (lựa chọn) cho câu hỏi

@@ -7,7 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowUp, ArrowDown, Plus, Copy, Trash2, Headphones, BookOpen, FileAudio, FileImage } from 'lucide-react';
+import { ArrowUp, ArrowDown, Plus, Copy, Trash2, Headphones, BookOpen, FileAudio, FileImage, Book, GraduationCap } from 'lucide-react';
 import { QuestionType, DifficultyLevel } from '@/types/toeic';
 import QuestionEditor from './QuestionEditor';
 import { toast } from 'sonner';
@@ -25,6 +25,9 @@ const QuestionGroupForm: React.FC<QuestionGroupFormProps> = ({
   onCancel 
 }) => {
   // Trạng thái cho nhóm câu hỏi
+  const [groupType, setGroupType] = useState<QuestionType>(
+    initialData?.type || QuestionType.LISTENING
+  );
   const [groupPart, setGroupPart] = useState<number>(
     initialData?.part || 1
   );
@@ -35,8 +38,6 @@ const QuestionGroupForm: React.FC<QuestionGroupFormProps> = ({
     initialData?.title || ''
   );
   
-  // Tự động xác định questionType dựa trên part
-  const questionType = groupPart <= 4 ? QuestionType.LISTENING : QuestionType.READING;
   
   // Trạng thái cho câu hỏi
   const [questions, setQuestions] = useState<ToeicQuestionDTO[]>(
@@ -106,7 +107,7 @@ const QuestionGroupForm: React.FC<QuestionGroupFormProps> = ({
   const addQuestion = () => {
     try {
       console.log("Đang thêm câu hỏi mới với:", {
-        questionType,
+        groupType,
         groupPart,
         questionsLength: questions.length
       });
@@ -114,7 +115,7 @@ const QuestionGroupForm: React.FC<QuestionGroupFormProps> = ({
       // Tạo câu hỏi mới với tất cả thuộc tính cần thiết
       const newQuestion: ToeicQuestionDTO = {
         id: undefined,
-        type: questionType,
+        type: groupType,
         part: groupPart,
         question: '',
         correctAnswer: 'A',
@@ -239,17 +240,42 @@ const QuestionGroupForm: React.FC<QuestionGroupFormProps> = ({
     setQuestions(reorderedQuestions);
   };
   
-  // Cập nhật type và part cho tất cả câu hỏi
+  // Cập nhật part khi thay đổi groupType
   useEffect(() => {
+    if (groupType === QuestionType.LISTENING) {
+      setGroupPart(groupPart <= 0 || groupPart > 4 ? 1 : groupPart);
+    } else if (groupType === QuestionType.READING) {
+      setGroupPart(groupPart < 5 || groupPart > 7 ? 5 : groupPart);
+    } else if (groupType === QuestionType.VOCABULARY || groupType === QuestionType.GRAMMAR) {
+      setGroupPart(0);
+    }
+  }, [groupType, groupPart]);
+  
+  // Cập nhật type và part của tất cả câu hỏi khi thay đổi nhóm
+  useEffect(() => {
+    console.log("Đang cập nhật questions khi groupType=" + groupType + ", groupPart=" + groupPart);
+    
     if (questions.length > 0) {
-      const updatedQuestions = questions.map(q => ({
-        ...q,
-        type: questionType,
-        part: groupPart
-      }));
+      const updatedQuestions = questions.map(q => {
+        let finalType = groupType;
+        
+        // Nếu là câu hỏi trong nhóm Reading, cho phép loại câu hỏi là VOCABULARY hoặc GRAMMAR
+        if (groupType === QuestionType.READING && (q.type === QuestionType.VOCABULARY || q.type === QuestionType.GRAMMAR)) {
+          finalType = q.type;
+        }
+        
+        console.log(`Câu hỏi "${q.question?.substring(0, 20) || 'Chưa có nội dung'}..." - type cuối: ${finalType}, part: ${groupPart}`);
+        
+        return {
+          ...q,
+          type: finalType,
+          part: groupPart
+        };
+      });
+      
       setQuestions(updatedQuestions);
     }
-  }, [questionType, groupPart]);
+  }, [groupType, groupPart]);
   
   // Xử lý submit form
   const handleSubmit = async (e: React.FormEvent) => {
@@ -259,19 +285,27 @@ const QuestionGroupForm: React.FC<QuestionGroupFormProps> = ({
       setIsSubmitting(true);
       
       // Kiểm tra các điều kiện bắt buộc
-      if (!groupPart) {
-        toast.error("Vui lòng chọn Part cho nhóm câu hỏi");
-        return;
+      if (groupType === QuestionType.LISTENING || groupType === QuestionType.READING) {
+        if (!groupPart) {
+          toast.error("Vui lòng chọn Part cho nhóm câu hỏi");
+          return;
+        }
       }
       
+      // Đảm bảo part luôn là số hợp lệ, không bao giờ là NaN
+      const finalPart = isNaN(groupPart) ? 
+        (groupType === QuestionType.VOCABULARY || groupType === QuestionType.GRAMMAR ? 0 : 
+         groupType === QuestionType.LISTENING ? 1 : 5) : 
+        groupPart;
+      
       // Kiểm tra yêu cầu audio cho part 1-4
-      if ((groupPart >= 1 && groupPart <= 4) && !audioFile && !audioUrl) {
+      if ((finalPart >= 1 && finalPart <= 4) && !audioFile && !audioUrl) {
         toast.error("Part 1-4 (Listening) yêu cầu phải có file âm thanh");
         return;
       }
       
       // Kiểm tra yêu cầu passage cho part 6-7
-      if ((groupPart === 6 || groupPart === 7) && (!passageText || passageText.trim() === '')) {
+      if ((finalPart === 6 || finalPart === 7) && (!passageText || passageText.trim() === '')) {
         toast.error("Part 6-7 yêu cầu phải có đoạn văn");
         return;
       }
@@ -280,16 +314,25 @@ const QuestionGroupForm: React.FC<QuestionGroupFormProps> = ({
       const groupData: QuestionGroupDTO = {
         id: initialData?.id,
         title: titleText,
-        type: questionType,
-        part: groupPart,
+        type: groupType,
+        part: finalPart,
         passage: passageText || undefined,
         audioUrl: initialData?.audioUrl,
         imageUrl: initialData?.imageUrl,
-        questions: questions.map(q => ({
-          ...q,
-          type: questionType as QuestionType,
-          part: groupPart
-        }))
+        questions: questions.map(q => {
+          let finalType = groupType;
+          
+          // Nếu là câu hỏi trong nhóm Reading, cho phép loại câu hỏi là VOCABULARY hoặc GRAMMAR
+          if (groupType === QuestionType.READING && (q.type === QuestionType.VOCABULARY || q.type === QuestionType.GRAMMAR)) {
+            finalType = q.type;
+          }
+          
+          return {
+            ...q,
+            type: finalType,
+            part: finalPart
+          };
+        })
       };
       
       const files: {audioFile?: File, imageFile?: File} = {};
@@ -306,8 +349,8 @@ const QuestionGroupForm: React.FC<QuestionGroupFormProps> = ({
       console.log('Đang gửi dữ liệu nhóm câu hỏi:', {
         isUpdate: !!initialData?.id,
         id: initialData?.id,
-        part: groupPart,
-        type: questionType,
+        part: finalPart,
+        type: groupType,
         hasNewAudioFile: !!audioFile,
         audioFileSize: audioFile?.size || 0,
         hasNewImageFile: !!imageFile,
@@ -356,10 +399,49 @@ const QuestionGroupForm: React.FC<QuestionGroupFormProps> = ({
                 </div>
 
                 <div className="space-y-2">
+                  <Label htmlFor="group-type" className="text-base font-medium">Loại câu hỏi</Label>
+                  <Select
+                    value={groupType}
+                    onValueChange={(value) => setGroupType(value as QuestionType)}
+                  >
+                    <SelectTrigger id="group-type" className="h-10">
+                      <SelectValue placeholder="Chọn loại câu hỏi" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={QuestionType.LISTENING}>
+                        <div className="flex items-center">
+                          <Headphones className="mr-2 h-4 w-4" />
+                          Nghe (Listening)
+                        </div>
+                      </SelectItem>
+                      <SelectItem value={QuestionType.READING}>
+                        <div className="flex items-center">
+                          <BookOpen className="mr-2 h-4 w-4" />
+                          Đọc (Reading)
+                        </div>
+                      </SelectItem>
+                      <SelectItem value={QuestionType.VOCABULARY}>
+                        <div className="flex items-center">
+                          <Book className="mr-2 h-4 w-4" />
+                          Từ vựng (Vocabulary)
+                        </div>
+                      </SelectItem>
+                      <SelectItem value={QuestionType.GRAMMAR}>
+                        <div className="flex items-center">
+                          <GraduationCap className="mr-2 h-4 w-4" />
+                          Ngữ pháp (Grammar)
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
                   <Label htmlFor="group-part" className="text-base font-medium">Part</Label>
                   <Select 
                     value={groupPart.toString()} 
                     onValueChange={(value) => setGroupPart(parseInt(value))}
+                    disabled={groupType === QuestionType.VOCABULARY || groupType === QuestionType.GRAMMAR}
                   >
                     <SelectTrigger id="group-part" className="h-10">
                       <SelectValue placeholder="Chọn part" />
@@ -530,6 +612,7 @@ const QuestionGroupForm: React.FC<QuestionGroupFormProps> = ({
                   question={questions[editingQuestionIndex]}
                   onSave={saveQuestion}
                   onCancel={cancelEditQuestion}
+                  parentGroupType={groupType}
                 />
               </div>
             ) : (

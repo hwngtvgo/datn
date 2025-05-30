@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ToeicQuestionDTO, ToeicOptionDTO } from '@/services/toeicQuestionService';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,16 +13,22 @@ import {
 } from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Card, CardContent } from "@/components/ui/card";
-import { Plus, Trash2 } from 'lucide-react';
-import { DifficultyLevel, QuestionCategory } from '@/types/toeic';
+import { Plus, Trash2, Headphones, BookOpen, Book, GraduationCap } from 'lucide-react';
+import { DifficultyLevel, QuestionCategory, QuestionType } from '@/types/toeic';
 
 export interface QuestionEditorProps {
   question: ToeicQuestionDTO;
   onSave: (question: ToeicQuestionDTO) => void;
   onCancel: () => void;
+  parentGroupType: QuestionType; // Thêm thuộc tính loại của nhóm chứa câu hỏi
 }
 
-const QuestionEditor: React.FC<QuestionEditorProps> = ({ question, onSave, onCancel }) => {
+const QuestionEditor: React.FC<QuestionEditorProps> = ({ 
+  question, 
+  onSave, 
+  onCancel, 
+  parentGroupType 
+}) => {
   const [questionText, setQuestionText] = useState<string>(question.question || '');
   const [options, setOptions] = useState<ToeicOptionDTO[]>(question.options || []);
   const [correctAnswer, setCorrectAnswer] = useState<string>(question.correctAnswer || '');
@@ -30,14 +36,29 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({ question, onSave, onCan
   const [difficultyLevel, setDifficultyLevel] = useState<DifficultyLevel>(
     question.difficultyLevel || DifficultyLevel.MEDIUM
   );
-  const [category, setCategory] = useState<QuestionCategory>(() => {
-    // Nếu category hiện tại là PRACTICE hoặc OTHER, sử dụng GRAMMAR
-    if (question.category === QuestionCategory.PRACTICE || question.category === QuestionCategory.OTHER) {
-      return QuestionCategory.GRAMMAR;
+  
+  // Thêm state cho loại câu hỏi dựa vào loại của nhóm
+  const [questionType, setQuestionType] = useState<QuestionType>(() => {
+    // Nếu câu hỏi đã có loại và nhóm là đọc, giữ nguyên loại
+    if (question.type && parentGroupType === QuestionType.READING) {
+      return question.type;
     }
-    // Nếu không có giá trị hoặc giá trị không hợp lệ, sử dụng GRAMMAR
-    return question.category || QuestionCategory.GRAMMAR;
+    
+    // Nếu nhóm là đọc nhưng câu hỏi chưa có loại, mặc định là từ vựng
+    if (parentGroupType === QuestionType.READING) {
+      return QuestionType.VOCABULARY;
+    }
+    
+    // Các trường hợp khác, loại câu hỏi giống loại của nhóm
+    return parentGroupType;
   });
+  
+  // Cập nhật loại câu hỏi khi loại của nhóm thay đổi
+  useEffect(() => {
+    if (parentGroupType !== QuestionType.READING) {
+      setQuestionType(parentGroupType);
+    }
+  }, [parentGroupType]);
   
   // Thêm tùy chọn mới
   const addOption = () => {
@@ -68,6 +89,21 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({ question, onSave, onCan
     setOptions(updatedOptions);
   };
   
+  // Hàm chuyển đổi từ QuestionType sang QuestionCategory tương ứng
+  const getCategory = (type: QuestionType): QuestionCategory => {
+    switch (type) {
+      case QuestionType.VOCABULARY:
+        return QuestionCategory.VOCABULARY;
+      case QuestionType.GRAMMAR:
+        return QuestionCategory.GRAMMAR;
+      case QuestionType.LISTENING:
+        return QuestionCategory.LISTENING;
+      default:
+        // Mặc định là GRAMMAR
+        return QuestionCategory.GRAMMAR;
+    }
+  };
+  
   // Lưu câu hỏi
   const handleSave = () => {
     // Kiểm tra dữ liệu trước khi lưu
@@ -81,34 +117,8 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({ question, onSave, onCan
       return;
     }
     
-    // Đảm bảo category là giá trị hợp lệ (chỉ GRAMMAR hoặc VOCABULARY)
-    let finalCategory = category;
-    if (finalCategory !== QuestionCategory.GRAMMAR && finalCategory !== QuestionCategory.VOCABULARY) {
-      finalCategory = QuestionCategory.GRAMMAR;
-    }
-    
-    console.log('Lưu câu hỏi với thông tin:');
-    console.log('- Category:', finalCategory);
-    console.log('- Category type:', typeof finalCategory);
-    console.log('- DifficultyLevel:', difficultyLevel);
-    console.log('- DifficultyLevel type:', typeof difficultyLevel);
-    
-    // Kiểm tra xem các enum có hợp lệ không
-    console.log('- Kiểm tra enum Category:');
-    console.log('  + Các giá trị hợp lệ:', Object.values(QuestionCategory));
-    console.log('  + Giá trị hiện tại có thuộc enum không:', Object.values(QuestionCategory).includes(finalCategory as QuestionCategory));
-    
-    console.log('- Kiểm tra enum DifficultyLevel:');
-    console.log('  + Các giá trị hợp lệ:', Object.values(DifficultyLevel));
-    console.log('  + Giá trị hiện tại có thuộc enum không:', Object.values(DifficultyLevel).includes(difficultyLevel as DifficultyLevel));
-    
-    // Kiểm tra JSON stringified
-    try {
-      const testJson = JSON.stringify({category: finalCategory});
-      console.log('- JSON test for category:', testJson);
-    } catch (e) {
-      console.error('- Không thể chuyển category thành JSON:', e);
-    }
+    // Đặt category dựa trên questionType
+    const category = getCategory(questionType);
     
     const updatedQuestion: ToeicQuestionDTO = {
       ...question,
@@ -116,12 +126,12 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({ question, onSave, onCan
       options: options,
       correctAnswer: correctAnswer,
       explanation: explanation,
-      difficultyLevel: difficultyLevel as DifficultyLevel,
-      category: finalCategory as QuestionCategory,
+      difficultyLevel: difficultyLevel,
+      type: questionType,
+      category: category
     };
     
     console.log('Câu hỏi đã cập nhật trước khi lưu:', JSON.stringify(updatedQuestion, null, 2));
-    console.log('Câu hỏi gốc trước khi cập nhật:', JSON.stringify(question, null, 2));
     onSave(updatedQuestion);
   };
   
@@ -139,22 +149,61 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({ question, onSave, onCan
         />
       </div>
       
-      {/* Danh mục câu hỏi */}
-      <div className="space-y-2">
-        <Label htmlFor="category">Danh mục <span className="text-destructive">*</span></Label>
-        <Select 
-          value={category} 
-          onValueChange={(value) => setCategory(value as QuestionCategory)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Chọn danh mục" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={QuestionCategory.GRAMMAR}>Ngữ pháp</SelectItem>
-            <SelectItem value={QuestionCategory.VOCABULARY}>Từ vựng</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      {/* Loại câu hỏi - Chỉ hiện khi nhóm là đọc */}
+      {parentGroupType === QuestionType.READING && (
+        <div className="space-y-2">
+          <Label htmlFor="question-type">Loại câu hỏi <span className="text-destructive">*</span></Label>
+          <Select 
+            value={questionType} 
+            onValueChange={(value) => setQuestionType(value as QuestionType)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Chọn loại câu hỏi" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={QuestionType.VOCABULARY}>
+                <div className="flex items-center">
+                  <Book className="mr-2 h-4 w-4" />
+                  Từ vựng (Vocabulary)
+                </div>
+              </SelectItem>
+              <SelectItem value={QuestionType.GRAMMAR}>
+                <div className="flex items-center">
+                  <GraduationCap className="mr-2 h-4 w-4" />
+                  Ngữ pháp (Grammar)
+                </div>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+      
+      {/* Nếu không phải nhóm đọc, hiển thị loại câu hỏi dưới dạng chỉ đọc */}
+      {parentGroupType !== QuestionType.READING && (
+        <div className="space-y-2">
+          <Label htmlFor="question-type-info">Loại câu hỏi</Label>
+          <div className="p-2 bg-muted rounded-md flex items-center">
+            {parentGroupType === QuestionType.LISTENING && (
+              <>
+                <Headphones className="h-4 w-4 mr-2" />
+                <span>Nghe (Listening)</span>
+              </>
+            )}
+            {parentGroupType === QuestionType.VOCABULARY && (
+              <>
+                <Book className="h-4 w-4 mr-2" />
+                <span>Từ vựng (Vocabulary)</span>
+              </>
+            )}
+            {parentGroupType === QuestionType.GRAMMAR && (
+              <>
+                <GraduationCap className="h-4 w-4 mr-2" />
+                <span>Ngữ pháp (Grammar)</span>
+              </>
+            )}
+          </div>
+        </div>
+      )}
       
       {/* Mức độ khó */}
       <div className="space-y-2">

@@ -237,7 +237,8 @@ public class ToeicQuestionService {
                                                     String passage,
                                                     Integer part,
                                                     String title,
-                                                    Long testId) {
+                                                    Long testId,
+                                                    String type) {
         try {
             // Parse JSON string to ToeicQuestion list
             List<ToeicQuestion> questionsRequest = objectMapper.readValue(
@@ -245,17 +246,34 @@ public class ToeicQuestionService {
                     objectMapper.getTypeFactory().constructCollectionType(List.class, ToeicQuestion.class)
             );
             
-            if (questionsRequest.isEmpty()) {
-                throw new RuntimeException("Cần ít nhất một câu hỏi để tạo nhóm");
+            // Xác định QuestionType dựa vào part và type được gửi lên
+            QuestionGroup.QuestionType questionType;
+            if (type != null && !type.isEmpty()) {
+                try {
+                    // Nếu có type được gửi lên, sử dụng nó (chuyển thành enum)
+                    questionType = QuestionGroup.QuestionType.valueOf(type);
+                } catch (IllegalArgumentException e) {
+                    throw new RuntimeException("Loại câu hỏi không hợp lệ: " + type);
+                }
+            } else {
+                // Nếu không có type, xác định dựa vào part
+                questionType = determineQuestionType(part);
+                if (questionType == null) {
+                    throw new RuntimeException("Không thể xác định loại câu hỏi từ part: " + part);
+                }
             }
             
-            // Lấy loại câu hỏi (Listening/Reading) dựa vào part
-            QuestionGroup.QuestionType questionType = determineQuestionType(part);
-            
-            // Validate dựa trên part
+            // Validate dữ liệu dựa vào part và questionType
             validateByPart(questionsRequest, part, questionType, audioFile, imageFile, passage);
             
-            // Upload files nếu có
+            // Tìm đối tượng Test nếu cần
+            Test test = null;
+            if (testId != null) {
+                test = testRepository.findById(testId)
+                        .orElseThrow(() -> new RuntimeException("Không tìm thấy bài kiểm tra với ID: " + testId));
+            }
+            
+            // Upload files
             String audioUrl = null;
             if (audioFile != null && !audioFile.isEmpty()) {
                 audioUrl = fileStorageService.storeFile(audioFile, "audio");
@@ -266,53 +284,74 @@ public class ToeicQuestionService {
                 imageUrl = fileStorageService.storeFile(imageFile, "images");
             }
             
-            // Tạo và lưu question group
-            QuestionGroup questionGroup = new QuestionGroup();
-            questionGroup.setQuestionType(questionType);
-            questionGroup.setPart(part);
-            questionGroup.setAudioUrl(audioUrl);
-            questionGroup.setImageUrl(imageUrl);
-            questionGroup.setPassage(passage);
+            // Tạo nhóm câu hỏi mới
+            QuestionGroup group = new QuestionGroup();
+            group.setQuestionType(questionType);
+            group.setPart(part);
+            group.setTitle(title);
+            group.setAudioUrl(audioUrl);
+            group.setImageUrl(imageUrl);
+            group.setPassage(passage);
+            group.setTest(test);
             
-            // Thiết lập title cho group
-            if (title == null || title.trim().isEmpty()) {
-                // Nếu không có title, tạo title mặc định
-                questionGroup.setTitle("Part " + part + " - " + questionType.name());
-            } else {
-                questionGroup.setTitle(title);
-            }
+            // Lưu nhóm câu hỏi
+            QuestionGroup savedGroup = questionGroupRepository.save(group);
             
-            // Nếu có testId, liên kết với test
-            if (testId != null) {
-                // Tìm Test theo ID
-                Test test = testRepository.findById(testId)
-                        .orElseThrow(() -> new RuntimeException("Không tìm thấy bài thi với ID: " + testId));
-                questionGroup.setTest(test);
-            }
-            
-            QuestionGroup savedGroup = questionGroupRepository.save(questionGroup);
-            
-            // Lưu từng câu hỏi trong nhóm
+            // Tạo các câu hỏi
             List<ToeicQuestion> savedQuestions = new ArrayList<>();
             for (int i = 0; i < questionsRequest.size(); i++) {
-                ToeicQuestion question = questionsRequest.get(i);
+                ToeicQuestion questionRequest = questionsRequest.get(i);
                 
-                // Thiết lập thông tin cho câu hỏi
-                question.setQuestionGroup(savedGroup);
+                // Tạo câu hỏi mới
+                ToeicQuestion question = new ToeicQuestion();
+                question.setQuestion(questionRequest.getQuestion());
+                question.setCorrectAnswer(questionRequest.getCorrectAnswer());
+                question.setExplanation(questionRequest.getExplanation());
+                question.setDifficultyLevel(questionRequest.getDifficultyLevel());
                 question.setQuestionOrder(i + 1);
+                question.setQuestionGroup(savedGroup);
                 
-                // Lưu câu hỏi
-                ToeicQuestion savedQuestion = questionRepository.save(question);
-                
-                // Lưu các tùy chọn
-                if (question.getOptions() != null && !question.getOptions().isEmpty()) {
-                    for (ToeicOption option : question.getOptions()) {
-                        option.setQuestion(savedQuestion);
-                        optionRepository.save(option);
+                // Kiểm tra category từ request trước
+                if (questionRequest.getCategory() != null) {
+                    question.setCategory(questionRequest.getCategory());
+                    System.out.println("DEBUG: Sử dụng category từ request: " + questionRequest.getCategory());
+                } else {
+                    // Thiết lập category dựa vào loại của nhóm câu hỏi
+                    try {
+                        // Thử chuyển đổi QuestionType của nhóm thành QuestionCategory
+                        ToeicQuestion.QuestionCategory category = ToeicQuestion.QuestionCategory.valueOf(questionType.name());
+                        question.setCategory(category);
+                        System.out.println("DEBUG: Đã thiết lập category=" + category + " cho câu hỏi mới trong nhóm " + questionType.name());
+                    } catch (IllegalArgumentException e) {
+                        // Nếu không thể chuyển đổi, đặt giá trị mặc định phù hợp
+                        if (questionType == QuestionGroup.QuestionType.READING) {
+                            question.setCategory(ToeicQuestion.QuestionCategory.VOCABULARY);
+                        } else {
+                            question.setCategory(ToeicQuestion.QuestionCategory.VOCABULARY);
+                        }
+                        System.out.println("DEBUG: Không thể chuyển đổi " + questionType + " sang QuestionCategory, đặt mặc định VOCABULARY");
                     }
                 }
                 
+                // Lưu câu hỏi mới
+                ToeicQuestion savedQuestion = questionRepository.save(question);
+                System.out.println("DEBUG: Câu hỏi đã lưu vào DB - ID: " + savedQuestion.getId() + 
+                                 ", Type: " + savedQuestion.getCategory() + 
+                                 ", Question: " + savedQuestion.getQuestion().substring(0, Math.min(20, savedQuestion.getQuestion().length())) + "...");
                 savedQuestions.add(savedQuestion);
+                
+                // Tạo các tùy chọn cho câu hỏi
+                if (questionRequest.getOptions() != null && !questionRequest.getOptions().isEmpty()) {
+                    for (ToeicOption optionRequest : questionRequest.getOptions()) {
+                        ToeicOption option = new ToeicOption();
+                        option.setOptionKey(optionRequest.getOptionKey());
+                        option.setOptionText(optionRequest.getOptionText());
+                        option.setQuestion(savedQuestion);
+                        
+                        // Lưu tùy chọn
+                        optionRepository.save(option);
+                    }
+                }
             }
             
             // Tạo response
@@ -324,13 +363,14 @@ public class ToeicQuestionService {
             response.setAudioUrl(savedGroup.getAudioUrl());
             response.setImageUrl(savedGroup.getImageUrl());
             response.setPassage(savedGroup.getPassage());
-            response.setTestId(savedGroup.getTest() != null ? savedGroup.getTest().getId() : null);
+            response.setTestId(test != null ? test.getId() : null);
+            
+            // Thiết lập danh sách câu hỏi cho response
             response.setQuestions(savedQuestions.stream()
                     .map(QuestionResponse::new)
                     .collect(Collectors.toList()));
             
             return response;
-            
         } catch (Exception e) {
             throw new RuntimeException("Lỗi khi tạo nhóm câu hỏi: " + e.getMessage(), e);
         }
@@ -384,17 +424,37 @@ public class ToeicQuestionService {
     @Transactional
     public QuestionGroupResponse updateQuestionGroup(Long groupId, String questionsJson, Integer part,
                                                     String title, MultipartFile audioFile, 
-                                                    MultipartFile imageFile, String passage) {
+                                                    MultipartFile imageFile, String passage, 
+                                                    String type) {
         try {
             // Lấy thông tin nhóm câu hỏi hiện tại
             QuestionGroup group = questionGroupRepository.findById(groupId)
                     .orElseThrow(() -> new RuntimeException("Không tìm thấy nhóm câu hỏi với ID: " + groupId));
             
+            // Xác định QuestionType dựa vào part và type được gửi lên
+            QuestionGroup.QuestionType questionType = group.getQuestionType();
+            
+            // Nếu có type mới được gửi lên, cập nhật questionType
+            if (type != null && !type.isEmpty()) {
+                try {
+                    questionType = QuestionGroup.QuestionType.valueOf(type);
+                    // Cập nhật type mới
+                    group.setQuestionType(questionType);
+                } catch (IllegalArgumentException e) {
+                    throw new RuntimeException("Loại câu hỏi không hợp lệ: " + type);
+                }
+            } else if (part != null) {
+                // Nếu không có type mới nhưng có part mới, xác định type từ part
+                QuestionGroup.QuestionType newType = determineQuestionType(part);
+                if (newType != null) {
+                    questionType = newType;
+                    group.setQuestionType(questionType);
+                }
+            }
+            
             // Cập nhật part nếu được cung cấp
             if (part != null) {
                 group.setPart(part);
-                // Cập nhật questionType dựa trên part mới
-                group.setQuestionType(determineQuestionType(part));
             }
             
             // Cập nhật title nếu được cung cấp
@@ -417,7 +477,6 @@ public class ToeicQuestionService {
                 throw new RuntimeException("Không thể xử lý dữ liệu câu hỏi: " + e.getMessage());
             }
             
-            QuestionGroup.QuestionType questionType = group.getQuestionType();
             Integer groupPart = group.getPart();
             
             // Validate dựa trên part
@@ -489,6 +548,20 @@ public class ToeicQuestionService {
                     existingQuestion.setDifficultyLevel(questionRequest.getDifficultyLevel());
                     existingQuestion.setQuestionOrder(i + 1);
                     
+                    // Đảm bảo category cũng được cập nhật đúng dựa vào questionType của nhóm
+                    if (questionRequest.getCategory() != null) {
+                        existingQuestion.setCategory(questionRequest.getCategory());
+                    } else {
+                        // Nếu không có category từ request, lấy từ questionType của nhóm
+                        try {
+                            ToeicQuestion.QuestionCategory category = ToeicQuestion.QuestionCategory.valueOf(savedGroup.getQuestionType().name());
+                            existingQuestion.setCategory(category);
+                        } catch (IllegalArgumentException e) {
+                            // Nếu không thể chuyển đổi, đặt giá trị mặc định là VOCABULARY
+                            existingQuestion.setCategory(ToeicQuestion.QuestionCategory.VOCABULARY);
+                        }
+                    }
+                    
                     // Lưu câu hỏi đã cập nhật
                     savedQuestion = questionRepository.save(existingQuestion);
                     System.out.println("Đã lưu cập nhật câu hỏi ID=" + savedQuestion.getId());
@@ -529,6 +602,22 @@ public class ToeicQuestionService {
                     // Đảm bảo ID là null để tránh xung đột
                     questionRequest.setId(null);
                     System.out.println("Tạo mới câu hỏi");
+                    
+                    // Đảm bảo category được thiết lập cho câu hỏi mới
+                    if (questionRequest.getCategory() == null) {
+                        try {
+                            // Thử chuyển đổi QuestionType của nhóm thành QuestionCategory
+                            ToeicQuestion.QuestionCategory category = ToeicQuestion.QuestionCategory.valueOf(savedGroup.getQuestionType().name());
+                            questionRequest.setCategory(category);
+                            System.out.println("- Đã thiết lập category=" + category + " cho câu hỏi mới");
+                        } catch (IllegalArgumentException e) {
+                            // Nếu không thể chuyển đổi, đặt giá trị mặc định là VOCABULARY
+                            questionRequest.setCategory(ToeicQuestion.QuestionCategory.VOCABULARY);
+                            System.out.println("- Không thể chuyển đổi " + savedGroup.getQuestionType() + " sang QuestionCategory, đặt mặc định VOCABULARY");
+                        }
+                    } else {
+                        System.out.println("- Câu hỏi mới đã có category=" + questionRequest.getCategory());
+                    }
                     
                     // Lưu câu hỏi mới
                     savedQuestion = questionRepository.save(questionRequest);
@@ -666,68 +755,65 @@ public class ToeicQuestionService {
     
     private void validateByPart(List<ToeicQuestion> questions, int part, QuestionGroup.QuestionType questionType, 
                                MultipartFile audioFile, MultipartFile imageFile, String passage, String existingAudioUrl) {
-        System.out.println("validateByPart: part=" + part + ", questionType=" + questionType);
-        System.out.println("- audioFile: " + (audioFile != null ? "Có" : "Không có"));
-        System.out.println("- audioFile isEmpty: " + (audioFile != null ? (audioFile.isEmpty() ? "Rỗng" : "Có nội dung") : "N/A"));
-        System.out.println("- existingAudioUrl: " + (existingAudioUrl != null ? existingAudioUrl : "Không có"));
-        System.out.println("- passage: " + (passage != null ? "Có" : "Không có"));
-        
-        // Phần 1-4 là Listening, phần 5-7 là Reading
-        if (part >= 1 && part <= 4 && questionType != QuestionGroup.QuestionType.LISTENING) {
-            throw new RuntimeException("Phần " + part + " phải có loại LISTENING");
+        if (questions.isEmpty()) {
+            throw new RuntimeException("Cần ít nhất một câu hỏi để tạo/cập nhật nhóm câu hỏi");
         }
         
-        if (part >= 5 && part <= 7 && questionType != QuestionGroup.QuestionType.READING) {
-            throw new RuntimeException("Phần " + part + " phải có loại READING");
-        }
-        
-        // Kiểm tra các yêu cầu theo từng part
-        boolean hasNewAudioFile = audioFile != null && !audioFile.isEmpty();
-        boolean hasExistingAudioFile = existingAudioUrl != null && !existingAudioUrl.isEmpty();
-        boolean hasAudioFile = hasNewAudioFile || hasExistingAudioFile;
-        
-        System.out.println("- hasNewAudioFile: " + hasNewAudioFile);
-        System.out.println("- hasExistingAudioFile: " + hasExistingAudioFile);
-        System.out.println("- hasAudioFile (tổng hợp): " + hasAudioFile);
-        
-        if ((part == 1 || part == 2) && !hasAudioFile) {
-            throw new RuntimeException("Part 1 và 2 yêu cầu phải có file âm thanh");
-        }
-        
-        if ((part == 3 || part == 4) && !hasAudioFile) {
-            throw new RuntimeException("Part 3 và 4 yêu cầu phải có file âm thanh chung");
-        }
-        
-        // Chỉ kiểm tra passage cho part 6-7 nếu đây là lần tạo mới, hoặc nếu passage rỗng
-        if ((part == 6 || part == 7) && (passage == null || passage.isEmpty())) {
-            throw new RuntimeException("Part 6 và 7 yêu cầu phải có đoạn văn chung");
-        }
-        
-        // Kiểm tra số lượng câu hỏi
-        if ((part == 3 || part == 4) && questions.size() < 3) {
-            throw new RuntimeException("Part 3 và 4 yêu cầu phải có ít nhất 3 câu hỏi");
-        }
-        
-        if ((part == 6 || part == 7) && questions.size() < 2) {
-            throw new RuntimeException("Part 6 và 7 yêu cầu phải có ít nhất 2 câu hỏi");
+        switch (questionType) {
+            case LISTENING:
+                // Part 1-4: yêu cầu file âm thanh
+                if (part < 1 || part > 4) {
+                    throw new RuntimeException("Part không hợp lệ cho loại LISTENING. Phải là 1-4, nhưng đang là: " + part);
+                }
+                
+                if (audioFile == null && existingAudioUrl == null) {
+                    throw new RuntimeException("Phần nghe (Part " + part + ") yêu cầu phải có file âm thanh");
+                }
+                break;
+                
+            case READING:
+                // Part 5-7: không yêu cầu file âm thanh
+                if (part < 5 || part > 7) {
+                    throw new RuntimeException("Part không hợp lệ cho loại READING. Phải là 5-7, nhưng đang là: " + part);
+                }
+                
+                // Part 6-7: yêu cầu passage
+                if ((part == 6 || part == 7) && (passage == null || passage.trim().isEmpty())) {
+                    throw new RuntimeException("Part " + part + " yêu cầu phải có đoạn văn (passage)");
+                }
+                break;
+                
+            case VOCABULARY:
+            case GRAMMAR:
+                // Các loại từ vựng và ngữ pháp sử dụng part = 0
+                if (part != 0) {
+                    throw new RuntimeException("Part cho loại " + questionType + " phải là 0, nhưng đang là: " + part);
+                }
+                break;
+                
+            default:
+                throw new RuntimeException("Loại câu hỏi không được hỗ trợ: " + questionType);
         }
     }
     
-    // Phương thức overload cho trường hợp không có audioUrl sẵn (dành cho tạo mới)
+    // Overload phương thức validateByPart không có existingAudioUrl
     private void validateByPart(List<ToeicQuestion> questions, int part, QuestionGroup.QuestionType questionType, 
                                MultipartFile audioFile, MultipartFile imageFile, String passage) {
-        System.out.println("Gọi validateByPart không có existingAudioUrl (tạo mới)");
         validateByPart(questions, part, questionType, audioFile, imageFile, passage, null);
     }
     
-    // Xác định loại câu hỏi (Listening/Reading) dựa vào phần thi
-    private QuestionGroup.QuestionType determineQuestionType(int part) {
+    // Xác định loại câu hỏi (Listening/Reading/Vocabulary/Grammar) dựa vào phần thi
+    private QuestionGroup.QuestionType determineQuestionType(Integer part) {
+
+        
         if (part >= 1 && part <= 4) {
             return QuestionGroup.QuestionType.LISTENING;
         } else if (part >= 5 && part <= 7) {
             return QuestionGroup.QuestionType.READING;
-        } else {
-            throw new RuntimeException("Phần thi không hợp lệ: " + part);
+        } else  {
+            // Đối với part 0, loại câu hỏi sẽ được chỉ định trực tiếp từ request
+            // Phần này sẽ được xử lý ở phương thức tạo/cập nhật nhóm câu hỏi
+            return null;
         }
     }
 }

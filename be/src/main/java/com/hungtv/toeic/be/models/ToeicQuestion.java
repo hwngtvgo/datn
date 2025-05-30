@@ -65,7 +65,7 @@ public class ToeicQuestion {
     
     // Enum cho phân loại câu hỏi
     public enum QuestionCategory {
-        GRAMMAR, VOCABULARY, PRACTICE, OTHER
+        GRAMMAR, VOCABULARY, LISTENING
     }
     
     // Constructors

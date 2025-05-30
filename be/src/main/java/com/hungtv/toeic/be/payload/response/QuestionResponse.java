@@ -33,6 +33,7 @@ public class QuestionResponse {
         // Lấy thông tin từ QuestionGroup
         QuestionGroup group = question.getQuestionGroup();
         if (group != null) {
+            // Nếu thuộc nhóm, lấy thông tin từ nhóm
             this.type = group.getQuestionType().name();
             this.part = group.getPart();
             this.audioUrl = group.getAudioUrl();
@@ -51,12 +52,14 @@ public class QuestionResponse {
             }
         }
         
+        // Thông tin về câu hỏi cụ thể
         this.question = question.getQuestion();
         this.questionOrder = question.getQuestionOrder();
         this.correctAnswer = question.getCorrectAnswer();
         this.explanation = question.getExplanation();
         this.difficultyLevel = question.getDifficultyLevel().name();
         
+        // Lấy danh sách các tùy chọn
         if (question.getOptions() != null) {
             this.options = question.getOptions().stream()
                     .map(OptionResponse::new)

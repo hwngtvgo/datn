@@ -1,6 +1,11 @@
 package com.hungtv.toeic.be.controllers;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -144,6 +149,7 @@ public class ToeicQuestionController {
     public ResponseEntity<QuestionGroupResponse> createQuestionGroup(
             @RequestParam("questionsJson") String questionsJson,
             @RequestParam("part") Integer part,
+            @RequestParam(value = "type", required = false) String type,
             @RequestParam(value = "title", required = false) String title,
             @RequestParam(value = "testId", required = false) Long testId,
             @RequestParam(value = "audioFile", required = false) MultipartFile audioFile,
@@ -152,7 +158,7 @@ public class ToeicQuestionController {
         
         try {
             QuestionGroupResponse createdGroupResponse = questionService.createQuestionGroup(
-                    questionsJson, audioFile, imageFile, passage, part, title, testId);
+                    questionsJson, audioFile, imageFile, passage, part, title, testId, type);
             
             return new ResponseEntity<>(createdGroupResponse, HttpStatus.CREATED);
         } catch (Exception e) {
@@ -196,6 +202,7 @@ public class ToeicQuestionController {
             @PathVariable Long groupId,
             @RequestParam("questionsJson") String questionsJson,
             @RequestParam("part") Integer part,
+            @RequestParam(value = "type", required = false) String type,
             @RequestParam(value = "title", required = false) String title,
             @RequestParam(value = "audioFile", required = false) MultipartFile audioFile,
             @RequestParam(value = "imageFile", required = false) MultipartFile imageFile,
@@ -204,6 +211,7 @@ public class ToeicQuestionController {
         try {
             System.out.println("ToeicQuestionController.updateQuestionGroup: Đang cập nhật nhóm câu hỏi ID=" + groupId);
             System.out.println("- part=" + part);
+            System.out.println("- type=" + type);
             System.out.println("- title=" + (title != null ? title : "null"));
             System.out.println("- passage=" + (passage != null ? "Có dữ liệu, độ dài: " + passage.length() : "null"));
             
@@ -251,7 +259,7 @@ public class ToeicQuestionController {
             
             try {
                 QuestionGroupResponse updatedGroupResponse = questionService.updateQuestionGroup(
-                        groupId, questionsJson, part, title, audioFile, imageFile, passage);
+                        groupId, questionsJson, part, title, audioFile, imageFile, passage, type);
                 
                 System.out.println("Cập nhật nhóm câu hỏi thành công, trả về kết quả");
                 return ResponseEntity.ok(updatedGroupResponse);
@@ -278,5 +286,80 @@ public class ToeicQuestionController {
         } catch (RuntimeException e) {
             return ResponseEntity.badRequest().body(new ApiResponse<>(false, e.getMessage()));
         }
+    }
+
+    @PostMapping("/debug-question-group")
+    public ResponseEntity<?> debugQuestionGroup(@RequestBody Map<String, Long> request) {
+        Long groupId = request.get("id");
+        if (groupId == null) {
+            return ResponseEntity.badRequest().body("ID của nhóm câu hỏi không được cung cấp");
+        }
+        
+        Optional<QuestionGroup> groupOpt = questionGroupRepository.findById(groupId);
+        if (groupOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Không tìm thấy nhóm câu hỏi với ID: " + groupId);
+        }
+        
+        QuestionGroup group = groupOpt.get();
+        Set<ToeicQuestion> questionSet = group.getQuestions();
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("group", Map.of(
+            "id", group.getId(),
+            "title", group.getTitle(),
+            "questionType", group.getQuestionType(),
+            "part", group.getPart()
+        ));
+        
+        List<Map<String, Object>> questionDetails = new ArrayList<>();
+        for (ToeicQuestion question : questionSet) {
+            questionDetails.add(Map.of(
+                "id", question.getId(),
+                "question", question.getQuestion(),
+                "category", question.getCategory(),
+                "correctAnswer", question.getCorrectAnswer(),
+                "order", question.getQuestionOrder()
+            ));
+        }
+        response.put("questions", questionDetails);
+        
+        return ResponseEntity.ok(response);
+    }
+    
+    @GetMapping("/public/debug-question-group/{id}")
+    public ResponseEntity<?> publicDebugQuestionGroup(@PathVariable Long id) {
+        if (id == null) {
+            return ResponseEntity.badRequest().body("ID của nhóm câu hỏi không được cung cấp");
+        }
+        
+        Optional<QuestionGroup> groupOpt = questionGroupRepository.findById(id);
+        if (groupOpt.isEmpty()) {
+            return ResponseEntity.badRequest().body("Không tìm thấy nhóm câu hỏi với ID: " + id);
+        }
+        
+        QuestionGroup group = groupOpt.get();
+        Set<ToeicQuestion> questionSet = group.getQuestions();
+        
+        Map<String, Object> response = new HashMap<>();
+        response.put("group", Map.of(
+            "id", group.getId(),
+            "title", group.getTitle(),
+            "questionType", group.getQuestionType(),
+            "part", group.getPart()
+        ));
+        
+        List<Map<String, Object>> questionDetails = new ArrayList<>();
+        for (ToeicQuestion question : questionSet) {
+            questionDetails.add(Map.of(
+                "id", question.getId(),
+                "question", question.getQuestion(),
+                "category", question.getCategory(),
+                "correctAnswer", question.getCorrectAnswer(),
+                "order", question.getQuestionOrder()
+            ));
+        }
+        response.put("questions", questionDetails);
+        
+        return ResponseEntity.ok(response);
     }
 }

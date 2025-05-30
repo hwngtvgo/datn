@@ -30,13 +30,13 @@ import TestStatistics from "@/pages/User/TestStatistics"
 // Admin pages
 import AdminDashboard from "./pages/Admin/Dashboard"
 import AdminUsers from "./pages/Admin/Users"
-import AdminCourses from "./pages/Admin/Courses"
+// import AdminCourses from "./pages/Admin/Courses"
 import AdminToeicExams from "./pages/Admin/ToeicExams"
 import AdminToeicQuestions from "./pages/Admin/ToeicQuestions"
 import StandaloneQuestions from "./pages/Admin/StandaloneQuestions"
-import AdminFinance from "./pages/Admin/Finance"
-import AdminFeedback from "./pages/Admin/Feedback"
-import ModalExamples from "./pages/Admin/ModalExamples"
+// import AdminFinance from "./pages/Admin/Finance"
+// import AdminFeedback from "./pages/Admin/Feedback"
+// import ModalExamples from "./pages/Admin/ModalExamples"
 
 
 // Components and utilities
@@ -281,13 +281,13 @@ function App() {
           }>
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<AdminUsers />} />
-          <Route path="courses" element={<AdminCourses />} />                                                     
+          {/* <Route path="courses" element={<AdminCourses />} />                                                      */}
           <Route path="toeic-exams" element={<AdminToeicExams />} />
           <Route path="toeic-questions" element={<AdminToeicQuestions />} />
           <Route path="standalone-questions" element={<StandaloneQuestions />} />
-          <Route path="finance" element={<AdminFinance />} />
+          {/* <Route path="finance" element={<AdminFinance />} />
           <Route path="modal-examples" element={<ModalExamples />} />
-          <Route path="feedback" element={<AdminFeedback />} />
+          <Route path="feedback" element={<AdminFeedback />} /> */}
           {/* Redirects for old URLs */}
           <Route path="exams" element={<Navigate to="/admin/toeic-exams" replace />} />
           <Route path="questions" element={<Navigate to="/admin/toeic-questions" replace />} />

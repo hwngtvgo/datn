@@ -24,7 +24,13 @@ const QuestionDetailView: React.FC<QuestionDetailViewProps> = ({ questions, grou
   
   // Lấy câu hỏi đầu tiên để xem thông tin chung
   const firstQuestion = questions[0];
-  const isListening = firstQuestion.type === 'LISTENING' || (groupInfo && groupInfo.type === 'LISTENING');
+  const questionType = groupInfo?.type || firstQuestion.type || '';
+  const isListening = questionType === 'LISTENING';
+  const isReading = questionType === 'READING';
+  const isVocabulary = questionType === 'VOCABULARY';
+  const isGrammar = questionType === 'GRAMMAR';
+  
+  // Lấy thông tin part
   const hasPart = firstQuestion.part !== undefined || (groupInfo && groupInfo.part !== undefined);
   const part = hasPart 
     ? (groupInfo ? parseInt(groupInfo.part) : firstQuestion.part) 
@@ -54,10 +60,17 @@ const QuestionDetailView: React.FC<QuestionDetailViewProps> = ({ questions, grou
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-xl font-bold">
-            Nhóm câu hỏi Part {part}
+            {isListening && `Nhóm câu hỏi Nghe (Part ${part})`}
+            {isReading && `Nhóm câu hỏi Đọc (Part ${part})`}
+            {isVocabulary && "Nhóm câu hỏi Từ vựng"}
+            {isGrammar && "Nhóm câu hỏi Ngữ pháp"}
           </h2>
           <p className="text-muted-foreground">
-            {isListening ? 'Phần nghe' : 'Phần đọc'} - {questions.length} câu hỏi
+            {isListening && 'Phần nghe'}
+            {isReading && 'Phần đọc'}
+            {isVocabulary && 'Từ vựng'}
+            {isGrammar && 'Ngữ pháp'}
+            {' - '}{questions.length} câu hỏi
           </p>
           
           {(createdAt || updatedAt) && (
@@ -71,7 +84,7 @@ const QuestionDetailView: React.FC<QuestionDetailViewProps> = ({ questions, grou
       
       {/* Hiển thị tài nguyên chung của nhóm */}
       {/* Audio file */}
-      {(part <= 4 || isListening) && (groupInfo?.audioUrl || firstQuestion.audioUrl) && (
+      {isListening && (groupInfo?.audioUrl || firstQuestion.audioUrl) && (
         <Card>
           <CardHeader>
             <CardTitle>Audio</CardTitle>
@@ -102,7 +115,7 @@ const QuestionDetailView: React.FC<QuestionDetailViewProps> = ({ questions, grou
       )}
       
       {/* Passage */}
-      {(part >= 5 || !isListening) && (groupInfo?.passage || firstQuestion.passage) && (
+      {(isReading || (!isListening && (part && part >= 5))) && (groupInfo?.passage || firstQuestion.passage) && (
         <Card>
           <CardHeader>
             <CardTitle>Đoạn văn</CardTitle>
