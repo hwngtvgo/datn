@@ -93,6 +93,18 @@ public class TestController {
     public ResponseEntity<ApiResponse<TestResponse>> createTest(@Valid @RequestBody CreateTestRequest request) {
         try {
             TestResponse createdTest = testService.createTest(request);
+            
+            // Xử lý các nhóm câu hỏi nếu có
+            if (request.getQuestionGroupIds() != null && !request.getQuestionGroupIds().isEmpty()) {
+                // Thêm các nhóm câu hỏi mới
+                for (Long groupId : request.getQuestionGroupIds()) {
+                    testService.addQuestionGroupToTest(createdTest.getId(), groupId);
+                }
+                
+                // Lấy lại test đã cập nhật
+                createdTest = testService.getTestById(createdTest.getId());
+            }
+            
             return ResponseEntity.status(HttpStatus.CREATED)
                     .body(new ApiResponse<>(true, "Tạo bài thi thành công", createdTest));
         } catch (Exception e) {

@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { 
   Clock, Calendar, Award, ChevronLeft, FileAudio, BookOpen, 
-  Target, Percent, Trophy, History, Eye
+  Target, Percent, Trophy, History, Eye, GanttChart, BookText
 } from "lucide-react";
 import { getMyStatistics, UserStatisticsResponse, TestResultResponse } from "@/services/testResultService";
 import { toast } from "sonner";
@@ -93,12 +93,12 @@ const TestStatistics: React.FC = () => {
     return sum / nonZeroValues.length;
   };
 
-  // Tính điểm TOEIC dự đoán dựa trên bài thi có điểm > 0 (thêm mới)
+  // Tính toán điểm dự đoán TOEIC dựa trên bài làm gần đây
   const calculatePredictedToeicScore = () => {
-    if (!statistics || !statistics.recentTests) return {
-      listening: statistics?.listeningScaled || 0,
-      reading: statistics?.readingScaled || 0,
-      total: (statistics?.listeningScaled || 0) + (statistics?.readingScaled || 0)
+    if (!statistics) return {
+      listening: 0,
+      reading: 0,
+      total: 0
     };
 
     const nonZeroTests = filterZeroScores(statistics.recentTests);
@@ -509,6 +509,18 @@ const TestStatistics: React.FC = () => {
                               <BookOpen className="w-3 h-3 mr-1" />
                               Reading: {result.readingScore}% ({result.readingScaledScore}/495)
                             </Badge>
+                            {result.grammarScore > 0 && (
+                              <Badge variant="outline" className="bg-purple-50 text-purple-600 border-purple-200">
+                                <GanttChart className="w-3 h-3 mr-1" />
+                                Grammar: {result.grammarScore}%
+                              </Badge>
+                            )}
+                            {result.vocabularyScore > 0 && (
+                              <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200">
+                                <BookText className="w-3 h-3 mr-1" />
+                                Vocabulary: {result.vocabularyScore}%
+                              </Badge>
+                            )}
                           </div>
                         </div>
                         <div className="bg-muted/50 p-4 flex items-center justify-center md:w-1/3">

@@ -334,8 +334,8 @@ export default function Account() {
                   <span>Đang tải...</span>
                 </div>
               ) : (
-                <div className="space-y-4">
-                  <div className="flex justify-between">
+              <div className="space-y-4">
+                <div className="flex justify-between">
                     <span className="text-muted-foreground">Bài thi đã làm</span>
                     <span className="font-medium">{getActualTestsTaken()}</span>
                 </div>

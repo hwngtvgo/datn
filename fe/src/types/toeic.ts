@@ -17,7 +17,12 @@ export enum QuestionType {
 export enum ExamType {
   FULL = 'FULL',
   MINI = 'MINI',
-  PRACTICE = 'PRACTICE'
+  PRACTICE = 'PRACTICE',
+  LISTENING_ONLY = 'LISTENING_ONLY',
+  READING_ONLY = 'READING_ONLY',
+  GRAMMAR_ONLY = 'GRAMMAR_ONLY',
+  VOCABULARY_ONLY = 'VOCABULARY_ONLY',
+  CUSTOM = 'CUSTOM'
 }
 
 // Enum định nghĩa các danh mục câu hỏi độc lập
@@ -106,13 +111,14 @@ export interface ToeicExamAnswer {
 export interface QuestionGroupResponse {
   id: number;
   title?: string;
-  questionType: string;
+  questionType?: string;
+  type?: string;
   part: number;
   passage?: string;
   audioUrl?: string;
   imageUrl?: string;
   testId?: number;
-  questions: QuestionResponse[];
+  questions?: QuestionResponse[];
   count?: number;
   createdAt?: string;
   updatedAt?: string;

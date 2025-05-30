@@ -322,62 +322,78 @@ const TestResultDetail: React.FC = () => {
                     <div>
                       <h4 className="text-md font-medium mb-2">Ngữ pháp và Từ vựng</h4>
                       <div className="space-y-4">
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium">Grammar</span>
-                            <span className="text-sm font-medium">{result.grammarScore}%</span>
+                        {result.grammarScore > 0 && (
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium">Grammar</span>
+                              <span className="text-sm font-medium">{result.grammarScore}%</span>
+                            </div>
+                            <div className="w-full bg-muted rounded-full h-2.5">
+                              <div 
+                                className="bg-purple-500 h-2.5 rounded-full" 
+                                style={{ width: `${result.grammarScore}%` }}
+                              ></div>
+                            </div>
                           </div>
-                          <div className="w-full bg-muted rounded-full h-2.5">
-                            <div 
-                              className="bg-purple-500 h-2.5 rounded-full" 
-                              style={{ width: `${result.grammarScore}%` }}
-                            ></div>
-                          </div>
-                        </div>
+                        )}
                         
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium">Vocabulary</span>
-                            <span className="text-sm font-medium">{result.vocabularyScore}%</span>
+                        {result.vocabularyScore > 0 && (
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium">Vocabulary</span>
+                              <span className="text-sm font-medium">{result.vocabularyScore}%</span>
+                            </div>
+                            <div className="w-full bg-muted rounded-full h-2.5">
+                              <div 
+                                className="bg-amber-500 h-2.5 rounded-full" 
+                                style={{ width: `${result.vocabularyScore}%` }}
+                              ></div>
+                            </div>
                           </div>
-                          <div className="w-full bg-muted rounded-full h-2.5">
-                            <div 
-                              className="bg-amber-500 h-2.5 rounded-full" 
-                              style={{ width: `${result.vocabularyScore}%` }}
-                            ></div>
-                          </div>
-                        </div>
+                        )}
+                        
+                        {result.grammarScore === 0 && result.vocabularyScore === 0 && (
+                          <p className="text-sm text-muted-foreground">Không có dữ liệu ngữ pháp và từ vựng</p>
+                        )}
                       </div>
                     </div>
                     
                     <div>
                       <h4 className="text-md font-medium mb-2">Kỹ năng TOEIC</h4>
                       <div className="space-y-4">
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium">Listening</span>
-                            <span className="text-sm font-medium">{result.listeningScore}%</span>
+                        {result.listeningScore > 0 && (
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium">Listening</span>
+                              <span className="text-sm font-medium">{result.listeningScore}%</span>
+                            </div>
+                            <div className="w-full bg-muted rounded-full h-2.5">
+                              <div 
+                                className="bg-blue-500 h-2.5 rounded-full" 
+                                style={{ width: `${result.listeningScore}%` }}
+                              ></div>
+                            </div>
                           </div>
-                          <div className="w-full bg-muted rounded-full h-2.5">
-                            <div 
-                              className="bg-blue-500 h-2.5 rounded-full" 
-                              style={{ width: `${result.listeningScore}%` }}
-                            ></div>
-                          </div>
-                        </div>
+                        )}
                         
-                        <div>
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="text-sm font-medium">Reading</span>
-                            <span className="text-sm font-medium">{result.readingScore}%</span>
+                        {result.readingScore > 0 && (
+                          <div>
+                            <div className="flex items-center justify-between mb-1">
+                              <span className="text-sm font-medium">Reading</span>
+                              <span className="text-sm font-medium">{result.readingScore}%</span>
+                            </div>
+                            <div className="w-full bg-muted rounded-full h-2.5">
+                              <div 
+                                className="bg-green-500 h-2.5 rounded-full" 
+                                style={{ width: `${result.readingScore}%` }}
+                              ></div>
+                            </div>
                           </div>
-                          <div className="w-full bg-muted rounded-full h-2.5">
-                            <div 
-                              className="bg-green-500 h-2.5 rounded-full" 
-                              style={{ width: `${result.readingScore}%` }}
-                            ></div>
-                          </div>
-                        </div>
+                        )}
+                        
+                        {result.listeningScore === 0 && result.readingScore === 0 && (
+                          <p className="text-sm text-muted-foreground">Không có dữ liệu kỹ năng TOEIC</p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -392,28 +408,28 @@ const TestResultDetail: React.FC = () => {
                   </p>
                   
                   <div className="space-y-3">
-                    {result.listeningScore < 60 && (
+                    {result.listeningScore > 0 && result.listeningScore < 60 && (
                       <div className="p-3 border rounded-md">
                         <p className="font-medium">Cải thiện kỹ năng Listening:</p>
                         <p className="text-sm">Tập trung luyện nghe với các bài tập Part {result.listeningScore < 40 ? '1-2' : '3-4'} và làm quen với các giọng nói khác nhau.</p>
                       </div>
                     )}
                     
-                    {result.readingScore < 60 && (
+                    {result.readingScore > 0 && result.readingScore < 60 && (
                       <div className="p-3 border rounded-md">
                         <p className="font-medium">Cải thiện kỹ năng Reading:</p>
                         <p className="text-sm">Tập trung làm các bài tập Part {result.readingScore < 40 ? '5' : '6-7'} và rèn luyện kỹ năng đọc hiểu nhanh.</p>
                       </div>
                     )}
                     
-                    {result.grammarScore < 60 && (
+                    {result.grammarScore > 0 && result.grammarScore < 60 && (
                       <div className="p-3 border rounded-md">
                         <p className="font-medium">Cải thiện ngữ pháp:</p>
                         <p className="text-sm">Ôn lại các cấu trúc ngữ pháp cơ bản và làm thêm các bài tập ngữ pháp.</p>
                       </div>
                     )}
                     
-                    {result.vocabularyScore < 60 && (
+                    {result.vocabularyScore > 0 && result.vocabularyScore < 60 && (
                       <div className="p-3 border rounded-md">
                         <p className="font-medium">Cải thiện từ vựng:</p>
                         <p className="text-sm">Mở rộng vốn từ vựng thông qua các bài đọc và học từ vựng theo chủ đề.</p>
@@ -424,6 +440,17 @@ const TestResultDetail: React.FC = () => {
                       <div className="p-3 border rounded-md border-green-200 bg-green-50">
                         <p className="font-medium text-green-800">Chúc mừng!</p>
                         <p className="text-sm">Bạn đã đạt kết quả tốt. Tiếp tục luyện tập để duy trì và nâng cao trình độ.</p>
+                      </div>
+                    )}
+
+                    {(result.listeningScore === 0 || result.listeningScore >= 60) && 
+                      (result.readingScore === 0 || result.readingScore >= 60) && 
+                      (result.grammarScore === 0 || result.grammarScore >= 60) && 
+                      (result.vocabularyScore === 0 || result.vocabularyScore >= 60) && 
+                      result.totalScore < 60 && (
+                      <div className="p-3 border rounded-md">
+                        <p className="font-medium">Tiếp tục luyện tập:</p>
+                        <p className="text-sm">Hãy làm thêm các bài thi để cải thiện điểm số tổng thể.</p>
                       </div>
                     )}
                   </div>

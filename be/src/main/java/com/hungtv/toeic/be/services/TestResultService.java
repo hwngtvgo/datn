@@ -109,13 +109,17 @@ public class TestResultService {
                 if (userAnswer.getIsCorrect()) {
                     correctAnswers++;
                     
-                    // Phân loại câu hỏi đúng theo loại
+                    // Phân loại câu hỏi đúng theo loại QuestionGroup.QuestionType
                     if (question.getQuestionGroup() != null) {
                         QuestionGroup.QuestionType type = question.getQuestionGroup().getQuestionType();
                         if (QuestionGroup.QuestionType.LISTENING.equals(type)) {
                             listeningCorrect++;
                         } else if (QuestionGroup.QuestionType.READING.equals(type)) {
                             readingCorrect++;
+                        } else if (QuestionGroup.QuestionType.GRAMMAR.equals(type)) {
+                            grammarCorrect++;
+                        } else if (QuestionGroup.QuestionType.VOCABULARY.equals(type)) {
+                            vocabularyCorrect++;
                         }
                     }
                     
@@ -125,17 +129,23 @@ public class TestResultService {
                             grammarCorrect++;
                         } else if (ToeicQuestion.QuestionCategory.VOCABULARY.equals(question.getCategory())) {
                             vocabularyCorrect++;
+                        } else if (ToeicQuestion.QuestionCategory.LISTENING.equals(question.getCategory())) {
+                            listeningCorrect++;
                         }
                     }
                 }
                 
-                // Đếm tổng số câu hỏi theo loại
+                // Đếm tổng số câu hỏi theo loại QuestionGroup.QuestionType
                 if (question.getQuestionGroup() != null) {
                     QuestionGroup.QuestionType type = question.getQuestionGroup().getQuestionType();
                     if (QuestionGroup.QuestionType.LISTENING.equals(type)) {
                         listeningTotal++;
                     } else if (QuestionGroup.QuestionType.READING.equals(type)) {
                         readingTotal++;
+                    } else if (QuestionGroup.QuestionType.GRAMMAR.equals(type)) {
+                        grammarTotal++;
+                    } else if (QuestionGroup.QuestionType.VOCABULARY.equals(type)) {
+                        vocabularyTotal++;
                     }
                 }
                 
@@ -145,6 +155,8 @@ public class TestResultService {
                         grammarTotal++;
                     } else if (ToeicQuestion.QuestionCategory.VOCABULARY.equals(question.getCategory())) {
                         vocabularyTotal++;
+                    } else if (ToeicQuestion.QuestionCategory.LISTENING.equals(question.getCategory())) {
+                        listeningTotal++;
                     }
                 }
             }
