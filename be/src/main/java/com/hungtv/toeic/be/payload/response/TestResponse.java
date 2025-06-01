@@ -3,6 +3,7 @@ package com.hungtv.toeic.be.payload.response;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.hungtv.toeic.be.models.Test.DifficultyLevel;
 import com.hungtv.toeic.be.models.Test.TestType;
 
 public class TestResponse {
@@ -15,6 +16,7 @@ public class TestResponse {
     private LocalDateTime createdAt;
     private String createdBy;
     private Boolean isActive;
+    private DifficultyLevel difficulty;
     private List<QuestionGroupResponse> questionGroups;
     
     public TestResponse() {
@@ -22,7 +24,8 @@ public class TestResponse {
     
     // Constructor với đầy đủ các thông tin
     public TestResponse(Long id, String title, String description, TestType type, Integer duration,
-                        String instructions, LocalDateTime createdAt, String createdBy, Boolean isActive) {
+                        String instructions, LocalDateTime createdAt, String createdBy, Boolean isActive,
+                        DifficultyLevel difficulty) {
         this.id = id;
         this.title = title;
         this.description = description;
@@ -32,13 +35,14 @@ public class TestResponse {
         this.createdAt = createdAt;
         this.createdBy = createdBy;
         this.isActive = isActive;
+        this.difficulty = difficulty;
     }
     
     // Constructor không bao gồm danh sách questionGroups
     public TestResponse(Long id, String title, String description, TestType type, Integer duration,
                         String instructions, LocalDateTime createdAt, String createdBy, Boolean isActive,
-                        List<QuestionGroupResponse> questionGroups) {
-        this(id, title, description, type, duration, instructions, createdAt, createdBy, isActive);
+                        DifficultyLevel difficulty, List<QuestionGroupResponse> questionGroups) {
+        this(id, title, description, type, duration, instructions, createdAt, createdBy, isActive, difficulty);
         this.questionGroups = questionGroups;
     }
     
@@ -113,6 +117,14 @@ public class TestResponse {
     
     public void setIsActive(Boolean isActive) {
         this.isActive = isActive;
+    }
+    
+    public DifficultyLevel getDifficulty() {
+        return difficulty;
+    }
+    
+    public void setDifficulty(DifficultyLevel difficulty) {
+        this.difficulty = difficulty;
     }
     
     public List<QuestionGroupResponse> getQuestionGroups() {

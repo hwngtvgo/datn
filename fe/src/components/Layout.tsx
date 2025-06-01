@@ -5,6 +5,7 @@ import { Button } from './ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import authService from '@/services/authService';
 import Footer from './Footer';
+import Chatbot from './Chatbot';
 
 export function Layout() {
   const location = useLocation();
@@ -17,6 +18,9 @@ export function Layout() {
         <Outlet />
       </main>
       <Footer />
+      
+      {/* Chỉ hiển thị Chatbot khi người dùng đã đăng nhập */}
+      {user && <Chatbot />}
     </div>
   );
 }

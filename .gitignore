@@ -1,2 +1,5 @@
 .cursor/
 .github/
+fe/.env.example
+fe/.env
+

@@ -15,14 +15,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.hungtv.toeic.be.models.QuestionGroup;
 import com.hungtv.toeic.be.models.Test;
+import com.hungtv.toeic.be.models.TestResult;
 import com.hungtv.toeic.be.payload.request.CreateTestRequest;
 import com.hungtv.toeic.be.payload.response.QuestionGroupResponse;
 import com.hungtv.toeic.be.payload.response.TestResponse;
 import com.hungtv.toeic.be.repositories.QuestionGroupRepository;
 import com.hungtv.toeic.be.repositories.TestRepository;
-import com.hungtv.toeic.be.repositories.UserRepository;
 import com.hungtv.toeic.be.repositories.TestResultRepository;
-import com.hungtv.toeic.be.models.TestResult;
+import com.hungtv.toeic.be.repositories.UserRepository;
 
 @Service
 public class ToeicTestService {
@@ -86,9 +86,7 @@ public class ToeicTestService {
      */
     @Transactional
     public TestResponse createTest(CreateTestRequest request) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        String username = auth.getName();
-        
+        // Tạo đối tượng Test từ request
         Test test = new Test();
         test.setTitle(request.getTitle());
         test.setDescription(request.getDescription());
@@ -96,34 +94,48 @@ public class ToeicTestService {
         test.setDuration(request.getDuration());
         test.setInstructions(request.getInstructions());
         test.setCreatedAt(LocalDateTime.now());
-        test.setCreatedBy(username);
-        test.setIsActive(true);
+        test.setDifficulty(request.getDifficulty());
         
-        Test savedTest = testRepository.save(test);
-        return convertToTestResponse(savedTest);
+        // Lấy thông tin người dùng hiện tại (nếu có)
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.isAuthenticated()) {
+            test.setCreatedBy(authentication.getName());
+        }
+        
+        // Lưu đối tượng Test vào cơ sở dữ liệu
+        test = testRepository.save(test);
+        
+        // Trả về TestResponse
+        return convertToTestResponse(test);
     }
     
     /**
      * Cập nhật thông tin bài thi
      * 
      * @param id ID của bài thi
-     * @param request Thông tin cập nhật
+     * @param request Thông tin mới của bài thi
      * @return TestResponse
      * @throws RuntimeException nếu không tìm thấy bài thi
      */
     @Transactional
     public TestResponse updateTest(Long id, CreateTestRequest request) {
+        // Tìm kiếm bài thi theo ID
         Test test = testRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy bài thi với ID: " + id));
         
+        // Cập nhật thông tin
         test.setTitle(request.getTitle());
         test.setDescription(request.getDescription());
         test.setType(request.getType());
         test.setDuration(request.getDuration());
         test.setInstructions(request.getInstructions());
+        test.setDifficulty(request.getDifficulty());
         
-        Test updatedTest = testRepository.save(test);
-        return convertToTestResponse(updatedTest);
+        // Lưu thông tin đã cập nhật
+        test = testRepository.save(test);
+        
+        // Trả về TestResponse
+        return convertToTestResponse(test);
     }
     
     /**
@@ -250,47 +262,63 @@ public class ToeicTestService {
     }
     
     /**
-     * Chuyển đổi từ Test entity sang TestResponse
+     * Chuyển đổi đối tượng Test thành TestResponse
      * 
-     * @param test Test entity
+     * @param test Đối tượng Test
      * @return TestResponse
      */
     private TestResponse convertToTestResponse(Test test) {
         return new TestResponse(
-                test.getId(),
-                test.getTitle(),
-                test.getDescription(),
-                test.getType(),
-                test.getDuration(),
-                test.getInstructions(),
-                test.getCreatedAt(),
+                test.getId(), 
+                test.getTitle(), 
+                test.getDescription(), 
+                test.getType(), 
+                test.getDuration(), 
+                test.getInstructions(), 
+                test.getCreatedAt(), 
                 test.getCreatedBy(),
-                test.getIsActive()
-        );
+                test.getIsActive(),
+                test.getDifficulty());
     }
     
     /**
-     * Chuyển đổi từ Test entity sang TestResponse kèm theo danh sách QuestionGroup
+     * Chuyển đổi đối tượng Test thành TestResponse bao gồm các nhóm câu hỏi
      * 
-     * @param test Test entity
+     * @param test Đối tượng Test
      * @return TestResponse
      */
     private TestResponse convertToTestResponseWithGroups(Test test) {
         List<QuestionGroupResponse> groupResponses = test.getQuestionGroups().stream()
-                .map(group -> questionService.getQuestionsByGroupId(group.getId()))
+                .map(group -> {
+                    QuestionGroupResponse response = new QuestionGroupResponse();
+                    response.setId(group.getId());
+                    response.setTitle(group.getTitle());
+                    response.setQuestionType(group.getQuestionType().name());
+                    response.setPart(group.getPart());
+                    response.setAudioUrl(group.getAudioUrl());
+                    response.setImageUrl(group.getImageUrl());
+                    response.setPassage(group.getPassage());
+                    response.setTestId(test.getId());
+                    
+                    // Đếm số lượng câu hỏi trong nhóm
+                    long questionCount = questionService.countQuestionsByGroupId(group.getId());
+                    response.setQuestionCount(questionCount);
+                    
+                    return response;
+                })
                 .collect(Collectors.toList());
         
         return new TestResponse(
-                test.getId(),
-                test.getTitle(),
-                test.getDescription(),
-                test.getType(),
-                test.getDuration(),
-                test.getInstructions(),
-                test.getCreatedAt(),
+                test.getId(), 
+                test.getTitle(), 
+                test.getDescription(), 
+                test.getType(), 
+                test.getDuration(), 
+                test.getInstructions(), 
+                test.getCreatedAt(), 
                 test.getCreatedBy(),
                 test.getIsActive(),
-                groupResponses
-        );
+                test.getDifficulty(),
+                groupResponses);
     }
 }

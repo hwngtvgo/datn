@@ -12,13 +12,13 @@ import { ToeicExam, DifficultyLevel, QuestionGroupResponse } from "@/types/toeic
 
 // Hiển thị badge cho độ khó
 const getDifficultyBadge = (difficulty: string) => {
-  switch(difficulty) {
+  switch (difficulty) {
     case 'EASY':
-      return <Badge className="bg-green-500">Dễ</Badge>;
+      return <Badge className="bg-green-500 hover:bg-green-600">Dễ</Badge>;
     case 'MEDIUM':
-      return <Badge className="bg-yellow-500">Trung bình</Badge>;
+      return <Badge className="bg-yellow-500 hover:bg-yellow-600">Trung bình</Badge>;
     case 'HARD':
-      return <Badge className="bg-red-500">Khó</Badge>;
+      return <Badge className="bg-red-500 hover:bg-red-600">Khó</Badge>;
     default:
       return <Badge>Không xác định</Badge>;
   }

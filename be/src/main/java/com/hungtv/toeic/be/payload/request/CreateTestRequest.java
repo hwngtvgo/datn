@@ -2,6 +2,7 @@ package com.hungtv.toeic.be.payload.request;
 
 import java.util.List;
 
+import com.hungtv.toeic.be.models.Test.DifficultyLevel;
 import com.hungtv.toeic.be.models.Test.TestType;
 
 import jakarta.validation.constraints.Min;
@@ -24,18 +25,22 @@ public class CreateTestRequest {
     
     private String instructions;
     
+    private DifficultyLevel difficulty = DifficultyLevel.MEDIUM;
+    
     // Danh sách ID của các nhóm câu hỏi
     private List<Long> questionGroupIds;
     
     public CreateTestRequest() {
     }
     
-    public CreateTestRequest(String title, String description, TestType type, Integer duration, String instructions) {
+    public CreateTestRequest(String title, String description, TestType type, Integer duration, 
+                           String instructions, DifficultyLevel difficulty) {
         this.title = title;
         this.description = description;
         this.type = type;
         this.duration = duration;
         this.instructions = instructions;
+        this.difficulty = difficulty != null ? difficulty : DifficultyLevel.MEDIUM;
     }
     
     public String getTitle() {
@@ -76,6 +81,14 @@ public class CreateTestRequest {
     
     public void setInstructions(String instructions) {
         this.instructions = instructions;
+    }
+    
+    public DifficultyLevel getDifficulty() {
+        return difficulty;
+    }
+    
+    public void setDifficulty(DifficultyLevel difficulty) {
+        this.difficulty = difficulty != null ? difficulty : DifficultyLevel.MEDIUM;
     }
     
     public List<Long> getQuestionGroupIds() {

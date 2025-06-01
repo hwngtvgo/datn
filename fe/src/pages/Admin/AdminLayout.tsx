@@ -4,6 +4,7 @@ import { Toaster, toast } from 'sonner';
 import AdminSidebar from '@/components/AdminSidebar';
 import authService from '@/services/authService';
 import { useAuth } from '@/contexts/AuthContext';
+import Chatbot from '@/components/Chatbot';
 
 const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -151,6 +152,9 @@ const AdminLayout: React.FC = () => {
         </main>
       </div>
       <Toaster position="top-right" richColors />
+      
+      {/* Hiển thị Chatbot trong trang admin */}
+      <Chatbot />
     </div>
   );
 };

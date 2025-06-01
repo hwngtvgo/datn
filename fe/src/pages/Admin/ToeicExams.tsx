@@ -243,11 +243,7 @@ const AdminToeicExams: React.FC = () => {
                   <TableRow key={exam.id}>
                     <TableCell>{exam.id}</TableCell>
                     <TableCell className="font-medium">{exam.title}</TableCell>
-                    <TableCell>
-                      {exam.description && exam.description.length > 50
-                        ? `${exam.description.substring(0, 50)}...`
-                        : exam.description}
-                    </TableCell>
+                    <TableCell className="max-w-xs truncate">{exam.description || "--"}</TableCell>
                     <TableCell>
                       <div className="flex items-center">
                         <Clock className="mr-1 h-4 w-4" />
@@ -256,48 +252,38 @@ const AdminToeicExams: React.FC = () => {
                     </TableCell>
                     <TableCell>{renderDifficultyBadge(exam.difficulty || 'MEDIUM')}</TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center">
                         <Switch
                           checked={exam.isActive}
-                          onCheckedChange={checked => handlePublishStatusChange(exam.id, checked)}
+                          onCheckedChange={(checked) => handlePublishStatusChange(exam.id, checked)}
+                          disabled={loading}
                         />
-                        {exam.isActive ? (
-                          <Badge variant="outline" className="text-green-600 border-green-600">
-                            <Eye className="h-3 w-3 mr-1" />
-                            Đang hoạt động
-                          </Badge>
-                        ) : (
-                          <Badge variant="outline" className="text-gray-500 border-gray-500">
-                            <EyeOff className="h-3 w-3 mr-1" />
-                            Đã vô hiệu
-                          </Badge>
-                        )}
+                        <span className="ml-2">{exam.isActive ? "Hoạt động" : "Vô hiệu"}</span>
                       </div>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end space-x-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
+                      <div className="flex justify-end items-center space-x-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => {
                             setSelectedExam(exam);
                             setIsEditDialogOpen(true);
                           }}
                         >
-                          <Pencil className="h-4 w-4 mr-1" />
-                          Sửa
+                          <Pencil className="h-4 w-4" />
+                          <span className="sr-only">Chỉnh sửa</span>
                         </Button>
-
-                        <Button 
-                          variant="destructive" 
-                          size="sm"
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => {
                             setSelectedExam(exam);
                             setIsDeleteDialogOpen(true);
                           }}
                         >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          Xóa
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                          <span className="sr-only">Xóa</span>
                         </Button>
                       </div>
                     </TableCell>

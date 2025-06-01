@@ -900,4 +900,14 @@ public class ToeicQuestionService {
             return null;
         }
     }
+
+    /**
+     * Đếm số lượng câu hỏi trong một nhóm
+     * 
+     * @param groupId ID của nhóm câu hỏi
+     * @return Số lượng câu hỏi
+     */
+    public long countQuestionsByGroupId(Long groupId) {
+        return questionRepository.countByQuestionGroupId(groupId);
+    }
 }

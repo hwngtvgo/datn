@@ -117,16 +117,16 @@ const ExamForm: React.FC<ExamFormProps> = ({
 
   // Hàm helper để xử lý dữ liệu nhóm câu hỏi
   const processGroupData = (group: any) => {
-    // Xác định loại từ nhiều trường có thể
-    let finalType = "UNKNOWN";
-    if (group.type && typeof group.type === 'string') {
-      finalType = group.type.toUpperCase();
-    } else if (group.questionType && typeof group.questionType === 'string') {
-      finalType = group.questionType.toUpperCase();
-    }
-    
-    return {
-      ...group,
+          // Xác định loại từ nhiều trường có thể
+          let finalType = "UNKNOWN";
+          if (group.type && typeof group.type === 'string') {
+            finalType = group.type.toUpperCase();
+          } else if (group.questionType && typeof group.questionType === 'string') {
+            finalType = group.questionType.toUpperCase();
+          }
+          
+          return {
+            ...group,
       type: finalType,
       count: group.questionCount || group.count || (group.questions ? group.questions.length : 0)
     };
@@ -189,7 +189,7 @@ const ExamForm: React.FC<ExamFormProps> = ({
           totalPagesCount = response.data.totalPages || 1;
           totalItemsCount = response.data.totalElements || processedGroups.length;
           console.log("Dữ liệu paged response:", processedGroups.length, "phần tử,", totalPagesCount, "trang,", totalItemsCount, "tổng phần tử");
-        } else {
+      } else {
           console.error("Định dạng response không đúng:", response.data);
         }
       }
@@ -392,6 +392,20 @@ const ExamForm: React.FC<ExamFormProps> = ({
       loadQuestionGroups();
     }
   }, [searchQuery, filterPart, filterType, activeTab]);
+
+  // Hiển thị badge cho độ khó
+  const renderDifficultyBadge = (difficulty: string) => {
+    switch (difficulty) {
+      case 'EASY':
+        return <Badge className="bg-green-500">Dễ</Badge>;
+      case 'MEDIUM':
+        return <Badge className="bg-yellow-500">Trung bình</Badge>;
+      case 'HARD':
+        return <Badge className="bg-red-500">Khó</Badge>;
+      default:
+        return <Badge>Không xác định</Badge>;
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -630,8 +644,8 @@ const ExamForm: React.FC<ExamFormProps> = ({
                                 {group.type === 'VOCABULARY' || group.type === 'GRAMMAR' ? 
                                   (group.part > 0 ? `Part ${group.part}` : '------') : 
                                   `Part ${group.part}`}
-                              </div>                                                                      
-                            </TableCell>  
+                              </div>
+                            </TableCell>
                             <TableCell>
                               {group.type === 'LISTENING' ? (
                                 <Badge variant="outline" className="text-blue-600 border-blue-600">Listening</Badge>
@@ -739,15 +753,15 @@ const ExamForm: React.FC<ExamFormProps> = ({
                           }
                           
                           pageButtons.push(
-                            <Button
+                          <Button
                               key={totalPages}
                               variant={currentPage === totalPages ? "default" : "outline"}
-                              size="sm"
+                            size="sm"
                               onClick={() => paginate(totalPages)}
-                            >
+                          >
                               {totalPages}
-                            </Button>
-                          );
+                          </Button>
+                        );
                         }
                         
                         return pageButtons;

@@ -52,6 +52,10 @@ public class Test {
     @Column(name = "is_active")
     private Boolean isActive = true;
     
+    @Enumerated(EnumType.STRING)
+    @Column(name = "difficulty", columnDefinition = "VARCHAR(10) DEFAULT 'MEDIUM'")
+    private DifficultyLevel difficulty = DifficultyLevel.MEDIUM;
+    
     @ManyToMany
     @JoinTable(
         name = "test_question_groups",
@@ -65,9 +69,15 @@ public class Test {
         FULL, LISTENING_ONLY, READING_ONLY, CUSTOM, MINI, PRACTICE, GRAMMAR_ONLY, VOCABULARY_ONLY
     }
     
+    // Enum cho độ khó của bài thi
+    public enum DifficultyLevel {
+        EASY, MEDIUM, HARD
+    }
+    
     // Constructors
     public Test() {
         this.createdAt = LocalDateTime.now();
+        this.difficulty = DifficultyLevel.MEDIUM;
     }
     
     public Test(Long id, String title, String description, TestType type, Integer duration, 
@@ -81,6 +91,22 @@ public class Test {
         this.createdAt = createdAt != null ? createdAt : LocalDateTime.now();
         this.createdBy = createdBy;
         this.isActive = isActive != null ? isActive : true;
+        this.difficulty = DifficultyLevel.MEDIUM;
+    }
+    
+    public Test(Long id, String title, String description, TestType type, Integer duration, 
+                String instructions, LocalDateTime createdAt, String createdBy, Boolean isActive,
+                DifficultyLevel difficulty) {
+        this.id = id;
+        this.title = title;
+        this.description = description;
+        this.type = type;
+        this.duration = duration;
+        this.instructions = instructions;
+        this.createdAt = createdAt != null ? createdAt : LocalDateTime.now();
+        this.createdBy = createdBy;
+        this.isActive = isActive != null ? isActive : true;
+        this.difficulty = difficulty != null ? difficulty : DifficultyLevel.MEDIUM;
     }
     
     // Getters và Setters
@@ -156,6 +182,14 @@ public class Test {
         this.isActive = isActive;
     }
     
+    public DifficultyLevel getDifficulty() {
+        return difficulty;
+    }
+
+    public void setDifficulty(DifficultyLevel difficulty) {
+        this.difficulty = difficulty;
+    }
+    
     public List<QuestionGroup> getQuestionGroups() {
         return questionGroups;
     }
@@ -200,6 +234,7 @@ public class Test {
                 ", duration=" + duration +
                 ", createdAt=" + createdAt +
                 ", isActive=" + isActive +
+                ", difficulty=" + difficulty +
                 '}';
     }
 }

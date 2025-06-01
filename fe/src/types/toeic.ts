@@ -78,7 +78,7 @@ export interface ToeicExam {
   description?: string;
   type?: ExamType;
   duration: number;
-  difficulty?: DifficultyLevel;
+  difficulty: DifficultyLevel;
   instructions?: string;
   isActive?: boolean;
   createdAt?: string;
