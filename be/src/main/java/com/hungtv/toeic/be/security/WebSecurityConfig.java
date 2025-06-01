@@ -76,6 +76,7 @@ public class WebSecurityConfig {
                     .requestMatchers("/api/question-groups/**").permitAll()
                     .requestMatchers("/api/toeic-exams/**").permitAll()
                     .requestMatchers("/api/tests/**").permitAll()
+                    .requestMatchers("/api/ai/**").permitAll()
                     .requestMatchers("/api/admin/**").hasRole("ADMIN")
                     .anyRequest().authenticated()
             );

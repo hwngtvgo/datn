@@ -3,17 +3,24 @@
 import { useState, useEffect, useRef } from "react"
 import { useParams, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { Progress } from "@/components/ui/progress"
-import { AlertCircle, Loader2, ChevronLeft, ChevronRight } from "lucide-react"
+import { AlertCircle, Loader2, ChevronLeft, ChevronRight, Clock, Award, BookOpen, Lightbulb, Volume2 } from "lucide-react"
 import { toast } from "sonner"
+import { Badge } from "@/components/ui/badge"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 // Services
 import * as toeicExamService from "@/services/toeicExamService"
 import { submitTestResult } from "@/services/testResultService"
-import { QuestionGroupResponse, QuestionResponse } from "@/types/toeic"
+import { QuestionGroupResponse, QuestionResponse, DifficultyLevel, ExamType } from "@/types/toeic"
 import { API_URL } from "@/config/constants"
 
 // Định nghĩa các interface cần thiết
@@ -24,6 +31,7 @@ interface TestData {
   instructions?: string;
   duration: number;
   type?: string;
+  difficulty?: string;
   questionGroups: QuestionGroupResponse[];
 }
 
@@ -37,12 +45,67 @@ const getFullUrl = (url?: string) => {
   return `${API_URL}/files/view/${url}`;
 };
 
+// Hiển thị badge cho độ khó
+const getDifficultyBadge = (difficulty: string) => {
+  // Chuyển đổi về chữ hoa để đảm bảo so sánh chính xác
+  const difficultyUpper = difficulty ? difficulty.toUpperCase() : '';
+  
+  switch (difficultyUpper) {
+    case 'EASY':
+      return <Badge className="bg-green-500 hover:bg-green-600">Dễ</Badge>;
+    case 'MEDIUM':
+      return <Badge className="bg-yellow-500 hover:bg-yellow-600">Trung bình</Badge>;
+    case 'HARD':
+      return <Badge className="bg-red-500 hover:bg-red-600">Khó</Badge>;
+    default:
+      return <Badge>Không xác định</Badge>;
+  }
+};
+
+// Hiển thị badge cho loại đề thi
+const getExamTypeBadge = (type: string | undefined) => {
+  switch (type) {
+    case 'FULL':
+      return <Badge variant="outline" className="border-blue-500 text-blue-500">Đầy đủ</Badge>;
+    case 'MINI':
+      return <Badge variant="outline" className="border-green-500 text-green-500">Mini</Badge>;
+    case 'LISTENING_ONLY':
+      return <Badge variant="outline" className="border-purple-500 text-purple-500">Chỉ Nghe</Badge>;
+    case 'READING_ONLY':
+      return <Badge variant="outline" className="border-orange-500 text-orange-500">Chỉ Đọc</Badge>;
+    case 'GRAMMAR_ONLY':
+      return <Badge variant="outline" className="border-yellow-500 text-yellow-500">Ngữ pháp</Badge>;
+    case 'VOCABULARY_ONLY':
+      return <Badge variant="outline" className="border-pink-500 text-pink-500">Từ vựng</Badge>;
+    case 'PRACTICE':
+      return <Badge variant="outline" className="border-teal-500 text-teal-500">Luyện tập</Badge>;
+    default:
+      return <Badge variant="outline">Khác</Badge>;
+  }
+};
+
 // Hàm để lấy tiêu đề hiển thị của nhóm câu hỏi
 const getGroupTitle = (group: QuestionGroupResponse) => {
   if (group.title) {
     return group.title;
   }
   return `Part ${group.part} - ${group.part <= 4 ? 'Listening' : 'Reading'}`;
+};
+
+// Hàm lấy icon phù hợp với loại đề thi
+const getExamTypeIcon = (type: string | undefined) => {
+  switch (type) {
+    case 'LISTENING_ONLY':
+      return <Volume2 className="h-5 w-5 text-purple-500" />;
+    case 'READING_ONLY':
+      return <BookOpen className="h-5 w-5 text-orange-500" />;
+    case 'GRAMMAR_ONLY':
+      return <BookOpen className="h-5 w-5 text-yellow-500" />;
+    case 'VOCABULARY_ONLY':
+      return <Lightbulb className="h-5 w-5 text-pink-500" />;
+    default:
+      return <Award className="h-5 w-5 text-blue-500" />;
+  }
 };
 
 export default function TestPage() {
@@ -64,6 +127,14 @@ export default function TestPage() {
   const [isPreloaded, setIsPreloaded] = useState<Record<number, boolean>>({})
   const [allGroupsPreloaded, setAllGroupsPreloaded] = useState(false)
 
+  // State để theo dõi quá trình làm bài
+  const [totalQuestions, setTotalQuestions] = useState(0)
+  const [answeredQuestions, setAnsweredQuestions] = useState(0)
+  const [correctAnswers, setCorrectAnswers] = useState(0)
+
+  // State để hiển thị thông tin chi tiết
+  const [showInstructions, setShowInstructions] = useState(true)
+
   // Load test data based on ID và tải trước tất cả dữ liệu
   useEffect(() => {
     const loadTest = async () => {
@@ -82,6 +153,13 @@ export default function TestPage() {
         // Sắp xếp questionGroups theo thứ tự part
         const sortedGroups = questionsData.sort((a: QuestionGroupResponse, b: QuestionGroupResponse) => a.part - b.part)
         
+        // Đếm tổng số câu hỏi
+        let questionCount = 0;
+        sortedGroups.forEach(group => {
+          questionCount += group.questions?.length || 0;
+        });
+        setTotalQuestions(questionCount);
+        
         // Thiết lập dữ liệu bài thi
         setTest({
           id: examData.id,
@@ -90,6 +168,7 @@ export default function TestPage() {
           instructions: examData.instructions,
           duration: examData.duration,
           type: examData.type,
+          difficulty: examData.difficulty,
           questionGroups: sortedGroups
         })
         
@@ -300,120 +379,112 @@ export default function TestPage() {
     return () => clearInterval(timer)
   }, [isCompleted])
 
+  // Đếm số câu hỏi đã trả lời khi answers thay đổi
+  useEffect(() => {
+    const answered = Object.keys(answers).length;
+    setAnsweredQuestions(answered);
+  }, [answers]);
+
+  // Format thời gian từ giây thành MM:SS
   const formatTime = (seconds: number) => {
-    const hours = Math.floor(seconds / 3600)
-    const minutes = Math.floor((seconds % 3600) / 60)
-    const secs = seconds % 60
-    return `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
-  }
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds < 10 ? '0' : ''}${remainingSeconds}`;
+  };
 
-  const handleAnswer = (questionId: number, answerId: string) => {
-    setAnswers({ ...answers, [questionId]: answerId })
-  }
-
-  const handleNext = () => {
-    if (!test) return
-
-    if (currentGroupIndex < test.questionGroups.length - 1) {
-      setCurrentGroupIndex(currentGroupIndex + 1)
-      window.scrollTo(0, 0) // Scroll lên đầu trang khi chuyển nhóm
-    } else {
-      handleFinishTest()
-    }
-  }
-
-  const handlePrevious = () => {
-    if (!test || currentGroupIndex === 0) return
-    
-    setCurrentGroupIndex(currentGroupIndex - 1)
-    window.scrollTo(0, 0) // Scroll lên đầu trang khi chuyển nhóm
-  }
-
+  // Tính toán progress
   const calculateProgress = () => {
-    if (!test) return 0
+    if (totalQuestions === 0) return 0;
+    return (answeredQuestions / totalQuestions) * 100;
+  };
 
-    // Đếm tổng số câu hỏi và số câu đã trả lời
-    const totalQuestions = test.questionGroups.reduce((total, group) => total + group.questions.length, 0)
-    const completedQuestions = Object.keys(answers).length
-    
-    return (completedQuestions / totalQuestions) * 100
-  }
+  // Chuyển đến nhóm câu hỏi tiếp theo
+  const handleNext = () => {
+    if (test && currentGroupIndex < test.questionGroups.length - 1) {
+      setCurrentGroupIndex(prev => prev + 1);
+      window.scrollTo(0, 0); // Scroll lên đầu trang
+    }
+  };
+
+  // Quay lại nhóm câu hỏi trước đó
+  const handlePrevious = () => {
+    if (currentGroupIndex > 0) {
+      setCurrentGroupIndex(prev => prev - 1);
+      window.scrollTo(0, 0); // Scroll lên đầu trang
+    }
+  };
+
+  // Ghi lại câu trả lời của người dùng
+  const handleAnswer = (questionId: number, answerId: string) => {
+    setAnswers(prev => ({
+      ...prev,
+      [questionId]: answerId
+    }));
+  };
 
   // Kiểm tra xem tất cả câu hỏi trong nhóm hiện tại đã được trả lời chưa
   const areAllQuestionsInCurrentGroupAnswered = () => {
-    if (!test) return false
-    
-    const currentGroup = test.questionGroups[currentGroupIndex]
-    if (!currentGroup || !currentGroup.questions) return false
-    
-    // Kiểm tra từng câu hỏi trong nhóm
-    for (const question of currentGroup.questions) {
-      if (!answers[question.id]) {
-        return false
-      }
-    }
-    
-    return true
-  }
-
-  // Xử lý hoàn thành bài thi
-  const handleFinishTest = async () => {
-    setIsCompleted(true);
-    
-    if (!test || !id) return;
-    
-    try {
-      // Tính toán thời gian hoàn thành (phút)
-      const totalTestTimeInSeconds = test.duration * 60;
-      const completionTimeInMinutes = Math.round((totalTestTimeInSeconds - timeLeft) / 60);
-      
-      // Chuẩn bị danh sách câu trả lời để gửi lên server
-      const userAnswers = Object.entries(answers).map(([questionId, userAnswer]) => ({
-        questionId: parseInt(questionId),
-        userAnswer: userAnswer
-      }));
-      
-      // Tạo request object
-      const saveRequest = {
-        testId: parseInt(id),
-        completionTimeInMinutes,
-        userAnswers
-      };
-      
-      // Gọi API lưu kết quả bài thi
-      console.log("Đang lưu kết quả bài thi:", saveRequest);
-      const result = await submitTestResult(saveRequest);
-      console.log("Kết quả đã được lưu:", result);
-      
-      // Hiển thị thông báo
-      toast.success("Kết quả bài thi đã được lưu vào lịch sử", {
-        duration: 3000,
-        position: "top-center"
-      });
-      
-    } catch (error) {
-      console.error("Lỗi khi lưu kết quả bài thi:", error);
-      toast.error("Không thể lưu kết quả bài thi. Vui lòng thử lại sau.", {
-        duration: 3000,
-        position: "top-center"
-      });
-    }
-  }
-
-  // Kiểm tra có thể chuyển tiếp hay không
-  const canProceedToNextGroup = () => {
     if (!test) return false;
     
     const currentGroup = test.questionGroups[currentGroupIndex];
-    const isListeningPart = currentGroup.part <= 4;
+    if (!currentGroup || !currentGroup.questions) return true;
     
-    // Nếu là phần nghe và có audio, phải chờ audio phát xong
-    if (isListeningPart && currentGroup.audioUrl && !audioEnded) {
-      return false;
+    return currentGroup.questions.every(question => answers[question.id] !== undefined);
+  };
+
+  // Xử lý khi người dùng nộp bài
+  const handleFinishTest = async () => {
+    try {
+      if (!test) return;
+      
+      // Tổng hợp kết quả
+      const questionAnswers = Object.entries(answers).map(([questionId, optionId]) => ({
+        questionId: parseInt(questionId),
+        selectedOptionId: optionId
+      }));
+      
+      // Gửi kết quả làm bài lên server
+      const result = await submitTestResult({
+        testId: test.id,
+        answers: questionAnswers,
+        completionTime: test.duration * 60 - timeLeft // Thời gian làm bài (giây)
+      });
+      
+      console.log("Kết quả làm bài:", result);
+      
+      // Tính toán số câu đúng
+      let correct = 0;
+      test.questionGroups.forEach(group => {
+        if (group.questions && group.questions.length > 0) {
+          group.questions.forEach(question => {
+            if (answers[question.id] === question.correctAnswer) {
+              correct++;
+            }
+          });
+        }
+      });
+      
+      setCorrectAnswers(correct);
+      setIsCompleted(true);
+      
+      // Hiển thị thông báo hoàn thành
+      toast.success("Đã hoàn thành bài thi!");
+      
+    } catch (error) {
+      console.error("Lỗi khi nộp bài thi:", error);
+      toast.error("Không thể nộp bài thi. Vui lòng thử lại.");
     }
-    
-    // Nếu là phần nghe đã phát hết audio hoặc phần đọc thì luôn cho phép next
-    return true;
+  };
+
+  // Tính toán tỷ lệ % điểm số
+  const scorePercentage = totalQuestions > 0 
+    ? (correctAnswers / totalQuestions) * 100 
+    : 0;
+
+  // Kiểm tra xem có thể chuyển sang nhóm tiếp theo không
+  const canProceedToNextGroup = () => {
+    // Có thể bỏ qua điều kiện này để cho phép chuyển khi chưa trả lời hết
+    return true; // areAllQuestionsInCurrentGroupAnswered();
   };
 
   if (isLoading) {
@@ -441,30 +512,29 @@ export default function TestPage() {
     )
   }
 
+  // Hiển thị kết quả khi hoàn thành bài thi
   if (isCompleted) {
-    // Tính toán kết quả
-    const totalQuestions = test.questionGroups.reduce((total, group) => total + group.questions.length, 0);
-    const answeredQuestions = Object.keys(answers).length;
-    
-    // Đếm số câu trả lời đúng
-    let correctAnswers = 0;
-    test.questionGroups.forEach(group => {
-      group.questions.forEach(question => {
-        const userAnswer = answers[question.id];
-        if (userAnswer && userAnswer === question.correctAnswer) {
-          correctAnswers++;
-        }
-      });
-    });
-    
-    const scorePercentage = (correctAnswers / totalQuestions) * 100;
-    
     return (
       <div className="container mx-auto px-4 py-8">
-        <Card className="max-w-4xl mx-auto">
+        <Card className="max-w-3xl mx-auto">
+          <CardHeader className="pb-2">
+            <div className="flex justify-between items-center">
+              <CardTitle>Kết quả bài thi {test.title}</CardTitle>
+              <div className="flex gap-2">
+                {getDifficultyBadge(test.difficulty || 'MEDIUM')}
+                {getExamTypeBadge(test.type)}
+              </div>
+            </div>
+          </CardHeader>
           <CardContent className="p-6">
-            <h1 className="text-2xl font-bold mb-4">Bài Thi Hoàn Thành</h1>
-            <p className="mb-4">Cảm ơn bạn đã hoàn thành bài thi TOEIC.</p>
+            <div className="mb-6 text-center">
+              <h2 className="text-2xl font-bold mb-1">Điểm của bạn: {correctAnswers}/{totalQuestions}</h2>
+              <p className="text-lg font-medium text-muted-foreground">{scorePercentage.toFixed(1)}%</p>
+              
+              <div className="mt-4 mb-6">
+                <Progress value={scorePercentage} className="h-3" />
+              </div>
+            </div>
             
             <div className="mb-6 p-4 bg-muted rounded-lg">
               <h2 className="text-xl font-semibold mb-4">Kết Quả Chi Tiết</h2>
@@ -497,41 +567,41 @@ export default function TestPage() {
             </div>
             
             <div className="mb-6">
-              <h2 className="text-xl font-semibold mb-4">Chi Tiết Đáp Án</h2>
-              <div className="space-y-6">
+              <h2 className="text-xl font-semibold mb-4">Câu Trả Lời Chi Tiết</h2>
+              <div className="space-y-4">
                 {test.questionGroups.map((group, groupIndex) => (
                   <div key={group.id} className="border rounded-lg p-4">
-                    <h3 className="font-semibold mb-2">
-                      {getGroupTitle(group)}
-                    </h3>
-                    <div className="space-y-4">
-                      {group.questions.map((question, qIndex) => {
-                        const userAnswer = answers[question.id] || "";
-                        const isCorrect = userAnswer === question.correctAnswer;
-                        
-                        return (
-                          <div 
-                            key={question.id} 
-                            className={`p-3 rounded-lg border ${isCorrect ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'}`}
-                          >
-                            <p className="font-medium mb-1">
-                              Câu {qIndex + 1}: {question.question}
-                            </p>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
-                              <p className="text-sm">
-                                <span className="text-muted-foreground">Đáp án của bạn:</span>{" "}
-                                <span className={isCorrect ? "text-green-600 font-medium" : "text-red-600 font-medium"}>
-                                  {userAnswer || "(Chưa trả lời)"}
-                                </span>
-                              </p>
-                              <p className="text-sm">
-                                <span className="text-muted-foreground">Đáp án đúng:</span>{" "}
-                                <span className="text-green-600 font-medium">{question.correctAnswer}</span>
+                    <h3 className="font-medium mb-2">{getGroupTitle(group)}</h3>
+                    <div className="space-y-3">
+                      {group.questions && group.questions.length > 0 ? (
+                        group.questions.map((question, qIndex) => {
+                          const userAnswer = answers[question.id] || "";
+                          const isCorrect = userAnswer === question.correctAnswer;
+                          const answerClass = userAnswer ? (isCorrect ? "text-green-600" : "text-red-600") : "text-gray-500";
+
+                          return (
+                            <div key={question.id} className="border-t pt-2">
+                              <div className="flex justify-between">
+                                <p className="font-medium">Câu {qIndex + 1}</p>
+                                <p className={answerClass}>
+                                  {userAnswer ? (isCorrect ? "Đúng" : "Sai") : "Không trả lời"}
+                                </p>
+                              </div>
+                              <p className="text-sm mb-1">{question.question}</p>
+                              <p className="text-sm text-muted-foreground">
+                                <span className="font-medium">Đáp án đúng:</span> {question.correctAnswer}
+                                {question.explanation && (
+                                  <>
+                                    <span className="font-medium ml-2">Giải thích:</span> {question.explanation}
+                                  </>
+                                )}
                               </p>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })
+                      ) : (
+                        <p className="text-sm text-muted-foreground">Không có câu hỏi nào trong nhóm này</p>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -557,110 +627,158 @@ export default function TestPage() {
   const isFirstGroup = currentGroupIndex === 0
   const isLastGroup = currentGroupIndex === test.questionGroups.length - 1
 
+  // Màn hình làm bài
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="max-w-4xl mx-auto">
-        {/* Phần tử preload cho audio tiếp theo - ẩn không hiển thị */}
-        {test && currentGroupIndex < test.questionGroups.length - 1 && 
-          test.questionGroups[currentGroupIndex + 1]?.audioUrl && (
-          <audio 
-            ref={nextAudioRef} 
-            preload="auto" 
-            className="hidden" 
-            src={getFullUrl(test.questionGroups[currentGroupIndex + 1].audioUrl)}
-          />
-        )}
-        
-        <div className="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-bold">{test.title}</h1>
-            <p className="text-muted-foreground">
-              {getGroupTitle(currentGroup)}
-            </p>
+      {/* Audio player cho phần nghe */}
+      {isListeningPart && currentGroup.audioUrl && (
+        <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-3 flex items-center justify-center z-50">
+          <div className="w-full max-w-3xl flex items-center gap-4">
+            <span className="text-sm font-medium">Audio cho Part {currentGroup.part}:</span>
+            <audio
+              ref={audioRef}
+              controls
+              autoPlay={false}
+              preload="auto"
+              className="w-full max-w-md"
+              onEnded={() => setAudioEnded(true)}
+            >
+              <source src={getFullUrl(currentGroup.audioUrl)} type="audio/mpeg" />
+              Trình duyệt của bạn không hỗ trợ audio player.
+            </audio>
           </div>
-          <div className="flex items-center gap-2 bg-muted p-2 rounded-md">
-            <span className="font-medium">{formatTime(timeLeft)}</span>
+        </div>
+      )}
+
+      <div className="max-w-3xl mx-auto">
+        {/* Header section */}
+        <div className="mb-6">
+          <div className="flex justify-between items-start mb-2">
+            <h1 className="text-2xl font-bold">{test.title}</h1>
+            <div className="flex items-center gap-2">
+              {getDifficultyBadge(test.difficulty || 'MEDIUM')}
+              {getExamTypeBadge(test.type)}
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between bg-muted p-3 rounded-lg mb-4">
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              <span className="font-medium">{formatTime(timeLeft)}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-sm">Tiến độ: {answeredQuestions}/{totalQuestions}</span>
+              <div className="w-32">
+                <Progress value={calculateProgress()} className="h-2" />
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Hiển thị thông báo tải */}
-        {!allGroupsPreloaded && (
-          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md text-amber-700 flex items-center">
-            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-            <span>Đang tải dữ liệu các nhóm câu hỏi. Việc này chỉ xảy ra lần đầu.</span>
-          </div>
+        {/* Instructions section - chỉ hiển thị khi mới bắt đầu và cho phép ẩn đi */}
+        {showInstructions && isFirstGroup && (
+          <Card className="mb-6">
+            <CardContent className="p-4">
+              <div className="flex justify-between items-start mb-2">
+                <h2 className="text-lg font-medium">Hướng dẫn làm bài</h2>
+                <Button variant="ghost" size="sm" onClick={() => setShowInstructions(false)}>
+                  Ẩn
+                </Button>
+              </div>
+              <div className="text-sm text-muted-foreground">
+                <p>{test.instructions || 'Đọc kỹ câu hỏi và chọn đáp án đúng. Bạn có thể di chuyển giữa các phần bài thi bằng các nút chuyển hướng.'}</p>
+                
+                <div className="mt-3 p-3 bg-secondary rounded-md">
+                  <p className="font-medium mb-1">Lưu ý cho đề thi này:</p>
+                  <ul className="list-disc pl-5 space-y-1">
+                    {test.type === 'LISTENING_ONLY' && (
+                      <li>Đây là đề thi chỉ có phần nghe. Hãy đảm bảo bạn sử dụng tai nghe hoặc loa.</li>
+                    )}
+                    {test.type === 'READING_ONLY' && (
+                      <li>Đây là đề thi chỉ có phần đọc. Đọc kỹ từng đoạn văn trước khi trả lời.</li>
+                    )}
+                    {test.type === 'GRAMMAR_ONLY' && (
+                      <li>Đây là đề thi tập trung vào ngữ pháp. Hãy chú ý đến cấu trúc câu và quy tắc ngữ pháp.</li>
+                    )}
+                    {test.type === 'VOCABULARY_ONLY' && (
+                      <li>Đây là đề thi tập trung vào từ vựng. Chọn từ phù hợp nhất với ngữ cảnh.</li>
+                    )}
+                    {test.type === 'MINI' && (
+                      <li>Đây là đề thi rút gọn với số lượng câu hỏi ít hơn đề thi đầy đủ.</li>
+                    )}
+                    {test.type === 'FULL' && (
+                      <li>Đây là đề thi đầy đủ bao gồm cả phần nghe và phần đọc.</li>
+                    )}
+                    <li>Thời gian làm bài: {test.duration} phút.</li>
+                    <li>Độ khó: {test.difficulty || 'Trung bình'}.</li>
+                  </ul>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         )}
 
-        <Progress value={calculateProgress()} className="mb-6" />
-
+        {/* Question Group Section */}
         <Card className="mb-6">
-          <CardContent className="p-6">
-            {/* Khu vực tài nguyên chung */}
-            <div className="mb-6">
-              {/* Audio file cho phần Listening */}
-              {isListeningPart && currentGroup.audioUrl && (
-              <div className="mb-4">
-                <div className="bg-muted p-4 rounded-md flex items-center gap-2 mb-4">
-                  <AlertCircle className="h-5 w-5 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                      Hãy nghe file âm thanh và trả lời tất cả các câu hỏi trong nhóm này.
-                  </p>
-                </div>
-                  <audio
-                    ref={audioRef}
-                    controls
-                    className="w-full mb-4"
-                    src={getFullUrl(currentGroup.audioUrl)}
-                  >
-                    Trình duyệt của bạn không hỗ trợ phát audio.
-                </audio>
+          <CardHeader className="pb-2">
+            <div className="flex justify-between items-center">
+              <CardTitle className="text-xl">
+                {getGroupTitle(currentGroup)}
+              </CardTitle>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">Part {currentGroup.part}</span>
+                {isListeningPart ? 
+                  <Badge className="bg-blue-500">Nghe</Badge> : 
+                  <Badge className="bg-green-500">Đọc</Badge>
+                }
               </div>
-            )}
-
-              {/* Hình ảnh nếu có */}
-              {currentGroup.imageUrl && (
-                <div className="mb-4">
-                  <img
-                    src={getFullUrl(currentGroup.imageUrl)}
-                    alt="Question illustration"
-                    className="max-h-[300px] object-contain mx-auto mb-4 rounded-md"
-                  />
-              </div>
-            )}
-
-              {/* Đoạn văn cho phần Reading */}
-              {!isListeningPart && currentGroup.passage && (
-                <div className="mb-6 p-4 bg-muted rounded-md">
-                  <h3 className="font-medium mb-2">Đoạn văn:</h3>
-                  <p className="whitespace-pre-line">{currentGroup.passage}</p>
-                </div>
-              )}
             </div>
-
-            {/* Danh sách câu hỏi trong nhóm */}
+          </CardHeader>
+          <CardContent className="p-6">
+            {/* Passage or image */}
+            {currentGroup.passage && (
+              <div className="mb-6 p-4 bg-muted rounded-lg">
+                <p className="whitespace-pre-line">{currentGroup.passage}</p>
+              </div>
+            )}
+            
+            {currentGroup.imageUrl && (
+              <div className="mb-6 flex justify-center">
+                <img 
+                  src={getFullUrl(currentGroup.imageUrl)} 
+                  alt="Question material" 
+                  className="max-w-full h-auto rounded-lg shadow-sm"
+                />
+              </div>
+            )}
+            
+            {/* Questions list */}
             <div className="space-y-8">
-              {currentGroup.questions && currentGroup.questions.map((question, qIndex) => (
+              {currentGroup.questions && currentGroup.questions.map((question, index) => (
                 <div key={question.id} className="border-b pb-6 last:border-b-0 last:pb-0">
-                  <h3 className="text-lg font-semibold mb-4">
-                    Câu {qIndex + 1}: {question.question}
-                  </h3>
-
-            <RadioGroup
+                  <div className="flex justify-between items-start mb-3">
+                    <h3 className="font-medium text-lg">Câu {index + 1}</h3>
+                    {answers[question.id] && (
+                      <Badge variant="outline" className="text-primary">Đã trả lời</Badge>
+                    )}
+                  </div>
+                  
+                  <p className="mb-4">{question.question}</p>
+                  
+                  <RadioGroup
                     value={answers[question.id] || ""}
                     onValueChange={(value) => handleAnswer(question.id, value)}
-              className="space-y-3"
-            >
-                    {question.options.map((option) => (
-                <div
-                  key={option.id}
-                  className="flex items-center space-x-2 rounded-md border p-3 cursor-pointer hover:bg-accent"
-                >
-                        <RadioGroupItem value={option.optionKey} id={`${question.id}-${option.optionKey}`} />
-                        <Label htmlFor={`${question.id}-${option.optionKey}`} className="flex-grow cursor-pointer">
-                          {option.optionText}
-                  </Label>
-                      </div>
-                    ))}
+                  >
+                    <div className="space-y-3">
+                      {question.options && question.options.map((option) => (
+                        <div key={option.id} className="flex items-start space-x-2 rounded-md border p-3 hover:bg-accent">
+                          <RadioGroupItem value={option.id} id={`option-${option.id}`} />
+                          <Label htmlFor={`option-${option.id}`} className="flex-grow cursor-pointer">
+                            {option.text}
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
                   </RadioGroup>
                 </div>
               ))}
@@ -668,45 +786,42 @@ export default function TestPage() {
           </CardContent>
         </Card>
 
-        <div className="flex justify-between">
+        {/* Navigation buttons */}
+        <div className="flex justify-between mt-6">
           <Button 
             variant="outline" 
-            onClick={handlePrevious} 
+            onClick={handlePrevious}
             disabled={isFirstGroup}
-            className="gap-2"
           >
-            <ChevronLeft className="h-4 w-4" />
-            Nhóm trước
+            <ChevronLeft className="mr-2 h-4 w-4" />
+            Quay lại
           </Button>
-
-          {/* Ẩn nút Next khi đang phát audio ở phần nghe */}
-          {!(isListeningPart && currentGroup.audioUrl && !audioEnded) && (
-            <Button
-              onClick={handleNext}
-              disabled={!canProceedToNextGroup()}
-              className="gap-2"
-            >
-              {isLastGroup ? "Kết thúc bài thi" : (
-                <>
-                  Nhóm tiếp theo
-                  <ChevronRight className="h-4 w-4" />
-                </>
-              )}
-          </Button>
-          )}
+          
+          <div className="flex gap-2">
+            {!isLastGroup ? (
+              <Button 
+                onClick={handleNext}
+                disabled={!canProceedToNextGroup()}
+              >
+                Tiếp theo
+                <ChevronRight className="ml-2 h-4 w-4" />
+              </Button>
+            ) : (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button onClick={handleFinishTest}>
+                      Nộp bài
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Nộp bài và xem kết quả</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
         </div>
-
-        {isListeningPart && currentGroup.audioUrl && !audioEnded && (
-          <p className="text-center mt-4 text-amber-500 text-sm">
-            Đang phát file âm thanh... Sẽ tự động chuyển sang nhóm tiếp theo khi kết thúc.
-          </p>
-        )}
-        
-        {!isListeningPart && !areAllQuestionsInCurrentGroupAnswered() && (
-          <p className="text-center mt-4 text-red-500 text-sm">
-            Vui lòng trả lời tất cả các câu hỏi trong nhóm này trước khi tiếp tục.
-          </p>
-        )}
       </div>
     </div>
   )

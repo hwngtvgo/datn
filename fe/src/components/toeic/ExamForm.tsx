@@ -395,7 +395,10 @@ const ExamForm: React.FC<ExamFormProps> = ({
 
   // Hiển thị badge cho độ khó
   const renderDifficultyBadge = (difficulty: string) => {
-    switch (difficulty) {
+    // Chuyển đổi về chữ hoa để đảm bảo so sánh chính xác
+    const difficultyUpper = difficulty ? difficulty.toUpperCase() : '';
+    
+    switch (difficultyUpper) {
       case 'EASY':
         return <Badge className="bg-green-500">Dễ</Badge>;
       case 'MEDIUM':

@@ -172,7 +172,10 @@ const AdminToeicExams: React.FC = () => {
 
   // Hiển thị mức độ khó dễ
   const renderDifficultyBadge = (difficultyLevel: string) => {
-    switch (difficultyLevel) {
+    // Chuyển đổi về chữ hoa để đảm bảo so sánh chính xác
+    const difficultyUpper = difficultyLevel ? difficultyLevel.toUpperCase() : '';
+    
+    switch (difficultyUpper) {
       case 'EASY':
         return <Badge className="bg-green-500">Dễ</Badge>;
       case 'MEDIUM':

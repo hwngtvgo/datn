@@ -3,3 +3,13 @@
 fe/.env.example
 fe/.env
 
+# Các file cấu hình nhạy cảm khác
+**/application-local.properties
+**/application-dev.properties
+**/application-prod.properties
+**/application.properties
+
+# Logs
+logs/
+*.log
+

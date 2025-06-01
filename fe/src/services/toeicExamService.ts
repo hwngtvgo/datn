@@ -87,8 +87,11 @@ export async function updateExam(id: number, exam: ToeicExam, questionGroupIds?:
       type: exam.type || "FULL",
       duration: exam.duration,
       instructions: exam.instructions || "",
+      difficulty: exam.difficulty || "MEDIUM",
       questionGroupIds: questionGroupIds || []
     };
+    
+    console.log("Payload gửi đi:", payload);
     
     const response = await axios.put(`${TOEIC_EXAM_API_URL}/${id}`, payload, {
       ...authModule.createAuthConfig()

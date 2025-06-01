@@ -2,17 +2,28 @@ import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, ChevronDown, ChevronUp } from "lucide-react"
+import { Loader2, ChevronDown, ChevronUp, Filter } from "lucide-react"
 import { Link } from "react-router-dom"
 import { toast } from "sonner"
+import { Input } from "@/components/ui/input"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
 
 // Services
 import * as toeicExamService from "@/services/toeicExamService"
-import { ToeicExam, DifficultyLevel, QuestionGroupResponse } from "@/types/toeic"
+import { ToeicExam, DifficultyLevel, ExamType, QuestionGroupResponse } from "@/types/toeic"
 
 // Hiển thị badge cho độ khó
 const getDifficultyBadge = (difficulty: string) => {
-  switch (difficulty) {
+  // Chuyển đổi về chữ hoa để đảm bảo so sánh chính xác
+  const difficultyUpper = difficulty ? difficulty.toUpperCase() : '';
+  
+  switch (difficultyUpper) {
     case 'EASY':
       return <Badge className="bg-green-500 hover:bg-green-600">Dễ</Badge>;
     case 'MEDIUM':
@@ -24,12 +35,38 @@ const getDifficultyBadge = (difficulty: string) => {
   }
 };
 
+// Hiển thị badge cho loại đề thi
+const getExamTypeBadge = (type: string | undefined) => {
+  switch (type) {
+    case 'FULL':
+      return <Badge variant="outline" className="border-blue-500 text-blue-500">Đầy đủ</Badge>;
+    case 'MINI':
+      return <Badge variant="outline" className="border-green-500 text-green-500">Mini</Badge>;
+    case 'LISTENING_ONLY':
+      return <Badge variant="outline" className="border-purple-500 text-purple-500">Chỉ Nghe</Badge>;
+    case 'READING_ONLY':
+      return <Badge variant="outline" className="border-orange-500 text-orange-500">Chỉ Đọc</Badge>;
+    case 'GRAMMAR_ONLY':
+      return <Badge variant="outline" className="border-yellow-500 text-yellow-500">Ngữ pháp</Badge>;
+    case 'VOCABULARY_ONLY':
+      return <Badge variant="outline" className="border-pink-500 text-pink-500">Từ vựng</Badge>;
+    case 'PRACTICE':
+      return <Badge variant="outline" className="border-teal-500 text-teal-500">Luyện tập</Badge>;
+    default:
+      return <Badge variant="outline">Khác</Badge>;
+  }
+};
+
 // Hiển thị badge cho loại câu hỏi
-const getQuestionTypeBadge = (type: string) => {
+const getQuestionTypeBadge = (type: string | undefined) => {
   if (type === 'LISTENING') {
     return <Badge className="bg-blue-500">Nghe</Badge>;
   } else if (type === 'READING') {
     return <Badge className="bg-green-500">Đọc</Badge>;
+  } else if (type === 'GRAMMAR') {
+    return <Badge className="bg-yellow-500">Ngữ pháp</Badge>;
+  } else if (type === 'VOCABULARY') {
+    return <Badge className="bg-pink-500">Từ vựng</Badge>;
   }
   return <Badge>Không xác định</Badge>;
 };
@@ -43,7 +80,11 @@ interface EnhancedExam extends ToeicExam {
 
 export default function PracticeTests() {
   const [practiceTests, setPracticeTests] = useState<EnhancedExam[]>([]);
+  const [filteredTests, setFilteredTests] = useState<EnhancedExam[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [difficultyFilter, setDifficultyFilter] = useState<string>("ALL");
+  const [typeFilter, setTypeFilter] = useState<string>("ALL");
 
   // Tải danh sách đề thi đang active
   useEffect(() => {
@@ -61,6 +102,7 @@ export default function PracticeTests() {
             questionGroups: undefined
           }));
           setPracticeTests(enhancedExams);
+          setFilteredTests(enhancedExams);
         } else {
           toast.error("Định dạng dữ liệu không hợp lệ từ API");
         }
@@ -75,12 +117,41 @@ export default function PracticeTests() {
     loadActiveExams();
   }, []);
 
+  // Áp dụng bộ lọc khi có thay đổi
+  useEffect(() => {
+    let result = [...practiceTests];
+    
+    // Lọc theo từ khóa tìm kiếm
+    if (searchQuery) {
+      result = result.filter(test => 
+        test.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (test.description && test.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+    }
+    
+    // Lọc theo độ khó
+    if (difficultyFilter !== "ALL") {
+      result = result.filter(test => test.difficulty === difficultyFilter);
+    }
+    
+    // Lọc theo loại đề thi
+    if (typeFilter !== "ALL") {
+      result = result.filter(test => test.type === typeFilter);
+    }
+    
+    setFilteredTests(result);
+  }, [searchQuery, difficultyFilter, typeFilter, practiceTests]);
+
   // Hàm để tải nhóm câu hỏi của bài thi
   const loadExamQuestions = async (examId: number, index: number) => {
+    // Tìm vị trí của bài thi trong danh sách đã lọc
+    const practiceIndex = practiceTests.findIndex(test => test.id === examId);
+    if (practiceIndex === -1) return;
+    
     // Nếu đã có dữ liệu, chỉ cần toggle hiển thị
-    if (practiceTests[index].questionGroups) {
+    if (practiceTests[practiceIndex].questionGroups) {
       const updatedTests = [...practiceTests];
-      updatedTests[index].isExpanded = !updatedTests[index].isExpanded;
+      updatedTests[practiceIndex].isExpanded = !updatedTests[practiceIndex].isExpanded;
       setPracticeTests(updatedTests);
       return;
     }
@@ -88,7 +159,7 @@ export default function PracticeTests() {
     // Nếu chưa có dữ liệu, tải từ API
     try {
       const updatedTests = [...practiceTests];
-      updatedTests[index].isLoading = true;
+      updatedTests[practiceIndex].isLoading = true;
       setPracticeTests(updatedTests);
 
       const questions = await toeicExamService.getExamQuestions(examId);
@@ -96,8 +167,8 @@ export default function PracticeTests() {
       
       // Cập nhật state
       const newTests = [...practiceTests];
-      newTests[index] = {
-        ...newTests[index],
+      newTests[practiceIndex] = {
+        ...newTests[practiceIndex],
         questionGroups: questions,
         isLoading: false,
         isExpanded: true
@@ -108,9 +179,16 @@ export default function PracticeTests() {
       toast.error("Không thể tải thông tin nhóm câu hỏi");
       
       const updatedTests = [...practiceTests];
-      updatedTests[index].isLoading = false;
+      updatedTests[practiceIndex].isLoading = false;
       setPracticeTests(updatedTests);
     }
+  };
+
+  // Hàm reset bộ lọc
+  const resetFilters = () => {
+    setSearchQuery("");
+    setDifficultyFilter("ALL");
+    setTypeFilter("ALL");
   };
 
   return (
@@ -122,6 +200,51 @@ export default function PracticeTests() {
         </p>
       </div>
 
+      {/* Thêm bộ lọc */}
+      <div className="mb-6 flex flex-col md:flex-row gap-4">
+        <div className="flex-1">
+          <Input
+            placeholder="Tìm kiếm đề thi..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full"
+          />
+        </div>
+        <div className="flex gap-2">
+          <Select value={difficultyFilter} onValueChange={setDifficultyFilter}>
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Độ khó" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Tất cả độ khó</SelectItem>
+              <SelectItem value="EASY">Dễ</SelectItem>
+              <SelectItem value="MEDIUM">Trung bình</SelectItem>
+              <SelectItem value="HARD">Khó</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-[160px]">
+              <SelectValue placeholder="Loại đề thi" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="ALL">Tất cả loại</SelectItem>
+              <SelectItem value="FULL">Đầy đủ</SelectItem>
+              <SelectItem value="MINI">Mini</SelectItem>
+              <SelectItem value="LISTENING_ONLY">Chỉ Nghe</SelectItem>
+              <SelectItem value="READING_ONLY">Chỉ Đọc</SelectItem>
+              <SelectItem value="GRAMMAR_ONLY">Ngữ pháp</SelectItem>
+              <SelectItem value="VOCABULARY_ONLY">Từ vựng</SelectItem>
+              <SelectItem value="PRACTICE">Luyện tập</SelectItem>
+            </SelectContent>
+          </Select>
+          
+          <Button variant="outline" onClick={resetFilters} title="Xóa bộ lọc">
+            <Filter className="h-4 w-4" />
+          </Button>
+        </div>
+      </div>
+
       {loading ? (
         <div className="flex justify-center items-center py-20">
           <div className="flex flex-col items-center gap-4">
@@ -129,21 +252,27 @@ export default function PracticeTests() {
             <p className="text-lg">Đang tải danh sách đề thi...</p>
           </div>
         </div>
-      ) : practiceTests.length === 0 ? (
+      ) : filteredTests.length === 0 ? (
         <div className="text-center py-10">
-          <p className="text-lg">Không có đề thi nào đang hoạt động.</p>
-          <p className="text-muted-foreground">Vui lòng quay lại sau.</p>
+          <p className="text-lg">Không tìm thấy đề thi nào phù hợp với bộ lọc.</p>
+          <p className="text-muted-foreground">Vui lòng thử lại với bộ lọc khác.</p>
+          <Button variant="outline" onClick={resetFilters} className="mt-4">
+            Xóa bộ lọc
+          </Button>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {practiceTests.map((test, index) => (
+          {filteredTests.map((test, index) => (
             <Card key={test.id} className="flex flex-col">
               <CardHeader>
                 <div className="flex justify-between items-start">
                   <CardTitle>{test.title}</CardTitle>
                   {getDifficultyBadge(test.difficulty || 'MEDIUM')}
                 </div>
-                <CardDescription>{test.description || 'Không có mô tả'}</CardDescription>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {getExamTypeBadge(test.type)}
+                </div>
+                <CardDescription className="mt-2">{test.description || 'Không có mô tả'}</CardDescription>
               </CardHeader>
               <CardContent className="flex-grow">
                 <div className="grid grid-cols-2 gap-2 text-sm mb-4">
