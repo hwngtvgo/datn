@@ -243,7 +243,7 @@ export default function AdminExams() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 style">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Quản lý đề thi TOEIC</h2>

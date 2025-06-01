@@ -159,9 +159,12 @@ const AdminToeicExams: React.FC = () => {
       setSelectedExam(null);
       
       toast.success("Đề thi đã được xóa thành công");
-    } catch (error) {
+    } catch (error: any) {
       console.error("Lỗi khi xóa đề thi:", error);
-      toast.error("Không thể xóa đề thi");
+      // Hiển thị thông báo lỗi chi tiết nếu có
+      const errorMessage = error.response?.data?.message || 
+                          "Không thể xóa đề thi. Đề thi này có thể đang được sử dụng bởi người dùng.";
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -351,7 +354,7 @@ const AdminToeicExams: React.FC = () => {
             <AlertDialogTitle>Xác nhận xóa đề thi</AlertDialogTitle>
             <AlertDialogDescription>
               Bạn có chắc chắn muốn xóa đề thi "{selectedExam?.title}"? 
-              Hành động này không thể hoàn tác và sẽ xóa tất cả câu hỏi liên quan.
+              Hành động này không thể hoàn tác và sẽ xóa tất cả kết quả bài thi và dữ liệu liên quan.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

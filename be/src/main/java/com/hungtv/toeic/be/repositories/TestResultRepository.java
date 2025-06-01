@@ -59,4 +59,7 @@ public interface TestResultRepository extends JpaRepository<TestResult, Long> {
      * @return Số lượng bài thi
      */
     int countByUserAndCreatedAtAfter(User user, LocalDateTime date);
+    
+    // Tìm tất cả kết quả bài thi liên kết với một đề thi cụ thể
+    List<TestResult> findByTest(com.hungtv.toeic.be.models.Test test);
 } 

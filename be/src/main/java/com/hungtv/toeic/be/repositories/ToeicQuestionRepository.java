@@ -1,6 +1,7 @@
 package com.hungtv.toeic.be.repositories;
 
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -28,6 +29,27 @@ public interface ToeicQuestionRepository extends JpaRepository<ToeicQuestion, Lo
     
     // Tìm câu hỏi theo questionGroup, sắp xếp theo thứ tự câu hỏi
     List<ToeicQuestion> findByQuestionGroupIdOrderByQuestionOrder(Long questionGroupId);
+    
+    // Đếm số lượng câu hỏi trong một nhóm
+    long countByQuestionGroupId(Long questionGroupId);
+    
+    // Đếm số lượng câu hỏi cho nhiều nhóm câu hỏi trong một truy vấn
+    @Query("SELECT q.questionGroup.id AS groupId, COUNT(q.id) AS questionCount FROM ToeicQuestion q WHERE q.questionGroup.id IN :groupIds GROUP BY q.questionGroup.id")
+    List<Object[]> countByQuestionGroupIds(@Param("groupIds") List<Long> groupIds);
+    
+    // Chuyển đổi kết quả truy vấn trên thành Map
+    default Map<Long, Long> countQuestionsGroupByGroupIds(List<Long> groupIds) {
+        List<Object[]> results = countByQuestionGroupIds(groupIds);
+        Map<Long, Long> countMap = new java.util.HashMap<>();
+        
+        for (Object[] result : results) {
+            Long groupId = (Long) result[0];
+            Long count = ((Number) result[1]).longValue();
+            countMap.put(groupId, count);
+        }
+        
+        return countMap;
+    }
     
     // Tìm câu hỏi theo questionGroup của loại listening, sắp xếp theo thứ tự câu hỏi
     @Query("SELECT q FROM ToeicQuestion q WHERE q.questionGroup.id = :groupId AND q.questionGroup.questionType = 'LISTENING' ORDER BY q.questionOrder")

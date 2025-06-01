@@ -14,6 +14,11 @@ export default function Header() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
 
+  // Kiểm tra quyền admin
+  const isAdmin = user && (user.role === 'ROLE_ADMIN' || user.role === 'ADMIN' || 
+                          (user.roles && Array.isArray(user.roles) && 
+                           (user.roles.includes('ROLE_ADMIN') || user.roles.includes('ADMIN'))));
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -72,10 +77,19 @@ export default function Header() {
                       </Link>
                     </div>
                   )}
+                  
                 </div>
+                
                 <div className="flex flex-col gap-2 mt-auto">
                   {user ? (
                     <>
+                      {isAdmin && (
+                        <Link to="/admin">
+                          <Button variant="outline" className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                            Trang quản trị
+                          </Button>
+                        </Link>
+                      )}
                       <Link to="/account">
                         <Button variant="outline" className="w-full hover:bg-accent/50 transition-colors">
                           <User className="h-4 w-4 mr-2" />
@@ -139,6 +153,13 @@ export default function Header() {
                 </div>
               </div>
             </div>
+            {isAdmin && (
+                  <Link to="/admin">
+                    <Button variant="ghost" size="sm" className="block px-4 py-2 text-sm hover:bg-accent/50 transition-colors">
+                      Trang quản trị
+                    </Button>
+                  </Link>
+                )}
           </nav>
         </div>
         <div className="flex items-center gap-2">

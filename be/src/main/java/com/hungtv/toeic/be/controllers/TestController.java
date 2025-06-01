@@ -154,7 +154,7 @@ public class TestController {
     public ResponseEntity<MessageResponse> deleteTest(@PathVariable Long id) {
         try {
             testService.deleteTest(id);
-            return ResponseEntity.ok(new MessageResponse("Xóa bài thi thành công"));
+            return ResponseEntity.ok(new MessageResponse("Xóa bài thi và tất cả kết quả liên quan thành công"));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
                     .body(new MessageResponse("Lỗi khi xóa bài thi: " + e.getMessage()));

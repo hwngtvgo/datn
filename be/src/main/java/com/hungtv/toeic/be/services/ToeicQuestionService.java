@@ -701,7 +701,91 @@ public class ToeicQuestionService {
         questionGroupRepository.deleteById(groupId);
     }
     
-    // Lấy tất cả nhóm câu hỏi
+    // Cải tiến phương thức để đơn giản hóa việc phân trang và lọc
+    // Phương thức này sẽ thay thế cho các phương thức getAllQuestionGroups hiện có
+    public Page<QuestionGroupResponse> getAllQuestionGroups(Pageable pageable, String type, Integer part, String search) {
+        Page<QuestionGroup> questionGroups;
+        
+        // Tạo câu truy vấn dựa trên các tham số
+        if (search != null && !search.isEmpty()) {
+            // Tìm kiếm với từ khóa
+            if (type != null && !type.isEmpty() && !"ALL".equals(type) && part != null && part != 0) {
+                // Tìm kiếm với cả type và part
+                QuestionGroup.QuestionType questionType = QuestionGroup.QuestionType.valueOf(type);
+                questionGroups = questionGroupRepository.findByTitleContainingAndQuestionTypeAndPart(
+                    search, questionType, part, pageable);
+            } else if (type != null && !type.isEmpty() && !"ALL".equals(type)) {
+                // Tìm kiếm với type
+                QuestionGroup.QuestionType questionType = QuestionGroup.QuestionType.valueOf(type);
+                questionGroups = questionGroupRepository.findByTitleContainingAndQuestionType(
+                    search, questionType, pageable);
+            } else if (part != null && part != 0) {
+                // Tìm kiếm với part
+                questionGroups = questionGroupRepository.findByTitleContainingAndPart(
+                    search, part, pageable);
+            } else {
+                // Chỉ tìm kiếm theo từ khóa
+                questionGroups = questionGroupRepository.findByTitleContaining(search, pageable);
+            }
+        } else {
+            // Lọc không có từ khóa tìm kiếm
+            if (type != null && !type.isEmpty() && !"ALL".equals(type) && part != null && part != 0) {
+                // Lọc theo cả type và part
+                QuestionGroup.QuestionType questionType = QuestionGroup.QuestionType.valueOf(type);
+                questionGroups = questionGroupRepository.findByQuestionTypeAndPart(questionType, part, pageable);
+            } else if (type != null && !type.isEmpty() && !"ALL".equals(type)) {
+                // Chỉ lọc theo type
+                QuestionGroup.QuestionType questionType = QuestionGroup.QuestionType.valueOf(type);
+                questionGroups = questionGroupRepository.findByQuestionType(questionType, pageable);
+            } else if (part != null && part != 0) {
+                // Chỉ lọc theo part
+                questionGroups = questionGroupRepository.findByPart(part, pageable);
+            } else {
+                // Không lọc
+                questionGroups = questionGroupRepository.findAll(pageable);
+            }
+        }
+        
+        // Lấy tất cả ID của nhóm câu hỏi
+        List<Long> groupIds = questionGroups.getContent().stream()
+                .map(QuestionGroup::getId)
+                .collect(Collectors.toList());
+        
+        // Lấy số lượng câu hỏi của tất cả nhóm trong một truy vấn
+        Map<Long, Long> questionCountMap = new java.util.HashMap<>();
+        if (!groupIds.isEmpty()) {
+            questionCountMap = questionRepository.countQuestionsGroupByGroupIds(groupIds);
+        }
+        
+        // Map kết quả
+        final Map<Long, Long> finalQuestionCountMap = questionCountMap;
+        return questionGroups.map(group -> {
+            QuestionGroupResponse response = new QuestionGroupResponse();
+            response.setId(group.getId());
+            response.setTitle(group.getTitle());
+            response.setPart(group.getPart());
+            response.setQuestionType(group.getQuestionType().name());
+            response.setAudioUrl(group.getAudioUrl());
+            response.setImageUrl(group.getImageUrl());
+            response.setPassage(group.getPassage());
+            response.setTestId(group.getTest() != null ? group.getTest().getId() : null);
+            
+            // Lấy số lượng câu hỏi trực tiếp từ tập questions hoặc từ map đã tính toán
+            long questionCount = group.getQuestions().size();
+            if (questionCount == 0) {
+                // Nếu không có câu hỏi trong tập, thử lấy từ map đã tính toán
+                questionCount = finalQuestionCountMap.getOrDefault(group.getId(), 0L);
+            }
+            response.setQuestionCount(questionCount);
+            
+            // Tối ưu bằng cách không tải các câu hỏi chi tiết
+            response.setQuestions(new ArrayList<>());
+            
+            return response;
+        });
+    }
+    
+    // Giữ phương thức gốc để tương thích ngược
     public List<QuestionGroupResponse> getAllQuestionGroups() {
         List<QuestionGroup> groups = questionGroupRepository.findAll();
         

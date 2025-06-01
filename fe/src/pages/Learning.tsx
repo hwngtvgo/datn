@@ -25,13 +25,7 @@ const levels = [
     icon: <PenTool className="h-8 w-8 text-primary" />,
     color: "bg-purple-50 dark:bg-purple-950",
   },
-  {
-    id: "800-990",
-    title: "Expert (800-990)",
-    description: "Master advanced concepts for top TOEIC scores",
-    icon: <BookText className="h-8 w-8 text-primary" />,
-    color: "bg-amber-50 dark:bg-amber-950",
-  },
+
 ]
 
 export default function Learning() {

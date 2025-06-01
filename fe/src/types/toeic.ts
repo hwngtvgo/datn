@@ -141,4 +141,19 @@ export interface OptionResponse {
   id: number;
   optionKey: string;
   optionText: string;
+}
+
+export interface QuestionGroupDTO {
+  id?: number;
+  title?: string;
+  type: QuestionType;
+  part: number;
+  passage?: string;
+  audioUrl?: string;
+  imageUrl?: string;
+  questions: ToeicQuestionDTO[];
+  testId?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  questionCount?: number; // Thêm trường này để lưu số lượng câu hỏi
 } 

@@ -9,7 +9,6 @@ const levelTitles = {
   "0-300": "Beginner (0-300)",
   "300-600": "Intermediate (300-600)",
   "600-800": "Advanced (600-800)",
-  "800-990": "Expert (800-990)",
 }
 
 const learningModules = [

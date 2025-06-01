@@ -12,6 +12,7 @@ public class QuestionGroupResponse {
     private String passage;
     private Long testId;
     private List<QuestionResponse> questions;
+    private long questionCount;
     
     public QuestionGroupResponse() {
     }
@@ -86,5 +87,13 @@ public class QuestionGroupResponse {
 
     public void setQuestions(List<QuestionResponse> questions) {
         this.questions = questions;
+    }
+    
+    public long getQuestionCount() {
+        return questionCount;
+    }
+
+    public void setQuestionCount(long questionCount) {
+        this.questionCount = questionCount;
     }
 }

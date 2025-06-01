@@ -108,6 +108,7 @@ export interface QuestionGroupDTO {
   questions: ToeicQuestionDTO[];
   createdAt?: string;
   updatedAt?: string;
+  questionCount?: number;
 }
 
 export interface QuestionGroupResponse {
@@ -228,34 +229,54 @@ export const getAllQuestionGroups = async (): Promise<any> => {
 };
 
 // Lấy tất cả nhóm câu hỏi
-export const getQuestionGroups = async (): Promise<QuestionGroupResponse[]> => {
+export const getQuestionGroups = async (
+  page: number = 0, 
+  size: number = 10, 
+  sort: string = "id,desc", 
+  type?: string, 
+  part?: number
+): Promise<QuestionGroupDTO[]> => {
   try {
-    console.log("Đang lấy dữ liệu nhóm câu hỏi từ API");
-    // Cần sử dụng endpoint /toeic-questions/question-groups
-    const response = await axios.get(`${TOEIC_QUESTIONS_API_URL}/question-groups`, {
-      ...authModule.createAuthConfig()
-    });
-    console.log("Dữ liệu nhóm câu hỏi nhận được:", response.data);
-    
-    // Xử lý dữ liệu API trả về - đảm bảo luôn trả về mảng kể cả khi API có cấu trúc khác
-    let questionGroups: QuestionGroupResponse[] = [];
-    
-    if (response.data) {
-      if (Array.isArray(response.data)) {
-        // Nếu là mảng, sử dụng trực tiếp
-        questionGroups = response.data;
-      } else if (response.data.content && Array.isArray(response.data.content)) {
-        // Nếu là dạng paged response có thuộc tính content
-        questionGroups = response.data.content;
-      } else {
-        console.warn("Cấu trúc dữ liệu không như mong đợi:", response.data);
-      }
+    const params: any = {
+      page,
+      size,
+      sort
+    };
+
+    if (type && type !== "ALL") {
+      params.type = type;
     }
-    
-    return questionGroups;
+
+    if (part !== undefined && part !== null && part !== 0 && part.toString() !== "ALL") {
+      params.part = part;
+    }
+
+    const response = await axios.get(`${API_URL}/toeic-questions/question-groups`, {
+      params
+    });
+
+    // Xử lý response có thể là mảng hoặc object có thuộc tính content
+    let data = Array.isArray(response.data) 
+      ? response.data 
+      : (response.data.content || []);
+
+    return data.map((group: any) => ({
+      id: group.id,
+      title: group.title,
+      type: mapStringToQuestionType(group.questionType),
+      part: group.part,
+      passage: group.passage,
+      audioUrl: group.audioUrl,
+      imageUrl: group.imageUrl,
+      questions: group.questions || [],
+      testId: group.testId,
+      createdAt: group.createdAt,
+      updatedAt: group.updatedAt,
+      questionCount: group.questionCount // Thêm trường mới này
+    }));
   } catch (error) {
-    console.error("Lỗi khi lấy danh sách nhóm câu hỏi:", error);
-    return [];
+    console.error("Error fetching question groups:", error);
+    throw error;
   }
 };
 
@@ -870,5 +891,22 @@ class ToeicQuestionService {
     return response.data;
   }
 }
+
+// Hàm chuyển đổi chuỗi thành QuestionType
+const mapStringToQuestionType = (type: string): QuestionType => {
+  switch (type?.toUpperCase()) {
+    case 'LISTENING':
+      return QuestionType.LISTENING;
+    case 'READING':
+      return QuestionType.READING;
+    case 'VOCABULARY':
+      return QuestionType.VOCABULARY;
+    case 'GRAMMAR':
+      return QuestionType.GRAMMAR;
+    default:
+      console.warn(`Loại câu hỏi không xác định: ${type}, sử dụng VOCABULARY làm mặc định`);
+      return QuestionType.VOCABULARY;
+  }
+};
 
 export default new ToeicQuestionService();

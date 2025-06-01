@@ -21,6 +21,8 @@ import com.hungtv.toeic.be.payload.response.TestResponse;
 import com.hungtv.toeic.be.repositories.QuestionGroupRepository;
 import com.hungtv.toeic.be.repositories.TestRepository;
 import com.hungtv.toeic.be.repositories.UserRepository;
+import com.hungtv.toeic.be.repositories.TestResultRepository;
+import com.hungtv.toeic.be.models.TestResult;
 
 @Service
 public class ToeicTestService {
@@ -36,6 +38,9 @@ public class ToeicTestService {
     
     @Autowired
     private ToeicQuestionService questionService;
+    
+    @Autowired
+    private TestResultRepository testResultRepository;
     
     /**
      * Lấy danh sách tất cả các bài thi
@@ -129,9 +134,19 @@ public class ToeicTestService {
      */
     @Transactional
     public void deleteTest(Long id) {
-        if (!testRepository.existsById(id)) {
-            throw new RuntimeException("Không tìm thấy bài thi với ID: " + id);
+        Test test = testRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy bài thi với ID: " + id));
+                
+        // Tìm tất cả kết quả bài thi liên kết với đề thi này
+        List<TestResult> testResults = testResultRepository.findByTest(test);
+        
+        // Xóa tất cả kết quả bài thi liên kết
+        if (!testResults.isEmpty()) {
+            testResults.forEach(result -> testResultRepository.delete(result));
+            System.out.println("Đã xóa " + testResults.size() + " kết quả bài thi liên kết với đề thi ID: " + id);
         }
+        
+        // Sau đó xóa đề thi
         testRepository.deleteById(id);
     }
     

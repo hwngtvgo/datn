@@ -8,6 +8,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import axios from 'axios';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -33,7 +35,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Search, Headphones, BookOpen, Book, GraduationCap } from 'lucide-react';
+import { Loader2, Search, Headphones, BookOpen, Book, GraduationCap, X } from 'lucide-react';
 
 // Types
 import { ToeicExam, QuestionGroupResponse, ExamType, DifficultyLevel } from '@/types/toeic';
@@ -78,6 +80,12 @@ const ExamForm: React.FC<ExamFormProps> = ({
   const [filterPart, setFilterPart] = useState<string>("all");
   const [filterType, setFilterType] = useState<string>("all");
   
+  // Phân trang dữ liệu
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [itemsPerPage] = useState<number>(8); // Đổi kích thước từ 20 xuống 10 để hiển thị 5 trang
+  const [totalPages, setTotalPages] = useState<number>(1);
+  const [totalItems, setTotalItems] = useState(0);
+  
   // Form validation
   const [titleError, setTitleError] = useState<string>('');
   const [durationError, setDurationError] = useState<string>('');
@@ -87,19 +95,7 @@ const ExamForm: React.FC<ExamFormProps> = ({
   const [selectedGroupDetail, setSelectedGroupDetail] = useState<toeicQuestionService.QuestionGroupDTO | null>(null);
   const [loadingGroupDetail, setLoadingGroupDetail] = useState<boolean>(false);
 
-  // Tải danh sách nhóm câu hỏi
-  useEffect(() => {
-    if (activeTab === "questions") {
-      loadQuestionGroups();
-      
-      // Nếu đang chỉnh sửa đề thi, tải các nhóm câu hỏi đã chọn
-      if (isEditing && initialData?.id) {
-        loadSelectedQuestionGroups();
-      }
-    }
-  }, [activeTab]);
-
-  // Tải danh sách các nhóm câu hỏi đã được chọn cho đề thi
+  // Tải các nhóm câu hỏi đã được chọn cho đề thi
   const loadSelectedQuestionGroups = async () => {
     try {
       if (!initialData?.id) return;
@@ -119,40 +115,97 @@ const ExamForm: React.FC<ExamFormProps> = ({
     }
   };
 
+  // Hàm helper để xử lý dữ liệu nhóm câu hỏi
+  const processGroupData = (group: any) => {
+    // Xác định loại từ nhiều trường có thể
+    let finalType = "UNKNOWN";
+    if (group.type && typeof group.type === 'string') {
+      finalType = group.type.toUpperCase();
+    } else if (group.questionType && typeof group.questionType === 'string') {
+      finalType = group.questionType.toUpperCase();
+    }
+    
+    return {
+      ...group,
+      type: finalType,
+      count: group.questionCount || group.count || (group.questions ? group.questions.length : 0)
+    };
+  };
+
   // Tải danh sách nhóm câu hỏi có sẵn
   const loadQuestionGroups = async () => {
     try {
       setLoadingGroups(true);
+      // Log thông tin tham số gửi đi
+      console.log(`Gọi API với tham số: page=${currentPage - 1}, size=${itemsPerPage}, part=${filterPart}, type=${filterType}, search=${searchQuery}`);
       
-      console.log("Bắt đầu tải danh sách nhóm câu hỏi...");
-      const response = await toeicQuestionService.getQuestionGroups();
-      console.log("Kết quả nhận được:", response);
+      // Chuẩn bị các tham số cần thiết
+      const pageParam = currentPage - 1; // API bắt đầu từ 0
+      const sizeParam = itemsPerPage;
+      const sortParam = "id,asc"; // Sắp xếp theo ID để tránh trùng lặp
       
-      if (response && Array.isArray(response)) {
-        // Kiểm tra và ghi log dữ liệu đầu tiên để debug
-        if (response.length > 0) {
-          console.log("Dữ liệu nhóm câu hỏi đầu tiên:", response[0]);
-          console.log("Type của nhóm đầu tiên:", response[0].type);
-          // Sử dụng type assertion để tránh lỗi TypeScript
-          console.log("QuestionType của nhóm đầu tiên:", (response[0] as any).questionType);
-        }
-        
-        // Xử lý kiểu cho service - map để đảm bảo trường type luôn có giá trị
-        const processedData = response.map(group => ({
-          ...group,
-          // Ưu tiên sử dụng type, nếu không có thì dùng questionType
-          type: group.type || (group as any).questionType
-        }));
-        
-        setQuestionGroups(processedData);
-        console.log(`Đã tải ${processedData.length} nhóm câu hỏi`);
-      } else {
-        console.warn("Dữ liệu nhóm câu hỏi không phải là mảng:", response);
-        setQuestionGroups([]);
+      // Xử lý filter part
+      let partParam = undefined;
+      if (filterPart !== "all") {
+        partParam = parseInt(filterPart);
       }
+      
+      // Xử lý filter type
+      let typeParam = undefined;
+      if (filterType !== "all") {
+        typeParam = filterType.toUpperCase();
+      }
+      
+      // Sử dụng axios trực tiếp thay vì gọi hàm getQuestionGroups
+      const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:8080/api'}/toeic-questions/question-groups`, {
+        params: {
+          page: pageParam,
+          size: sizeParam,
+          sort: sortParam,
+          type: typeParam,
+          part: partParam,
+          search: searchQuery || undefined
+        }
+      });
+
+      // Log response từ API để debug
+      console.log("Response từ API:", response.data);
+
+      // Xử lý dữ liệu phân trang từ response
+      let processedGroups = [];
+      let totalPagesCount = 1;
+      let totalItemsCount = 0;
+      
+      if (response.data) {
+        if (Array.isArray(response.data)) {
+          // Nếu là mảng, sử dụng trực tiếp
+          processedGroups = response.data.map(processGroupData);
+          totalItemsCount = processedGroups.length;
+          totalPagesCount = Math.ceil(totalItemsCount / sizeParam) || 1;
+          console.log("Dữ liệu dạng mảng: ", processedGroups.length, "phần tử, ước tính", totalPagesCount, "trang");
+        } else if (response.data.content && Array.isArray(response.data.content)) {
+          // Nếu là dạng paged response có thuộc tính content
+          processedGroups = response.data.content.map(processGroupData);
+          totalPagesCount = response.data.totalPages || 1;
+          totalItemsCount = response.data.totalElements || processedGroups.length;
+          console.log("Dữ liệu paged response:", processedGroups.length, "phần tử,", totalPagesCount, "trang,", totalItemsCount, "tổng phần tử");
+        } else {
+          console.error("Định dạng response không đúng:", response.data);
+        }
+      }
+      
+      // Đảm bảo totalPages ít nhất là 1
+      totalPagesCount = Math.max(1, totalPagesCount);
+      
+      setQuestionGroups(processedGroups);
+      setTotalItems(totalItemsCount);
+      setTotalPages(totalPagesCount);
+      console.log(`Đã tải ${processedGroups.length} nhóm câu hỏi, tổng cộng ${totalItemsCount} nhóm, ${totalPagesCount} trang`);
     } catch (error) {
-      console.error('Lỗi khi tải danh sách nhóm câu hỏi:', error);
-      toast.error('Không thể tải danh sách nhóm câu hỏi');
+      console.error("Lỗi khi tải nhóm câu hỏi:", error);
+      setQuestionGroups([]);
+      setTotalItems(0);
+      setTotalPages(1);
     } finally {
       setLoadingGroups(false);
     }
@@ -167,52 +220,37 @@ const ExamForm: React.FC<ExamFormProps> = ({
     }
   };
 
-  // Lọc các nhóm câu hỏi theo tìm kiếm và filter
-  const filteredQuestionGroups = questionGroups.filter(group => {
-    // Tìm kiếm theo từ khóa
-    const matchesSearch = searchQuery === '' || 
-      (group.title && group.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (group.passage && group.passage.toLowerCase().includes(searchQuery.toLowerCase()));
-    
-    // Lọc theo part
-    const matchesPart = filterPart === 'all' || group.part.toString() === filterPart;
-    
-    // Lọc theo loại (Listening/Reading/Vocabulary/Grammar)
-    const matchesType = filterType === 'all' || 
-      (filterType === 'listening' && group.type === 'LISTENING') ||
-      (filterType === 'reading' && group.type === 'READING') ||
-      (filterType === 'vocabulary' && group.type === 'VOCABULARY') ||
-      (filterType === 'grammar' && group.type === 'GRAMMAR');
-    
-    return matchesSearch && matchesPart && matchesType;
-  });
+  // Lọc các nhóm câu hỏi theo tìm kiếm và filter không còn cần thiết vì đã lọc từ API
+  const filteredQuestionGroups = questionGroups;
 
-  // Phân trang dữ liệu
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [itemsPerPage] = useState<number>(10);
-
-  // Tính toán chỉ số bắt đầu và kết thúc cho trang hiện tại
-  const indexOfLastItem = currentPage * itemsPerPage;
-  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = filteredQuestionGroups.slice(indexOfFirstItem, indexOfLastItem);
-
-  // Tính tổng số trang
-  const totalPages = Math.ceil(filteredQuestionGroups.length / itemsPerPage);
+  // Không cần tính toán các chỉ số phân trang nữa vì dữ liệu đã được phân trang từ API
+  // const indexOfLastItem = currentPage * itemsPerPage;
+  // const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  // const currentItems = filteredQuestionGroups.slice(indexOfFirstItem, indexOfLastItem);
+  const currentItems = questionGroups;
 
   // Xử lý chuyển trang
-  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+  const paginate = (pageNumber: number) => {
+    console.log(`Chuyển đến trang ${pageNumber}`);
+    setCurrentPage(pageNumber);
+    // loadQuestionGroups sẽ được gọi tự động thông qua useEffect
+  };
 
   // Chuyển trang trước
   const goToPreviousPage = () => {
     if (currentPage > 1) {
+      console.log(`Chuyển từ trang ${currentPage} đến trang ${currentPage - 1}`);
       setCurrentPage(currentPage - 1);
+      // loadQuestionGroups sẽ được gọi tự động thông qua useEffect
     }
   };
 
   // Chuyển trang sau
   const goToNextPage = () => {
     if (currentPage < totalPages) {
+      console.log(`Chuyển từ trang ${currentPage} đến trang ${currentPage + 1}`);
       setCurrentPage(currentPage + 1);
+      // loadQuestionGroups sẽ được gọi tự động thông qua useEffect
     }
   };
 
@@ -331,6 +369,29 @@ const ExamForm: React.FC<ExamFormProps> = ({
   const handleRowClick = (group: toeicQuestionService.QuestionGroupResponse) => {
     loadGroupDetail(group.id);
   };
+
+  // Tải danh sách nhóm câu hỏi
+  useEffect(() => {
+    if (activeTab === "questions") {
+      console.log(`useEffect được gọi - currentPage: ${currentPage}`);
+      loadQuestionGroups();
+      
+      // Nếu đang chỉnh sửa đề thi, tải các nhóm câu hỏi đã chọn (chỉ tải 1 lần)
+      if (isEditing && initialData?.id) {
+        loadSelectedQuestionGroups();
+      }
+    }
+  }, [activeTab, currentPage, isEditing, initialData]);
+
+  // Tải lại dữ liệu khi thay đổi bộ lọc
+  useEffect(() => {
+    if (activeTab === "questions" && (searchQuery || filterPart !== 'all' || filterType !== 'all')) {
+      console.log(`useEffect được gọi do thay đổi bộ lọc`);
+      // Khi thay đổi bộ lọc, reset về trang 1
+      setCurrentPage(1);
+      loadQuestionGroups();
+    }
+  }, [searchQuery, filterPart, filterType, activeTab]);
 
   return (
     <div className="space-y-6">
@@ -522,86 +583,88 @@ const ExamForm: React.FC<ExamFormProps> = ({
           ) : (
             <Card>
               <CardContent className="p-4">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-[50px]"></TableHead>
-                      <TableHead>Part</TableHead>
-                      <TableHead>Loại</TableHead>
-                      <TableHead>Tiêu đề</TableHead>
-                      <TableHead className="text-right">Số câu hỏi</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {currentItems.length === 0 ? (
+                <ScrollArea className="max-h-[80vh]">
+                  <Table>
+                    <TableHeader>
                       <TableRow>
-                        <TableCell colSpan={5} className="text-center py-4">
-                          Không tìm thấy nhóm câu hỏi phù hợp
-                        </TableCell>
+                        <TableHead className="w-[50px]"></TableHead>
+                        <TableHead>Part</TableHead>
+                        <TableHead>Loại</TableHead>
+                        <TableHead>Tiêu đề</TableHead>
+                        <TableHead className="text-right">Số câu hỏi</TableHead>
                       </TableRow>
-                    ) : (
-                      currentItems.map((group) => (
-                        <TableRow 
-                          key={group.id} 
-                          className={selectedGroups.includes(group.id) ? "bg-primary-50" : ""}
-                          onClick={() => handleRowClick(group)}
-                          style={{ cursor: 'pointer' }}
-                        >
-                          <TableCell>
-                            <Checkbox
-                              checked={selectedGroups.includes(group.id)}
-                              onCheckedChange={() => toggleGroupSelection(group.id)}
-                              onClick={(e) => e.stopPropagation()}
-                            />
+                    </TableHeader>
+                    <TableBody>
+                      {currentItems.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="text-center py-4">
+                            Không tìm thấy nhóm câu hỏi phù hợp
                           </TableCell>
-                          <TableCell>
-                            <div className="flex items-center">
-                              {group.type === 'LISTENING' ? (
-                                <Headphones className="mr-1 h-4 w-4 text-blue-500" />
-                              ) : group.type === 'READING' ? (
-                                <BookOpen className="mr-1 h-4 w-4 text-green-500" />
-                              ) : group.type === 'VOCABULARY' ? (
-                                <Book className="mr-1 h-4 w-4 text-purple-500" />
-                              ) : group.type === 'GRAMMAR' ? (
-                                <GraduationCap className="mr-1 h-4 w-4 text-orange-500" />
-                              ) : null}
-                              {group.type === 'VOCABULARY' || group.type === 'GRAMMAR' ? 
-                                (group.part > 0 ? `Part ${group.part}` : 'Không có part') : 
-                                `Part ${group.part}`}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            {group.type === 'LISTENING' ? (
-                              <Badge variant="outline" className="text-blue-600 border-blue-600">Listening</Badge>
-                            ) : group.type === 'READING' ? (
-                              <Badge variant="outline" className="text-green-600 border-green-600">Reading</Badge>
-                            ) : group.type === 'VOCABULARY' ? (
-                              <Badge variant="outline" className="text-purple-600 border-purple-600">Vocabulary</Badge>
-                            ) : group.type === 'GRAMMAR' ? (
-                              <Badge variant="outline" className="text-orange-600 border-orange-600">Grammar</Badge>
-                            ) : (
-                              <Badge variant="outline">Unknown</Badge>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            {group.title ? (
-                              <span className="font-medium">{group.title}</span>
-                            ) : (
-                              <span className="text-muted-foreground text-xs italic">Không có tiêu đề</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">{group.count || 0}</TableCell>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
+                      ) : (
+                        currentItems.map((group) => (
+                          <TableRow 
+                            key={group.id} 
+                            className={selectedGroups.includes(group.id) ? "bg-primary-50" : ""}
+                            onClick={() => handleRowClick(group)}
+                            style={{ cursor: 'pointer' }}
+                          >
+                            <TableCell>
+                              <Checkbox
+                                checked={selectedGroups.includes(group.id)}
+                                onCheckedChange={() => toggleGroupSelection(group.id)}
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center">
+                                {group.type === 'LISTENING' ? (
+                                  <Headphones className="mr-1 h-4 w-4 text-blue-500" />
+                                ) : group.type === 'READING' ? (
+                                  <BookOpen className="mr-1 h-4 w-4 text-green-500" />
+                                ) : group.type === 'VOCABULARY' ? (
+                                  <Book className="mr-1 h-4 w-4 text-purple-500" />
+                                ) : group.type === 'GRAMMAR' ? (
+                                  <GraduationCap className="mr-1 h-4 w-4 text-orange-500" />
+                                ) : null}
+                                {group.type === 'VOCABULARY' || group.type === 'GRAMMAR' ? 
+                                  (group.part > 0 ? `Part ${group.part}` : '------') : 
+                                  `Part ${group.part}`}
+                              </div>                                                                      
+                            </TableCell>  
+                            <TableCell>
+                              {group.type === 'LISTENING' ? (
+                                <Badge variant="outline" className="text-blue-600 border-blue-600">Listening</Badge>
+                              ) : group.type === 'READING' ? (
+                                <Badge variant="outline" className="text-green-600 border-green-600">Reading</Badge>
+                              ) : group.type === 'VOCABULARY' ? (
+                                <Badge variant="outline" className="text-purple-600 border-purple-600">Vocabulary</Badge>
+                              ) : group.type === 'GRAMMAR' ? (
+                                <Badge variant="outline" className="text-orange-600 border-orange-600">Grammar</Badge>
+                              ) : (
+                                <Badge variant="outline">Unknown ({group.type})</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              {group.title ? (
+                                <span className="font-medium">{group.title}</span>
+                              ) : (
+                                <span className="text-muted-foreground text-xs italic">Không có tiêu đề</span>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">{group.count || 0}</TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </ScrollArea>
                 
                 {/* Phân trang */}
-                {filteredQuestionGroups.length > 0 && (
+                {questionGroups.length > 0 && (
                   <div className="flex items-center justify-between space-x-2 py-4">
                     <div className="text-sm text-muted-foreground">
-                      Hiển thị {indexOfFirstItem + 1}-{Math.min(indexOfLastItem, filteredQuestionGroups.length)} của {filteredQuestionGroups.length} nhóm câu hỏi
+                      Trang {currentPage} / {totalPages} (Tổng {totalItems} nhóm)
                     </div>
                     <div className="flex items-center space-x-2">
                       <Button
@@ -612,30 +675,84 @@ const ExamForm: React.FC<ExamFormProps> = ({
                       >
                         Trước
                       </Button>
-                      {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
-                        // Hiển thị 5 trang xung quanh trang hiện tại
-                        let pageNum = currentPage - 2 + i;
-                        if (currentPage < 3) {
-                          pageNum = i + 1;
-                        } else if (currentPage > totalPages - 2) {
-                          pageNum = totalPages - 4 + i;
+                      
+                      {/* Hiển thị trang phù hợp thay vì hiển thị tất cả */}
+                      {(() => {
+                        const pageButtons = [];
+                        const maxVisiblePages = 5;
+                        
+                        // Tính toán dãy trang cần hiển thị
+                        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+                        
+                        // Điều chỉnh nếu không đủ trang ở cuối
+                        if (endPage - startPage + 1 < maxVisiblePages) {
+                          startPage = Math.max(1, endPage - maxVisiblePages + 1);
                         }
                         
-                        // Đảm bảo số trang hợp lệ
-                        if (pageNum > 0 && pageNum <= totalPages) {
-                          return (
+                        // Hiển thị trang đầu tiên nếu cần
+                        if (startPage > 1) {
+                          pageButtons.push(
                             <Button
-                              key={pageNum}
-                              variant={currentPage === pageNum ? "default" : "outline"}
+                              key={1}
+                              variant={currentPage === 1 ? "default" : "outline"}
                               size="sm"
-                              onClick={() => paginate(pageNum)}
+                              onClick={() => paginate(1)}
                             >
-                              {pageNum}
+                              1
+                            </Button>
+                          );
+                          
+                          // Hiển thị dấu chấm lửng nếu không kề trang đầu
+                          if (startPage > 2) {
+                            pageButtons.push(
+                              <span key="ellipsis1" className="px-2">
+                                ...
+                              </span>
+                            );
+                          }
+                        }
+                        
+                        // Hiển thị các trang giữa
+                        for (let i = startPage; i <= endPage; i++) {
+                          pageButtons.push(
+                            <Button
+                              key={i}
+                              variant={currentPage === i ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => paginate(i)}
+                            >
+                              {i}
                             </Button>
                           );
                         }
-                        return null;
-                      })}
+                        
+                        // Hiển thị trang cuối cùng nếu cần
+                        if (endPage < totalPages) {
+                          // Hiển thị dấu chấm lửng nếu không kề trang cuối
+                          if (endPage < totalPages - 1) {
+                            pageButtons.push(
+                              <span key="ellipsis2" className="px-2">
+                                ...
+                              </span>
+                            );
+                          }
+                          
+                          pageButtons.push(
+                            <Button
+                              key={totalPages}
+                              variant={currentPage === totalPages ? "default" : "outline"}
+                              size="sm"
+                              onClick={() => paginate(totalPages)}
+                            >
+                              {totalPages}
+                            </Button>
+                          );
+                        }
+                        
+                        return pageButtons;
+                      })()}
+                      
                       <Button
                         variant="outline"
                         size="sm"
@@ -674,12 +791,21 @@ const ExamForm: React.FC<ExamFormProps> = ({
       
       {/* Dialog Xem chi tiết nhóm câu hỏi */}
       <Dialog open={showGroupDetailDialog} onOpenChange={setShowGroupDetailDialog}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              Chi tiết nhóm câu hỏi
-            </DialogTitle>
-          </DialogHeader>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+          {/* <div className="sticky top-0 right-0 z-50 bg-white pt-2 pb-2">
+            <button 
+              className="absolute top-2 right-2 rounded-full p-2 hover:bg-gray-100"
+              onClick={() => setShowGroupDetailDialog(false)}
+            >
+              <X className="h-4 w-4" />
+            </button>
+            
+            <DialogHeader className="pb-2">
+              <DialogTitle>
+                Chi tiết nhóm câu hỏi
+              </DialogTitle>
+            </DialogHeader>
+          </div> */}
           
           {loadingGroupDetail ? (
             <div className="flex items-center justify-center p-4">
@@ -687,20 +813,22 @@ const ExamForm: React.FC<ExamFormProps> = ({
               <span>Đang tải dữ liệu...</span>
             </div>
           ) : (
-            <QuestionDetailView 
-              questions={selectedGroupDetail?.questions || []} 
-              groupInfo={{
-                part: selectedGroupDetail?.part?.toString() || "0",
-                type: selectedGroupDetail?.type || "",
-                count: selectedGroupDetail?.questions?.length || 0,
-                audioUrl: selectedGroupDetail?.audioUrl,
-                imageUrl: selectedGroupDetail?.imageUrl, 
-                passage: selectedGroupDetail?.passage
-              }}
-            />
+            <div className="overflow-y-auto flex-1 px-1" style={{maxHeight: 'calc(80vh - 130px)'}}>
+              <QuestionDetailView 
+                questions={selectedGroupDetail?.questions || []} 
+                groupInfo={{
+                  part: selectedGroupDetail?.part?.toString() || "0",
+                  type: selectedGroupDetail?.type || "",
+                  count: selectedGroupDetail?.questions?.length || 0,
+                  audioUrl: selectedGroupDetail?.audioUrl,
+                  imageUrl: selectedGroupDetail?.imageUrl, 
+                  passage: selectedGroupDetail?.passage
+                }}
+              />
+            </div>
           )}
           
-          <DialogFooter className="mt-4">
+          <DialogFooter className="sticky bottom-0 bg-white pt-2 mt-2 border-t">
             <Button onClick={() => setShowGroupDetailDialog(false)}>Đóng</Button>
           </DialogFooter>
         </DialogContent>

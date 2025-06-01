@@ -52,11 +52,14 @@ public class ToeicQuestionController {
 
     // Lấy tất cả nhóm câu hỏi
     @GetMapping("/question-groups")
-    public ResponseEntity<List<QuestionGroupResponse>> getAllQuestionGroups() {
+    public ResponseEntity<?> getAllQuestionGroups(Pageable pageable,
+                                                 @RequestParam(required = false) String type,
+                                                 @RequestParam(required = false) Integer part,
+                                                 @RequestParam(required = false) String search) {
         try {
-            return ResponseEntity.ok(questionService.getAllQuestionGroups());
+            return ResponseEntity.ok(questionService.getAllQuestionGroups(pageable, type, part, search));
         } catch (RuntimeException e) {
-            return ResponseEntity.badRequest().build();
+            return ResponseEntity.badRequest().body(new ApiResponse<>(false, "Lỗi khi lấy danh sách nhóm câu hỏi: " + e.getMessage()));
         }
     }
 
