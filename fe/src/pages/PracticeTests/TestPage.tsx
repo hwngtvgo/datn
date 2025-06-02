@@ -155,7 +155,7 @@ export default function TestPage() {
         
         // Đếm tổng số câu hỏi
         let questionCount = 0;
-        sortedGroups.forEach(group => {
+        sortedGroups.forEach((group: QuestionGroupResponse) => {
           questionCount += group.questions?.length || 0;
         });
         setTotalQuestions(questionCount);
@@ -416,6 +416,9 @@ export default function TestPage() {
 
   // Ghi lại câu trả lời của người dùng
   const handleAnswer = (questionId: number, answerId: string) => {
+    // Log dữ liệu đáp án để debug
+    console.log(`Đã chọn đáp án: ID=${answerId} cho câu hỏi ID=${questionId}`);
+    
     setAnswers(prev => ({
       ...prev,
       [questionId]: answerId
@@ -438,16 +441,28 @@ export default function TestPage() {
       if (!test) return;
       
       // Tổng hợp kết quả
-      const questionAnswers = Object.entries(answers).map(([questionId, optionId]) => ({
+      const userAnswers = Object.entries(answers).map(([questionId, optionId]) => {
+        // Tìm câu hỏi và đáp án tương ứng
+        const questionObj = test.questionGroups
+          .flatMap(group => group.questions || [])
+          .find(q => q.id === parseInt(questionId));
+        
+        // Lấy optionKey từ optionId đã chọn
+        const option = questionObj?.options.find(opt => opt.id.toString() === optionId);
+        
+        console.log(`Câu ${questionId}: Chọn ${option?.optionKey || ""} (ID: ${optionId}), Đáp án đúng: ${questionObj?.correctAnswer || "không rõ"}`);
+        
+        return {
         questionId: parseInt(questionId),
-        selectedOptionId: optionId
-      }));
+          userAnswer: option?.optionKey || ""
+        };
+      });
       
       // Gửi kết quả làm bài lên server
       const result = await submitTestResult({
         testId: test.id,
-        answers: questionAnswers,
-        completionTime: test.duration * 60 - timeLeft // Thời gian làm bài (giây)
+        completionTimeInMinutes: (test.duration * 60 - timeLeft) / 60, // Chuyển từ giây sang phút
+        userAnswers: userAnswers
       });
       
       console.log("Kết quả làm bài:", result);
@@ -457,7 +472,25 @@ export default function TestPage() {
       test.questionGroups.forEach(group => {
         if (group.questions && group.questions.length > 0) {
           group.questions.forEach(question => {
-            if (answers[question.id] === question.correctAnswer) {
+            console.log(`Đáp án đúng của câu hỏi ${question.id}: ${question.correctAnswer}`);
+            console.log(`Đáp án đã chọn: ${answers[question.id]}`);
+            
+            // Tìm option đã chọn dựa trên ID
+            const selectedOption = question.options?.find(opt => 
+              opt.id.toString() === answers[question.id]
+            );
+            
+            // Lấy optionKey của đáp án đã chọn
+            const selectedOptionKey = selectedOption?.optionKey || "";
+            
+            // So sánh optionKey đã chọn với correctAnswer
+            const isCorrect = selectedOptionKey === question.correctAnswer;
+            
+            console.log(`Đáp án đúng: ${question.correctAnswer}`);
+            console.log(`Đáp án đã chọn: ${selectedOptionKey}`);
+            console.log(`Đúng: ${isCorrect}`);
+            
+            if (isCorrect) {
               correct++;
             }
           });
@@ -572,32 +605,87 @@ export default function TestPage() {
                 {test.questionGroups.map((group, groupIndex) => (
                   <div key={group.id} className="border rounded-lg p-4">
                     <h3 className="font-medium mb-2">{getGroupTitle(group)}</h3>
-                    <div className="space-y-3">
+                    <div className="space-y-4">
                       {group.questions && group.questions.length > 0 ? (
                         group.questions.map((question, qIndex) => {
-                          const userAnswer = answers[question.id] || "";
-                          const isCorrect = userAnswer === question.correctAnswer;
+                        const userAnswer = answers[question.id] || "";
+                          
+                          // Tìm option đã chọn dựa trên ID
+                          const selectedOption = question.options?.find(opt => 
+                            opt.id.toString() === userAnswer
+                          );
+                          
+                          // Lấy optionKey của đáp án đã chọn
+                          const selectedOptionKey = selectedOption?.optionKey || "";
+                          
+                          // So sánh optionKey đã chọn với correctAnswer
+                          const isCorrect = selectedOptionKey === question.correctAnswer;
+                          
                           const answerClass = userAnswer ? (isCorrect ? "text-green-600" : "text-red-600") : "text-gray-500";
+                          
+                          // Tính toán số thứ tự câu hỏi liên tục
+                          let questionNumber = qIndex + 1;
+                          for (let i = 0; i < groupIndex; i++) {
+                            questionNumber += test.questionGroups[i].questions?.length || 0;
+                          }
 
-                          return (
-                            <div key={question.id} className="border-t pt-2">
+                          // Format số câu hỏi thành dạng 001, 002,...
+                          const formattedNumber = String(questionNumber).padStart(3, '0');
+                        
+                        return (
+                            <div key={question.id} className="border-t pt-4">
                               <div className="flex justify-between">
-                                <p className="font-medium">Câu {qIndex + 1}</p>
+                                <h4 className="font-medium text-base">{group.title || `Part ${group.part}`} - Question {formattedNumber}</h4>
+                              </div>
+                              <div className="flex justify-between mt-1">
+                                <p className="font-medium">Câu {questionNumber}</p>
                                 <p className={answerClass}>
                                   {userAnswer ? (isCorrect ? "Đúng" : "Sai") : "Không trả lời"}
                                 </p>
                               </div>
-                              <p className="text-sm mb-1">{question.question}</p>
-                              <p className="text-sm text-muted-foreground">
-                                <span className="font-medium">Đáp án đúng:</span> {question.correctAnswer}
-                                {question.explanation && (
-                                  <>
-                                    <span className="font-medium ml-2">Giải thích:</span> {question.explanation}
-                                  </>
-                                )}
-                              </p>
-                            </div>
-                          );
+                              
+                              <p className="mt-2 mb-3">{question.question}</p>
+                              
+                              <div className="space-y-2 pl-4">
+                                {question.options && [...question.options]
+                                  .sort((a, b) => a.optionKey.localeCompare(b.optionKey))
+                                  .map((option) => {
+                                    const isSelected = option.id.toString() === userAnswer;
+                                    const isCorrectOption = option.optionKey === question.correctAnswer;
+                                    
+                                    let optionClass = "p-1.5 rounded";
+                                    
+                                    if (isSelected) {
+                                      optionClass += isCorrectOption 
+                                        ? " bg-green-100 text-green-800 font-medium" 
+                                        : " bg-red-100 text-red-800 font-medium";
+                                    } else if (isCorrectOption) {
+                                      optionClass += " bg-green-100 text-green-800";
+                                    }
+                                    
+                                    return (
+                                      <div key={option.id} className={optionClass}>
+                                        <span className="font-medium">{option.optionKey}. </span>
+                                        {option.optionText}
+                                        {isSelected && isCorrectOption && <span className="ml-2 text-green-600">(Đáp án đúng)</span>}
+                                        {isSelected && !isCorrectOption && <span className="ml-2 text-red-600">(Đã chọn)</span>}
+                                        {!isSelected && isCorrectOption && <span className="ml-2 text-green-600">(Đáp án đúng)</span>}
+                                      </div>
+                                    );
+                                  })
+                                }
+                              </div>
+                              
+                              {question.explanation && (
+                                <div className="mt-3 p-2 bg-slate-50 rounded">
+                                  <p className="text-sm text-slate-700">
+                                    <span className="font-medium">Giải thích: </span>
+                                    {question.explanation}
+                                  </p>
+                                </div>
+                              )}
+                          </div>
+                        );
                         })
                       ) : (
                         <p className="text-sm text-muted-foreground">Không có câu hỏi nào trong nhóm này</p>
@@ -635,11 +723,11 @@ export default function TestPage() {
         <div className="fixed bottom-0 left-0 right-0 bg-background border-t p-3 flex items-center justify-center z-50">
           <div className="w-full max-w-3xl flex items-center gap-4">
             <span className="text-sm font-medium">Audio cho Part {currentGroup.part}:</span>
-            <audio
+          <audio 
               ref={audioRef}
               controls
               autoPlay={false}
-              preload="auto"
+            preload="auto" 
               className="w-full max-w-md"
               onEnded={() => setAudioEnded(true)}
             >
@@ -664,7 +752,7 @@ export default function TestPage() {
           <div className="flex items-center justify-between bg-muted p-3 rounded-lg mb-4">
             <div className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
-              <span className="font-medium">{formatTime(timeLeft)}</span>
+            <span className="font-medium">{formatTime(timeLeft)}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-sm">Tiến độ: {answeredQuestions}/{totalQuestions}</span>
@@ -713,7 +801,7 @@ export default function TestPage() {
                     <li>Độ khó: {test.difficulty || 'Trung bình'}.</li>
                   </ul>
                 </div>
-              </div>
+          </div>
             </CardContent>
           </Card>
         )}
@@ -741,47 +829,67 @@ export default function TestPage() {
                 <p className="whitespace-pre-line">{currentGroup.passage}</p>
               </div>
             )}
-            
-            {currentGroup.imageUrl && (
+
+              {currentGroup.imageUrl && (
               <div className="mb-6 flex justify-center">
-                <img 
-                  src={getFullUrl(currentGroup.imageUrl)} 
+                  <img
+                    src={getFullUrl(currentGroup.imageUrl)}
                   alt="Question material" 
                   className="max-w-full h-auto rounded-lg shadow-sm"
-                />
+                  />
               </div>
             )}
-            
+
             {/* Questions list */}
             <div className="space-y-8">
-              {currentGroup.questions && currentGroup.questions.map((question, index) => (
-                <div key={question.id} className="border-b pb-6 last:border-b-0 last:pb-0">
-                  <div className="flex justify-between items-start mb-3">
-                    <h3 className="font-medium text-lg">Câu {index + 1}</h3>
-                    {answers[question.id] && (
-                      <Badge variant="outline" className="text-primary">Đã trả lời</Badge>
-                    )}
-                  </div>
+              {/* Log dữ liệu để debug */}
+              {currentGroup.questions && currentGroup.questions.length > 0 ? (
+                currentGroup.questions.map((question, index) => {
+                  // Tính toán số thứ tự câu hỏi dựa trên vị trí trong tất cả các nhóm
+                  let questionNumber = index + 1;
                   
-                  <p className="mb-4">{question.question}</p>
+                  // Cộng thêm tổng số câu hỏi từ các nhóm trước đó
+                  for (let i = 0; i < currentGroupIndex; i++) {
+                    questionNumber += test.questionGroups[i].questions?.length || 0;
+                  }
                   
-                  <RadioGroup
+                  return (
+                    <div key={question.id} className="border-b pb-6 last:border-b-0 last:pb-0">
+                      <div className="flex justify-between items-start mb-3">
+                        <h3 className="font-medium text-lg">Câu {questionNumber}</h3>
+                        {answers[question.id] && (
+                          <Badge variant="outline" className="text-primary">Đã trả lời</Badge>
+              )}
+            </div>
+
+                      <p className="mb-4">{question.question}</p>
+
+            <RadioGroup
                     value={answers[question.id] || ""}
                     onValueChange={(value) => handleAnswer(question.id, value)}
-                  >
-                    <div className="space-y-3">
-                      {question.options && question.options.map((option) => (
-                        <div key={option.id} className="flex items-start space-x-2 rounded-md border p-3 hover:bg-accent">
-                          <RadioGroupItem value={option.id} id={`option-${option.id}`} />
-                          <Label htmlFor={`option-${option.id}`} className="flex-grow cursor-pointer">
-                            {option.text}
-                          </Label>
+                      >
+                        <div className="space-y-3">
+                          {question.options && [...question.options]
+                            .sort((a, b) => a.optionKey.localeCompare(b.optionKey))
+                            .map((option) => (
+                            <div key={option.id} className="flex items-start space-x-2 rounded-md border p-3 hover:bg-accent">
+                              <RadioGroupItem value={String(option.id)} id={`option-${option.id}`} />
+                              <Label htmlFor={`option-${option.id}`} className="flex-grow cursor-pointer">
+                                <span className="font-medium">{option.optionKey}. </span>
+                          {option.optionText}
+                  </Label>
+                      </div>
+                    ))}
                         </div>
-                      ))}
-                    </div>
                   </RadioGroup>
+                    </div>
+                  );
+                })
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-muted-foreground">Không tìm thấy câu hỏi nào. Vui lòng kiểm tra lại đề thi.</p>
                 </div>
-              ))}
+              )}
             </div>
           </CardContent>
         </Card>
@@ -790,18 +898,18 @@ export default function TestPage() {
         <div className="flex justify-between mt-6">
           <Button 
             variant="outline" 
-            onClick={handlePrevious}
+            onClick={handlePrevious} 
             disabled={isFirstGroup}
           >
             <ChevronLeft className="mr-2 h-4 w-4" />
             Quay lại
           </Button>
-          
+
           <div className="flex gap-2">
             {!isLastGroup ? (
-              <Button 
-                onClick={handleNext}
-                disabled={!canProceedToNextGroup()}
+            <Button
+              onClick={handleNext}
+              disabled={!canProceedToNextGroup()}
               >
                 Tiếp theo
                 <ChevronRight className="ml-2 h-4 w-4" />
@@ -812,7 +920,7 @@ export default function TestPage() {
                   <TooltipTrigger asChild>
                     <Button onClick={handleFinishTest}>
                       Nộp bài
-                    </Button>
+          </Button>
                   </TooltipTrigger>
                   <TooltipContent>
                     <p>Nộp bài và xem kết quả</p>

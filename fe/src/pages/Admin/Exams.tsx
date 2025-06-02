@@ -69,6 +69,15 @@ export default function AdminExams() {
   // Selected questions for test
   const [selectedQuestions, setSelectedQuestions] = useState<ToeicQuestionDTO[]>([])
   
+  // States for pagination
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+
+  // Sort states
+  const [sortBy, setSortBy] = useState("id"); 
+  const [sortDir, setSortDir] = useState("desc");
+
   useEffect(() => {
     loadTests()
     loadQuestions()
@@ -78,8 +87,10 @@ export default function AdminExams() {
   const loadTests = async () => {
     try {
       setLoading(true)
-      const data = await toeicTestService.getAllTests()
-      setTests(data)
+      const data = await toeicTestService.getAllTests(currentPage, pageSize, `${sortBy},${sortDir}`)
+      setTests(data.content || [])
+      setTotalPages(data.totalPages || 1)
+      console.log("Dữ liệu đề thi:", data)
     } catch (error) {
       console.error("Lỗi khi tải danh sách đề thi:", error)
       toast.error("Không thể tải danh sách đề thi")
@@ -242,6 +253,23 @@ export default function AdminExams() {
     }
   }
 
+  // Handle sorting
+  const handleSort = (column: string) => {
+    const isAsc = sortBy === column && sortDir === "asc";
+    setSortDir(isAsc ? "desc" : "asc");
+    setSortBy(column);
+  };
+
+  // Use effect with dependencies for pagination and sorting
+  useEffect(() => {
+    loadTests();
+  }, [currentPage, pageSize, sortBy, sortDir]);
+
+  // Handle page change
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
   return (
     <div className="space-y-6 style">
       <div className="flex items-center justify-between">
@@ -400,8 +428,22 @@ export default function AdminExams() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>ID</TableHead>
-              <TableHead>Tên đề thi</TableHead>
+              <TableHead onClick={() => handleSort("id")} className="cursor-pointer">
+                <div className="flex items-center gap-1">
+                  ID
+                  {sortBy === "id" && (
+                    <ArrowUpDown className={`h-4 w-4 ${sortDir === "asc" ? "rotate-180" : ""}`} />
+                  )}
+                </div>
+              </TableHead>
+              <TableHead onClick={() => handleSort("name")} className="cursor-pointer">
+                <div className="flex items-center gap-1">
+                  Tên đề thi
+                  {sortBy === "name" && (
+                    <ArrowUpDown className={`h-4 w-4 ${sortDir === "asc" ? "rotate-180" : ""}`} />
+                  )}
+                </div>
+              </TableHead>
               <TableHead>Thời gian</TableHead>
               <TableHead>Số câu hỏi</TableHead>
               <TableHead>Trạng thái</TableHead>
@@ -758,6 +800,66 @@ export default function AdminExams() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-between mt-4">
+        <div className="text-sm text-muted-foreground">
+          Hiển thị {tests.length} / {totalPages * pageSize} đề thi
+        </div>
+        <div className="flex gap-1">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => handlePageChange(0)}
+            disabled={currentPage === 0}
+          >
+            Đầu
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 0}
+          >
+            Trước
+          </Button>
+          <div className="flex items-center gap-1 mx-2">
+            <span className="text-sm">Trang</span>
+            <Select 
+              value={currentPage.toString()} 
+              onValueChange={(value) => handlePageChange(parseInt(value))}
+            >
+              <SelectTrigger className="h-8 w-14">
+                <SelectValue placeholder={currentPage + 1} />
+              </SelectTrigger>
+              <SelectContent>
+                {Array.from({ length: totalPages }).map((_, idx) => (
+                  <SelectItem key={idx} value={idx.toString()}>
+                    {idx + 1}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <span className="text-sm">/ {totalPages}</span>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage >= totalPages - 1}
+          >
+            Tiếp
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => handlePageChange(totalPages - 1)}
+            disabled={currentPage >= totalPages - 1}
+          >
+            Cuối
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }

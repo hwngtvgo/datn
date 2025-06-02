@@ -1,258 +1,600 @@
 "use client"
 
-import { useParams } from "react-router-dom"
+import { useState, useEffect } from "react"
+import { useParams, Link } from "react-router-dom"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Separator } from "@/components/ui/separator"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { BookmarkPlus, CheckCircle2, XCircle } from "lucide-react"
+import { CheckCircle2, AlertCircle, BookOpen, HelpCircle, Lightbulb, Loader2 } from "lucide-react"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { toast } from "sonner"
 
-const grammarRules = [
+import * as toeicExamService from "@/services/toeicExamService"
+
+// Định nghĩa các quy tắc ngữ pháp mặc định để hiển thị trong khi API đang tải
+const defaultGrammarRules = [
   {
     id: 1,
     title: "Present Simple vs Present Continuous",
-    description: "Learn when to use the present simple and present continuous tenses",
+    description: "Cách sử dụng thì hiện tại đơn và hiện tại tiếp diễn",
     content: `
-      <h3>Present Simple</h3>
-      <p>We use the present simple to talk about:</p>
-      <ul>
-        <li>Things that are always true: <em>Water boils at 100 degrees Celsius.</em></li>
-        <li>Habits and routines: <em>I usually wake up at 7 AM.</em></li>
-        <li>Permanent situations: <em>She works for a multinational company.</em></li>
+      <h3 class="text-lg font-medium mb-2">Hiện tại đơn (Present Simple)</h3>
+      <p class="mb-2">Dùng để diễn tả:</p>
+      <ul class="list-disc pl-5 mb-3">
+        <li>Thói quen, hành động lặp đi lặp lại: I <b>go</b> to school every day.</li>
+        <li>Sự thật hiển nhiên: Water <b>boils</b> at 100°C.</li>
+        <li>Lịch trình, thời gian biểu: The train <b>leaves</b> at 9 PM.</li>
       </ul>
       
-      <h3>Present Continuous</h3>
-      <p>We use the present continuous to talk about:</p>
-      <ul>
-        <li>Actions happening now: <em>I am writing an email to a client.</em></li>
-        <li>Temporary situations: <em>She is staying with her parents until she finds an apartment.</em></li>
-        <li>Future arrangements: <em>We are meeting the suppliers next week.</em></li>
-      </ul>
-    `,
-  },
-  {
-    id: 2,
-    title: "Past Simple vs Past Continuous",
-    description: "Understand the difference between past simple and past continuous",
-    content: `
-      <h3>Past Simple</h3>
-      <p>We use the past simple to talk about:</p>
-      <ul>
-        <li>Completed actions in the past: <em>I finished the report yesterday.</em></li>
-        <li>Series of completed actions: <em>I woke up, had breakfast, and went to work.</em></li>
-        <li>Past habits: <em>She always arrived early at the office.</em></li>
+      <h3 class="text-lg font-medium mb-2">Hiện tại tiếp diễn (Present Continuous)</h3>
+      <p class="mb-2">Dùng để diễn tả:</p>
+      <ul class="list-disc pl-5 mb-3">
+        <li>Hành động đang diễn ra: I <b>am studying</b> now.</li>
+        <li>Kế hoạch đã định trước trong tương lai gần: We <b>are leaving</b> tomorrow.</li>
+        <li>Tình huống tạm thời: She <b>is staying</b> with her parents for a month.</li>
       </ul>
       
-      <h3>Past Continuous</h3>
-      <p>We use the past continuous to talk about:</p>
-      <ul>
-        <li>Actions in progress at a specific time in the past: <em>At 3 PM yesterday, I was attending a meeting.</em></li>
-        <li>Background actions: <em>While I was working on the project, my colleague called.</em></li>
-        <li>Parallel actions: <em>She was taking notes while the manager was presenting.</em></li>
+      <div class="bg-muted p-3 rounded-md mt-3">
+        <p class="font-medium mb-1">Lưu ý:</p>
+        <ul class="list-disc pl-5">
+          <li>Một số động từ thường không dùng ở thì tiếp diễn: like, love, hate, want, know, understand, remember, believe...</li>
+          <li>Cấu trúc hiện tại đơn: S + V(s/es) + O</li>
+          <li>Cấu trúc hiện tại tiếp diễn: S + am/is/are + V-ing + O</li>
       </ul>
+      </div>
     `,
-  },
-  {
-    id: 3,
-    title: "Modal Verbs",
-    description: "Learn how to use modal verbs for different functions",
-    content: `
-      <h3>Common Modal Verbs</h3>
-      <p>Modal verbs are used to express:</p>
-      <ul>
-        <li><strong>Can/Could</strong>: Ability, possibility, permission
-          <br><em>I can speak three languages. / Could you help me with this?</em>
-        </li>
-        <li><strong>Must/Have to</strong>: Obligation, necessity
-          <br><em>You must submit the report by Friday. / I have to attend the conference.</em>
-        </li>
-        <li><strong>Should/Ought to</strong>: Advice, recommendation
-          <br><em>You should prepare for the presentation. / We ought to inform the client.</em>
-        </li>
-        <li><strong>May/Might</strong>: Possibility, permission
-          <br><em>The project may be delayed. / Might I make a suggestion?</em>
-        </li>
-        <li><strong>Will/Would</strong>: Future, requests, offers
-          <br><em>I will send you the documents. / Would you like some coffee?</em>
-        </li>
-      </ul>
-    `,
-  },
-]
+    examples: [],
+    selectedExamples: []
+  }
+];
 
-const quizQuestions = [
-  {
-    id: 1,
-    question: "The company _____ a new product next month.",
-    options: ["launch", "launches", "is launching", "are launching"],
-    correctAnswer: 2,
-  },
-  {
-    id: 2,
-    question: "She _____ in the marketing department since 2018.",
-    options: ["works", "is working", "has worked", "has been working"],
-    correctAnswer: 2,
-  },
-  {
-    id: 3,
-    question: "By the time the CEO arrived, the meeting _____ for an hour.",
-    options: ["started", "was starting", "had started", "had been going on"],
-    correctAnswer: 3,
-  },
-  {
-    id: 4,
-    question: "You _____ check your emails regularly when you're on a business trip.",
-    options: ["must", "should", "can", "might"],
-    correctAnswer: 1,
-  },
-  {
-    id: 5,
-    question: "If we _____ the deadline, we'll lose the contract.",
-    options: ["miss", "will miss", "would miss", "are missing"],
-    correctAnswer: 0,
-  },
-]
+// Định nghĩa kiểu dữ liệu cho ngữ pháp
+interface GrammarRule {
+  id: number;
+  title: string;
+  description: string;
+  content: string;
+  examples: GrammarExample[];
+  selectedExamples: GrammarExample[];
+}
+
+interface OptionData {
+  id: number;
+  optionKey: string;
+  optionText: string;
+}
+
+interface GrammarExample {
+  id: number;
+  question: string;
+  answer: string;
+  explanation: string;
+  options?: OptionData[]; // Thêm options cho câu hỏi từ backend
+}
+
+// Interface cho câu hỏi đã định dạng
+interface FormattedQuestion {
+  id: number;
+  ruleId?: number;
+  ruleTitle?: string;
+  question: string;
+  options: {
+    id: number;       // ID của option từ backend
+    key: string;      // A, B, C, D (optionKey từ backend)
+    text: string;     // Nội dung câu trả lời (optionText từ backend)
+  }[];
+  answer: string;     // Đáp án đúng (optionKey từ backend, thường là A, B, C, D)
+  explanation?: string;
+}
 
 export default function GrammarPage() {
-  const { level } = useParams()
+  const { level } = useParams();
+  const [grammarRules, setGrammarRules] = useState<GrammarRule[]>(defaultGrammarRules);
+  const [selectedRule, setSelectedRule] = useState<GrammarRule | null>(null);
+  const [selectedExample, setSelectedExample] = useState<number | null>(null);
+  const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
+  const [showExplanations, setShowExplanations] = useState<Record<number, boolean>>({});
+  const [quizQuestions, setQuizQuestions] = useState<FormattedQuestion[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Hàm tạo phương án trả lời với key A, B, C, D
+  const createOptionsWithKeys = (correctAnswer: string, questionText: string): {key: string, text: string}[] => {
+    // Trong thực tế, dữ liệu này nên được lấy từ API
+    // Nhưng vì chưa có dữ liệu đầy đủ, tạm thời tạo các phương án
+    const options = [
+      { key: 'A', text: correctAnswer },
+      { key: 'B', text: 'is' },
+      { key: 'C', text: 'are' },
+      { key: 'D', text: 'was' }
+    ];
+    
+    return options;
+  };
+
+  // Tạo câu hỏi cho phần quiz, tập hợp từ tất cả các quy tắc
+  const loadQuizQuestions = (rules: GrammarRule[]): FormattedQuestion[] => {
+    const quizQuestionsData: FormattedQuestion[] = [];
+    
+    for (const rule of rules) {
+      if (rule.examples.length > 0 && rule.selectedExamples.length > 0) {
+        // Lấy tất cả các id của ví dụ đã chọn
+        const selectedIds = rule.selectedExamples.map((ex: GrammarExample) => ex.id);
+        
+        // Lọc các câu hỏi còn lại (không có trong selectedIds)
+        const remainingQuestions = rule.examples
+          .filter((ex: GrammarExample) => !selectedIds.includes(ex.id))
+          .map((ex: GrammarExample) => {
+            // Debug: In ra dữ liệu option cho mỗi câu hỏi
+            console.log(`Xử lý câu hỏi ${ex.id} với options:`, ex.options);
+            
+            // Lấy các phương án trả lời từ dữ liệu backend
+            const options = ex.options ? ex.options.map((opt: OptionData) => ({
+              id: opt.id,
+              key: opt.optionKey,
+              text: opt.optionText
+            })) : [];
+            
+            // Nếu không có options, tạo một mẫu đơn giản
+            const defaultOptions = options.length > 0 ? options : [
+              { key: 'A', text: 'Phương án A', id: 0 },
+              { key: 'B', text: 'Phương án B', id: 1 },
+              { key: 'C', text: 'Phương án C', id: 2 },
+              { key: 'D', text: 'Phương án D', id: 3 }
+            ];
+            
+            // Đảm bảo options được sắp xếp theo thứ tự A, B, C, D
+            const sortedOptions = [...defaultOptions].sort((a, b) => a.key.localeCompare(b.key));
+            
+            return {
+              id: ex.id,
+              ruleId: rule.id,
+              ruleTitle: rule.title,
+              question: ex.question,
+              options: sortedOptions,
+              answer: ex.answer,
+              explanation: ex.explanation
+            };
+          });
+        
+        quizQuestionsData.push(...remainingQuestions);
+      }
+    }
+    
+    return quizQuestionsData;
+  };
+
+  // Tải dữ liệu ngữ pháp từ API
+  useEffect(() => {
+    const loadGrammarData = async () => {
+      setIsLoading(true);
+      try {
+        // Lấy tất cả các đề thi để tìm các đề thi ngữ pháp
+        const examsResponse = await toeicExamService.getAllExams(0, 1000); // Tăng kích thước để lấy tất cả đề thi
+        console.log("Dữ liệu đề thi từ API:", examsResponse);
+        
+        // Lọc các đề thi có loại là GRAMMAR_ONLY
+        const allGrammarExams = examsResponse.content ? 
+          examsResponse.content.filter((exam: any) => exam.type === 'GRAMMAR_ONLY') : [];
+        
+        console.log("Đề thi ngữ pháp:", allGrammarExams);
+        
+        // Xác định mức độ dựa theo URL
+        let targetDifficulties: string[] = [];
+        let shouldFilter = false;
+        
+        if (level && level.includes("-")) {
+          // URL có định dạng số điểm, ví dụ: 0-300, 300-600, 600-800
+          if (level.match(/^\d+-\d+$/)) {
+            const [min, max] = level.split("-").map(Number);
+            
+            if (min >= 0 && max <= 300) {
+              targetDifficulties = ["EASY"];
+              shouldFilter = true;
+              console.log("Lọc theo mức độ: Dễ (0-300)");
+            } else if (min >= 300 && max <= 600) {
+              targetDifficulties = ["MEDIUM"];
+              shouldFilter = true;
+              console.log("Lọc theo mức độ: Trung bình (300-600)");
+            } else if (min >= 600 && max <= 800) {
+              targetDifficulties = ["HARD"];
+              shouldFilter = true;
+              console.log("Lọc theo mức độ: Khó (600-800)");
+            }
+          } else {
+            // Xử lý chuỗi level từ URL theo cách cũ, ví dụ: "beginner-intermediate"
+            const levelParts = level.split('-');
+            const difficultyMap: Record<string, string> = {
+              "beginner": "EASY",
+              "intermediate": "MEDIUM",
+              "advanced": "HARD"
+            };
+            
+            // Kiểm tra xem có phải format hợp lệ không
+            const isValidFormat = levelParts.every(part => difficultyMap[part]);
+            
+            if (isValidFormat) {
+              // Ánh xạ các giá trị từ URL sang các giá trị difficulty trong backend
+              targetDifficulties = levelParts.map(part => difficultyMap[part] || part.toUpperCase());
+              shouldFilter = true;
+              console.log("Đang lọc theo các trình độ:", targetDifficulties);
+            } else {
+              console.log("Định dạng level không hợp lệ, hiển thị tất cả bài tập ngữ pháp");
+            }
+          }
+        } else {
+          console.log("Không có tham số level hoặc không đúng định dạng, hiển thị tất cả bài tập ngữ pháp");
+        }
+        
+        // Lọc đề thi theo trình độ nếu cần
+        let grammarExams = allGrammarExams;
+        if (shouldFilter && targetDifficulties.length > 0) {
+          grammarExams = allGrammarExams.filter((exam: any) => 
+            targetDifficulties.includes(exam.difficulty)
+          );
+          
+          console.log("Đề thi ngữ pháp sau khi lọc theo trình độ:", grammarExams);
+        } else {
+          console.log("Hiển thị tất cả đề thi ngữ pháp không lọc:", grammarExams.length, "đề thi");
+        }
+        
+        if (grammarExams.length > 0) {
+          // Mảng chứa các promise để đợi xử lý tất cả các đề thi
+          const rulesPromises = grammarExams.map(async (exam: any) => {
+            // Nếu có instructions, sử dụng làm nội dung lý thuyết
+            const content = exam.instructions ? 
+              `<div class="space-y-4">${exam.instructions}</div>` : 
+              `<div class="space-y-4">
+                <h3 class="text-lg font-medium mb-2">${exam.title}</h3>
+                <p>${exam.description || 'Không có mô tả chi tiết.'}</p>
+              </div>`;
+            
+            // Lấy câu hỏi của đề thi để sử dụng làm ví dụ
+            let examples: GrammarExample[] = [];
+            let selectedExamples: GrammarExample[] = [];
+            
+            try {
+              const questionsData = await toeicExamService.getExamQuestions(exam.id);
+              console.log(`Câu hỏi cho đề thi ${exam.id}:`, questionsData);
+              
+              // Debug: In ra dữ liệu để kiểm tra cấu trúc
+              console.log('Chi tiết câu hỏi nhận được:', JSON.stringify(questionsData, null, 2));
+              
+              // Tạo ví dụ từ các câu hỏi
+              if (questionsData && questionsData.length > 0) {
+                // Lấy tất cả câu hỏi từ các nhóm
+                const allQuestions = questionsData.flatMap((group: any) => {
+                  console.log(`Thông tin nhóm câu hỏi:`, group);
+                  return group.questions ? group.questions : [];
+                });
+                
+                console.log('Tổng số câu hỏi:', allQuestions.length);
+                console.log('Mẫu câu hỏi đầu tiên:', allQuestions[0]);
+                
+                // Chuyển đổi tất cả câu hỏi thành examples
+                examples = allQuestions.map((q: any) => {
+                  // Debug: In ra dữ liệu option cho mỗi câu hỏi
+                  console.log(`Options cho câu hỏi ${q.id}:`, q.options);
+                  
+                  return {
+                    id: q.id,
+                    question: q.question,
+                    answer: q.correctAnswer, // Lưu ý: Đây là optionKey (A, B, C, D) không phải optionText
+                    explanation: q.explanation || "Không có giải thích chi tiết cho câu hỏi này.",
+                    options: q.options || [] // Lưu lại options từ backend
+                  };
+                });
+                
+                // Nhóm câu hỏi theo nhóm gốc (nếu có)
+                const questionsByGroup: Record<number, GrammarExample[]> = {};
+                questionsData.forEach((group: any) => {
+                  if (group.questions && group.questions.length > 0) {
+                    questionsByGroup[group.id] = group.questions.map((q: any) => ({
+                      id: q.id,
+                      question: q.question,
+                      answer: q.correctAnswer,
+                      explanation: q.explanation || "Không có giải thích chi tiết cho câu hỏi này."
+                    }));
+                  }
+                });
+                
+                // Lấy câu đầu tiên của mỗi nhóm làm ví dụ minh họa
+                selectedExamples = Object.values(questionsByGroup).map(questions => questions[0]);
+              }
+            } catch (error) {
+              console.error(`Lỗi khi lấy câu hỏi cho đề thi ${exam.id}:`, error);
+            }
+            
+            // Trả về một đối tượng GrammarRule
+            return {
+              id: exam.id,
+              title: exam.title,
+              description: exam.description || `Bài học ngữ pháp về ${exam.title}`,
+              content: content,
+              examples: examples,
+              selectedExamples: selectedExamples
+            } as GrammarRule;
+          });
+          
+          // Đợi tất cả promise hoàn thành
+          const rules = await Promise.all(rulesPromises);
+          
+          setGrammarRules(rules.length > 0 ? rules : defaultGrammarRules);
+          setSelectedRule(rules.length > 0 ? rules[0] : defaultGrammarRules[0]);
+          
+          // Tạo danh sách câu hỏi cho quiz từ tất cả các quy tắc
+          const quizQuestionsData = loadQuizQuestions(rules);
+          setQuizQuestions(quizQuestionsData);
+        } else {
+          console.log("Không tìm thấy đề thi ngữ pháp cho trình độ được chọn, hiển thị tất cả đề thi ngữ pháp");
+          // Sử dụng tất cả các đề thi ngữ pháp nếu không có đề thi nào phù hợp với trình độ đã chọn
+          const rulesPromises = allGrammarExams.map(async (exam: any) => {
+            // Nếu có instructions, sử dụng làm nội dung lý thuyết
+            const content = exam.instructions ? 
+              `<div class="space-y-4">${exam.instructions}</div>` : 
+              `<div class="space-y-4">
+                <h3 class="text-lg font-medium mb-2">${exam.title}</h3>
+                <p>${exam.description || 'Không có mô tả chi tiết.'}</p>
+              </div>`;
+            
+            // Lấy câu hỏi của đề thi để sử dụng làm ví dụ
+            let examples: GrammarExample[] = [];
+            let selectedExamples: GrammarExample[] = [];
+            
+            try {
+              const questionsData = await toeicExamService.getExamQuestions(exam.id);
+              console.log(`Câu hỏi cho đề thi ${exam.id}:`, questionsData);
+              
+              // Debug: In ra dữ liệu để kiểm tra cấu trúc
+              console.log('Chi tiết câu hỏi nhận được:', JSON.stringify(questionsData, null, 2));
+              
+              // Tạo ví dụ từ các câu hỏi
+              if (questionsData && questionsData.length > 0) {
+                // Lấy tất cả câu hỏi từ các nhóm
+                const allQuestions = questionsData.flatMap((group: any) => {
+                  console.log(`Thông tin nhóm câu hỏi:`, group);
+                  return group.questions ? group.questions : [];
+                });
+                
+                console.log('Tổng số câu hỏi:', allQuestions.length);
+                console.log('Mẫu câu hỏi đầu tiên:', allQuestions[0]);
+                
+                // Chuyển đổi tất cả câu hỏi thành examples
+                examples = allQuestions.map((q: any) => {
+                  // Debug: In ra dữ liệu option cho mỗi câu hỏi
+                  console.log(`Options cho câu hỏi ${q.id}:`, q.options);
+                  
+                  return {
+                    id: q.id,
+                    question: q.question,
+                    answer: q.correctAnswer, // Lưu ý: Đây là optionKey (A, B, C, D) không phải optionText
+                    explanation: q.explanation || "Không có giải thích chi tiết cho câu hỏi này.",
+                    options: q.options || [] // Lưu lại options từ backend
+                  };
+                });
+                
+                // Nhóm câu hỏi theo nhóm gốc (nếu có)
+                const questionsByGroup: Record<number, GrammarExample[]> = {};
+                questionsData.forEach((group: any) => {
+                  if (group.questions && group.questions.length > 0) {
+                    questionsByGroup[group.id] = group.questions.map((q: any) => ({
+                      id: q.id,
+                      question: q.question,
+                      answer: q.correctAnswer,
+                      explanation: q.explanation || "Không có giải thích chi tiết cho câu hỏi này."
+                    }));
+                  }
+                });
+                
+                // Lấy câu đầu tiên của mỗi nhóm làm ví dụ minh họa
+                selectedExamples = Object.values(questionsByGroup).map(questions => questions[0]);
+              }
+            } catch (error) {
+              console.error(`Lỗi khi lấy câu hỏi cho đề thi ${exam.id}:`, error);
+            }
+            
+            // Trả về một đối tượng GrammarRule
+            return {
+              id: exam.id,
+              title: exam.title,
+              description: exam.description || `Bài học ngữ pháp về ${exam.title}`,
+              content: content,
+              examples: examples,
+              selectedExamples: selectedExamples
+            } as GrammarRule;
+          });
+          
+          // Đợi tất cả promise hoàn thành
+          const rules = await Promise.all(rulesPromises);
+          
+          setGrammarRules(rules.length > 0 ? rules : defaultGrammarRules);
+          setSelectedRule(rules.length > 0 ? rules[0] : defaultGrammarRules[0]);
+          
+          // Tạo câu hỏi cho phần quiz, tập hợp từ tất cả các quy tắc
+          const quizQuestionsData = loadQuizQuestions(rules);
+          setQuizQuestions(quizQuestionsData);
+        }
+      } catch (error) {
+        console.error("Lỗi khi tải dữ liệu ngữ pháp:", error);
+        toast.error("Không thể tải dữ liệu ngữ pháp. Đang sử dụng dữ liệu mặc định.");
+        setGrammarRules(defaultGrammarRules);
+        setSelectedRule(defaultGrammarRules[0]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadGrammarData();
+  }, [level]); // Thêm level vào dependencies để tải lại dữ liệu khi level thay đổi
+
+  const handleSelectRule = (rule: GrammarRule) => {
+    setSelectedRule(rule);
+    setSelectedExample(null);
+  };
+
+  const handleSelectExample = (exampleId: number) => {
+    setSelectedExample(exampleId);
+  };
+
+  const toggleExplanation = (questionId: number) => {
+    setShowExplanations(prev => ({
+      ...prev,
+      [questionId]: !prev[questionId]
+    }));
+  };
 
   return (
     <div className="container py-10">
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight mb-2">Grammar Practice</h1>
-        <p className="text-muted-foreground">
-          Level: {level?.replace("-", " to ")} - Master essential grammar rules for the TOEIC test
-        </p>
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <p className="text-muted-foreground">
+            Level: {level?.replace("-", " to ")} - Master essential grammar rules for the TOEIC test
+          </p>
+        </div>
       </div>
 
-      <Tabs defaultValue="rules">
-        <TabsList className="grid w-full grid-cols-3 mb-8">
-          <TabsTrigger value="rules">Grammar Rules</TabsTrigger>
-          <TabsTrigger value="exercises">Exercises</TabsTrigger>
-          <TabsTrigger value="quiz">Quiz</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="rules">
-          <div className="grid gap-6">
-            {grammarRules.map((rule) => (
-              <Card key={rule.id}>
-                <CardHeader>
-                  <CardTitle>{rule.title}</CardTitle>
-                  <CardDescription>{rule.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div dangerouslySetInnerHTML={{ __html: rule.content }} />
-                  <div className="flex justify-end mt-4">
-                    <Button variant="outline" size="sm">
-                      <BookmarkPlus className="h-4 w-4 mr-2" /> Save to Notes
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+      {isLoading ? (
+        <div className="h-[60vh] flex items-center justify-center">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <p className="text-lg">Đang tải dữ liệu ngữ pháp...</p>
           </div>
-        </TabsContent>
+        </div>
+      ) : (
+        <Tabs defaultValue="theory" className="w-full">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="theory" className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4" />
+              Lý thuyết
+            </TabsTrigger>
+            <TabsTrigger value="examples" className="flex items-center gap-2">
+              <Lightbulb className="h-4 w-4" />
+              Ví dụ minh họa
+            </TabsTrigger>
+            <TabsTrigger value="quiz" className="flex items-center gap-2">
+              <CheckCircle2 className="h-4 w-4" />
+              Bài tập
+            </TabsTrigger>
+          </TabsList>
 
-        <TabsContent value="exercises">
+          <TabsContent value="theory">
           <Card>
             <CardHeader>
-              <CardTitle>Fill in the Blanks</CardTitle>
-              <CardDescription>Choose the correct form of the verb to complete each sentence</CardDescription>
+                <CardTitle>Ngữ pháp cơ bản</CardTitle>
+                <CardDescription>Học các quy tắc ngữ pháp tiếng Anh cơ bản</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  <p className="font-medium">1. The marketing team _____ on a new campaign at the moment.</p>
-                  <RadioGroup defaultValue="is working">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="works" id="q1-1" />
-                      <Label htmlFor="q1-1">works</Label>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div className="md:col-span-1 space-y-2">
+                    <h3 className="font-medium text-lg mb-3">Danh sách quy tắc</h3>
+                    {grammarRules.map(rule => (
+                      <div
+                        key={rule.id}
+                        className={`p-3 rounded-md cursor-pointer transition-colors ${
+                          selectedRule?.id === rule.id
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted hover:bg-muted/80"
+                        }`}
+                        onClick={() => handleSelectRule(rule)}
+                      >
+                        <h4 className="font-medium">{rule.title}</h4>
+                        <p className="text-sm">{rule.description}</p>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="is working" id="q1-2" />
-                      <Label htmlFor="q1-2">is working</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="has worked" id="q1-3" />
-                      <Label htmlFor="q1-3">has worked</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="worked" id="q1-4" />
-                      <Label htmlFor="q1-4">worked</Label>
-                    </div>
-                  </RadioGroup>
-                  <div className="flex items-center text-green-600">
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                    <span className="text-sm">Correct! We use present continuous for actions happening now.</span>
+                    ))}
+                </div>
+
+                  <div className="md:col-span-3">
+                    {selectedRule && (
+                      <>
+                        <h2 className="text-xl font-bold mb-4">{selectedRule.title}</h2>
+                        <div 
+                          className="prose max-w-none"
+                          dangerouslySetInnerHTML={{ __html: selectedRule.content }}
+                        />
+                        
+                        <Alert className="mt-6">
+                          <AlertCircle className="h-4 w-4" />
+                          <AlertTitle>Mẹo học</AlertTitle>
+                          <AlertDescription>
+                            Để ghi nhớ tốt các quy tắc ngữ pháp, hãy luyện tập thường xuyên và áp dụng vào các tình huống thực tế. Chuyển sang tab "Ví dụ minh họa" để xem các ví dụ cụ thể và tab "Bài tập" để kiểm tra kiến thức của bạn.
+                          </AlertDescription>
+                        </Alert>
+                      </>
+                    )}
                   </div>
                 </div>
 
-                <Separator />
-
-                <div className="space-y-4">
-                  <p className="font-medium">2. Last year, our company _____ its market share by 15%.</p>
-                  <RadioGroup defaultValue="increased">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="increase" id="q2-1" />
-                      <Label htmlFor="q2-1">increase</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="increases" id="q2-2" />
-                      <Label htmlFor="q2-2">increases</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="increased" id="q2-3" />
-                      <Label htmlFor="q2-3">increased</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="is increasing" id="q2-4" />
-                      <Label htmlFor="q2-4">is increasing</Label>
-                    </div>
-                  </RadioGroup>
-                  <div className="flex items-center text-green-600">
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                    <span className="text-sm">Correct! We use past simple for completed actions in the past.</span>
-                  </div>
-                </div>
-
-                <Separator />
-
-                <div className="space-y-4">
-                  <p className="font-medium">3. By the end of this quarter, we _____ all our targets.</p>
-                  <RadioGroup defaultValue="will have met">
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="will meet" id="q3-1" />
-                      <Label htmlFor="q3-1">will meet</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="are meeting" id="q3-2" />
-                      <Label htmlFor="q3-2">are meeting</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="will have met" id="q3-3" />
-                      <Label htmlFor="q3-3">will have met</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <RadioGroupItem value="have met" id="q3-4" />
-                      <Label htmlFor="q3-4">have met</Label>
-                    </div>
-                  </RadioGroup>
-                  <div className="flex items-center text-red-600">
-                    <XCircle className="h-4 w-4 mr-2" />
-                    <span className="text-sm">Incorrect. The correct answer is "will have met" (future perfect).</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-8 flex justify-between">
+                <div className="flex justify-between mt-8">
                 <Button variant="outline">Previous</Button>
                 <Button>Next</Button>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
+          
+          <TabsContent value="examples">
+            <Card>
+              <CardHeader>
+                <CardTitle>Ví dụ minh họa</CardTitle>
+                <CardDescription>Các ví dụ giúp hiểu rõ quy tắc ngữ pháp</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <div className="md:col-span-1 space-y-2">
+                    <h3 className="font-medium text-lg mb-3">Danh sách quy tắc</h3>
+                    {grammarRules.map(rule => (
+                      <div
+                        key={rule.id}
+                        className={`p-3 rounded-md cursor-pointer transition-colors ${
+                          selectedRule?.id === rule.id
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted hover:bg-muted/80"
+                        }`}
+                        onClick={() => handleSelectRule(rule)}
+                      >
+                        <h4 className="font-medium">{rule.title}</h4>
+                        <p className="text-sm">{rule.description}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="md:col-span-3">
+                    {selectedRule && (
+                      <>
+                        <h2 className="text-xl font-bold mb-4">Ví dụ cho: {selectedRule.title}</h2>
+                        
+                        {selectedRule.selectedExamples && selectedRule.selectedExamples.length > 0 ? (
+                          <div className="space-y-6">
+                            {selectedRule.selectedExamples.map((example) => (
+                              <div 
+                                key={example.id} 
+                                className={`p-4 border rounded-lg ${
+                                  selectedExample === example.id ? "border-primary" : ""
+                                }`}
+                                onClick={() => handleSelectExample(example.id)}
+                              >
+                                <p className="font-medium mb-2">Câu {example.id}: {example.question}</p>
+                                <p className="text-green-600 font-medium mb-2">Đáp án: {example.answer}</p>
+                                <p className="text-gray-600">
+                                  <span className="font-medium">Giải thích:</span> {example.explanation}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="p-4 border rounded-lg">
+                            <p className="text-center text-muted-foreground">Không có ví dụ cho chủ đề này</p>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
         <TabsContent value="quiz">
           <Card>
@@ -261,24 +603,85 @@ export default function GrammarPage() {
               <CardDescription>Test your knowledge of grammar rules</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-6">
-                {quizQuestions.map((question, index) => (
-                  <div key={question.id} className="space-y-4">
-                    <p className="font-medium">
-                      {index + 1}. {question.question}
-                    </p>
-                    <RadioGroup>
-                      {question.options.map((option, optionIndex) => (
-                        <div key={optionIndex} className="flex items-center space-x-2">
-                          <RadioGroupItem value={option} id={`q${question.id}-${optionIndex}`} />
-                          <Label htmlFor={`q${question.id}-${optionIndex}`}>{option}</Label>
+              {quizQuestions.length > 0 ? (
+                <div className="space-y-8">
+                  {/* Chỉ hiển thị câu hỏi thuộc quy tắc ngữ pháp đang được chọn */}
+                  {selectedRule && (
+                    <div className="space-y-6">
+                      <h3 className="text-lg font-medium">{selectedRule.title}</h3>
+                      
+                      {quizQuestions
+                        .filter(q => q.ruleId === selectedRule.id)
+                        .map((question, index) => (
+                        <div key={question.id} className="space-y-4 border rounded-lg p-4">
+                          <p className="font-medium">
+                            {index + 1}. {question.question}
+                          </p>
+                          <RadioGroup 
+                            value={userAnswers[question.id] || ""}
+                            onValueChange={(value) => 
+                              setUserAnswers(prev => ({...prev, [question.id]: value}))
+                            }
+                          >
+                            {question.options.map((option) => (
+                              <div key={option.id} className="flex items-center space-x-2">
+                                <RadioGroupItem value={option.key} id={`q${question.id}-${option.key}`} />
+                                <Label htmlFor={`q${question.id}-${option.key}`}>
+                                  <span className="font-medium mr-2">{option.key}.</span>
+                                  {option.text}
+                                </Label>
+                              </div>
+                            ))}
+                          </RadioGroup>
+                          
+                          <div className="flex items-center gap-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => toggleExplanation(question.id)}
+                            >
+                              <HelpCircle className="h-4 w-4 mr-1" />
+                              {showExplanations[question.id] ? "Ẩn giải thích" : "Xem giải thích"}
+                            </Button>
+                            
+                            {userAnswers[question.id] && (
+                              <span className={
+                                userAnswers[question.id] === question.answer 
+                                  ? "text-green-600 font-medium" 
+                                  : "text-red-600 font-medium"
+                              }>
+                                {userAnswers[question.id] === question.answer ? "✓ Đúng" : "✗ Sai"}
+                              </span>
+                            )}
+                          </div>
+                          
+                          {showExplanations[question.id] && (
+                            <div className="p-3 bg-muted rounded-md">
+                              <p><span className="font-medium">Đáp án đúng:</span> {question.answer}</p>
+                              <p><span className="font-medium">Giải thích:</span> {
+                                // Tìm giải thích từ câu hỏi gốc
+                                grammarRules.flatMap(rule => rule.examples)
+                                  .find(ex => ex.id === question.id)?.explanation || 
+                                "Không có giải thích chi tiết cho câu hỏi này."
+                              }</p>
+                            </div>
+                          )}
                         </div>
                       ))}
-                    </RadioGroup>
-                    {index < quizQuestions.length - 1 && <Separator className="my-4" />}
-                  </div>
-                ))}
-              </div>
+                      
+                      {quizQuestions.filter(q => q.ruleId === selectedRule.id).length === 0 && (
+                        <div className="p-8 text-center">
+                          <p className="text-muted-foreground">Không có câu hỏi cho bài kiểm tra này</p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="p-8 text-center">
+                  <p className="text-muted-foreground">Không có câu hỏi cho bài kiểm tra này</p>
+                </div>
+              )}
 
               <div className="mt-8 flex justify-end">
                 <Button>Submit Answers</Button>
@@ -287,6 +690,7 @@ export default function GrammarPage() {
           </Card>
         </TabsContent>
       </Tabs>
+      )}
     </div>
   )
 }

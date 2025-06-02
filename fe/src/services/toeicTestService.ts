@@ -30,11 +30,11 @@ export interface ToeicTestDTO {
 }
 
 // API calls
-const getAllTests = async (page = 0, size = 20) => {
-  const response = await axios.get(`${API_URL}/tests?page=${page}&size=${size}`, {
+const getAllTests = async (page = 0, size = 20, sort = "id,desc") => {
+  const response = await axios.get(`${API_URL}/tests?page=${page}&size=${size}&sort=${sort}`, {
     withCredentials: true
   });
-  return response.data.content || [];
+  return response.data;
 };
 
 const getPublicTests = async (page = 0, size = 20) => {

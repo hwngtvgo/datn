@@ -26,6 +26,7 @@ import VocabularyStoryDetail from "./pages/Learning/VocabularyStoryDetail"
 import TestHistory from "@/pages/User/TestHistory"
 import TestResultDetail from "@/pages/User/TestResultDetail"
 import TestStatistics from "@/pages/User/TestStatistics"
+import PracticeExamsPage from "./pages/Learning/PracticeExamsPage"
 
 // Admin pages
 import AdminDashboard from "./pages/Admin/Dashboard"
@@ -259,6 +260,7 @@ function App() {
           <Route path="learning/:level/fill-in-blanks" element={<FillInBlanksPage />} />
           <Route path="learning/:level/vocabulary-stories" element={<VocabularyStoriesPage />} />
           <Route path="learning/:level/vocabulary-stories/:id" element={<VocabularyStoryDetail />} />
+          <Route path="learning/:level/practice-exams" element={<PracticeExamsPage />} />
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
             <Route path="forgot-password" element={<ForgotPassword />} />

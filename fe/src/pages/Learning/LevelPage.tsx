@@ -47,6 +47,13 @@ const learningModules = [
     icon: <BookText className="h-6 w-6" />,
     color: "bg-rose-100 dark:bg-rose-900",
   },
+  {
+    id: "practice-exams",
+    title: "Practice Exams",
+    description: "Do grammar and vocabulary exercises in test format",
+    icon: <FileText className="h-6 w-6" />,
+    color: "bg-indigo-100 dark:bg-indigo-900",
+  },
 ]
 
 export default function LevelPage() {

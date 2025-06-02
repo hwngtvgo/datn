@@ -40,7 +40,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import ExamForm from '@/components/toeic/ExamForm';
 
 // Icons 
-import { Pencil, Trash2, Clock, ListChecks, Eye, EyeOff } from 'lucide-react';
+import { Pencil, Trash2, Clock, ListChecks, Eye, EyeOff, ArrowUpDown } from 'lucide-react';
 
 // Services
 import * as toeicExamService from '@/services/toeicExamService';
@@ -62,19 +62,45 @@ const AdminToeicExams: React.FC = () => {
   const [selectedExam, setSelectedExam] = useState<ToeicExam | null>(null);
   const [activeTab, setActiveTab] = useState<string>("all");
   
-  // Load exams on component mount
+  // States for pagination
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalItems, setTotalItems] = useState(0);
+  const [pageSize, setPageSize] = useState(10);
+
+  // States for sorting
+  const [sortBy, setSortBy] = useState("id");
+  const [sortDir, setSortDir] = useState("desc");
+
+  // Load exams on component mount or when pagination/sorting changes
   useEffect(() => {
     loadExams();
-  }, []);
+  }, [currentPage, pageSize, sortBy, sortDir, activeTab]);
 
   // Tải danh sách đề thi
   const loadExams = async () => {
     try {
       setLoading(true);
       
-      const response = await toeicExamService.getAllExams();
-      if (response && Array.isArray(response.content)) {
+      // Filter based on active tab
+      let params: any = {
+        page: currentPage,
+        size: pageSize,
+        sort: `${sortBy},${sortDir}`
+      };
+      
+      if (activeTab === 'active') {
+        params.isActive = true;
+      } else if (activeTab === 'inactive') {
+        params.isActive = false;
+      }
+      
+      const response = await toeicExamService.getAllExams(currentPage, pageSize, `${sortBy},${sortDir}`);
+      if (response && response.content) {
         setExams(response.content);
+        setTotalPages(response.totalPages || 1);
+        setTotalItems(response.totalElements || 0);
+        console.log("Dữ liệu đề thi:", response);
       } else {
         toast.error("Định dạng dữ liệu không hợp lệ từ server");
       }
@@ -86,19 +112,25 @@ const AdminToeicExams: React.FC = () => {
     }
   };
 
-  // Lọc danh sách đề thi theo từ khóa tìm kiếm và tab
+  // Lọc danh sách đề thi theo từ khóa tìm kiếm
   const filteredExams = exams.filter(exam => {
-    const matchesSearch = (
+    return (
       exam.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (exam.description && exam.description.toLowerCase().includes(searchQuery.toLowerCase()))
     );
-    
-    if (activeTab === 'all') return matchesSearch;
-    if (activeTab === 'active') return matchesSearch && exam.isActive;
-    if (activeTab === 'inactive') return matchesSearch && !exam.isActive;
-    
-    return matchesSearch;
   });
+
+  // Xử lý chuyển đổi trang
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+  };
+
+  // Xử lý thay đổi sắp xếp
+  const handleSort = (column: string) => {
+    const isAsc = sortBy === column && sortDir === "asc";
+    setSortDir(isAsc ? "desc" : "asc");
+    setSortBy(column);
+  };
 
   // Xử lý thay đổi trạng thái công bố
   const handlePublishStatusChange = async (examId: number, newStatus: boolean) => {
@@ -187,8 +219,6 @@ const AdminToeicExams: React.FC = () => {
     }
   };
 
-
-
   return (
     <div className="container mx-auto py-8">
       <div className="flex justify-between items-center mb-6">
@@ -219,11 +249,51 @@ const AdminToeicExams: React.FC = () => {
             <TableCaption>Danh sách đề thi TOEIC ({filteredExams.length})</TableCaption>
             <TableHeader>
               <TableRow>
-                <TableHead>ID</TableHead>
-                <TableHead>Tiêu đề</TableHead>
+                <TableHead 
+                  className="cursor-pointer"
+                  onClick={() => handleSort("id")}
+                >
+                  <div className="flex items-center gap-1">
+                    ID
+                    {sortBy === "id" && (
+                      <ArrowUpDown className={`h-4 w-4 ${sortDir === "asc" ? "rotate-180" : ""}`} />
+                    )}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer"
+                  onClick={() => handleSort("title")}
+                >
+                  <div className="flex items-center gap-1">
+                    Tiêu đề
+                    {sortBy === "title" && (
+                      <ArrowUpDown className={`h-4 w-4 ${sortDir === "asc" ? "rotate-180" : ""}`} />
+                    )}
+                  </div>
+                </TableHead>
                 <TableHead>Mô tả</TableHead>
-                <TableHead>Thời gian</TableHead>
-                <TableHead>Độ khó</TableHead>
+                <TableHead 
+                  className="cursor-pointer"
+                  onClick={() => handleSort("duration")}
+                >
+                  <div className="flex items-center gap-1">
+                    Thời gian
+                    {sortBy === "duration" && (
+                      <ArrowUpDown className={`h-4 w-4 ${sortDir === "asc" ? "rotate-180" : ""}`} />
+                    )}
+                  </div>
+                </TableHead>
+                <TableHead 
+                  className="cursor-pointer"
+                  onClick={() => handleSort("difficulty")}
+                >
+                  <div className="flex items-center gap-1">
+                    Độ khó
+                    {sortBy === "difficulty" && (
+                      <ArrowUpDown className={`h-4 w-4 ${sortDir === "asc" ? "rotate-180" : ""}`} />
+                    )}
+                  </div>
+                </TableHead>
                 <TableHead>Trạng thái</TableHead>
                 <TableHead className="text-right">Thao tác</TableHead>
               </TableRow>
@@ -295,6 +365,59 @@ const AdminToeicExams: React.FC = () => {
               )}
             </TableBody>
           </Table>
+
+          <div className="flex items-center justify-between py-4">
+            <div className="text-sm text-muted-foreground">
+              Hiển thị {filteredExams.length} / {totalItems} đề thi
+            </div>
+            <div className="flex gap-1">
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handlePageChange(0)}
+                disabled={currentPage === 0}
+              >
+                Đầu
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 0}
+              >
+                Trước
+              </Button>
+              <div className="flex items-center gap-1 mx-2">
+                <span className="text-sm">Trang</span>
+                <select 
+                  value={currentPage}
+                  onChange={(e) => handlePageChange(Number(e.target.value))}
+                  className="h-8 w-16 rounded-md border border-input px-2"
+                >
+                  {Array.from({ length: totalPages }).map((_, idx) => (
+                    <option key={idx} value={idx}>{idx + 1}</option>
+                  ))}
+                </select>
+                <span className="text-sm">/ {totalPages}</span>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage >= totalPages - 1}
+              >
+                Tiếp
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => handlePageChange(totalPages - 1)}
+                disabled={currentPage >= totalPages - 1}
+              >
+                Cuối
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
 
