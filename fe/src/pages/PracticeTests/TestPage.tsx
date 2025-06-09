@@ -681,8 +681,8 @@ export default function TestPage() {
                                   <p className="text-sm text-slate-700">
                                     <span className="font-medium">Giải thích: </span>
                                     {question.explanation}
-                                  </p>
-                                </div>
+                              </p>
+                            </div>
                               )}
                           </div>
                         );

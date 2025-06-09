@@ -33,8 +33,8 @@ public interface NotificationSettingRepository extends JpaRepository<Notificatio
      * (cần gửi email vào 7h sáng thứ 2)
      * @return List<NotificationSetting>
      */
-    @Query("SELECT ns FROM NotificationSetting ns WHERE ns.emailNotifications = true " +
-           "AND (ns.lastEmailSent IS NULL OR ns.lastEmailSent < :weekStart)")
+    @Query("SELECT ns FROM NotificationSetting ns WHERE ns.emailNotifications = true " )
+       //     "AND (ns.lastEmailSent IS NULL OR ns.lastEmailSent < :weekStart)")
     List<NotificationSetting> findAllForWeeklyEmailNotification(LocalDateTime weekStart);
     
     /**

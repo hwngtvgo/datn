@@ -449,11 +449,11 @@ export default function GrammarPage() {
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight mb-2">Grammar Practice</h1>
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <p className="text-muted-foreground">
-            Level: {level?.replace("-", " to ")} - Master essential grammar rules for the TOEIC test
-          </p>
-        </div>
+        <p className="text-muted-foreground">
+          Level: {level?.replace("-", " to ")} - Master essential grammar rules for the TOEIC test
+        </p>
       </div>
+                  </div>
 
       {isLoading ? (
         <div className="h-[60vh] flex items-center justify-center">
@@ -591,10 +591,10 @@ export default function GrammarPage() {
                       </>
                     )}
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="quiz">
           <Card>
@@ -607,16 +607,16 @@ export default function GrammarPage() {
                 <div className="space-y-8">
                   {/* Chỉ hiển thị câu hỏi thuộc quy tắc ngữ pháp đang được chọn */}
                   {selectedRule && (
-                    <div className="space-y-6">
+              <div className="space-y-6">
                       <h3 className="text-lg font-medium">{selectedRule.title}</h3>
                       
                       {quizQuestions
                         .filter(q => q.ruleId === selectedRule.id)
                         .map((question, index) => (
                         <div key={question.id} className="space-y-4 border rounded-lg p-4">
-                          <p className="font-medium">
-                            {index + 1}. {question.question}
-                          </p>
+                    <p className="font-medium">
+                      {index + 1}. {question.question}
+                    </p>
                           <RadioGroup 
                             value={userAnswers[question.id] || ""}
                             onValueChange={(value) => 
@@ -676,11 +676,11 @@ export default function GrammarPage() {
                       )}
                     </div>
                   )}
-                </div>
+                  </div>
               ) : (
                 <div className="p-8 text-center">
                   <p className="text-muted-foreground">Không có câu hỏi cho bài kiểm tra này</p>
-                </div>
+              </div>
               )}
 
               <div className="mt-8 flex justify-end">

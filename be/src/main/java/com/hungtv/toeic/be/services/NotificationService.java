@@ -105,7 +105,7 @@ public class NotificationService {
     /**
      * Gửi email thông báo hoạt động tài khoản hàng tuần, chạy vào 7 giờ sáng mỗi thứ 2
      */
-    @Scheduled(cron = "50 53 8 * * SAT")
+    @Scheduled(cron = "0 11 19 * * MON")
     @Transactional
     public void sendWeeklyActivityEmails() {
         logger.info("Bắt đầu gửi email thông báo hoạt động tài khoản hàng tuần");

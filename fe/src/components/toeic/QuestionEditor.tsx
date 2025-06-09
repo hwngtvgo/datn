@@ -104,6 +104,11 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
     }
   };
   
+  // Thêm hàm kiểm tra loại từ vựng
+  const isVocabularyType = (type: QuestionType): boolean => {
+    return type === QuestionType.VOCABULARY;
+  };
+  
   // Lưu câu hỏi
   const handleSave = () => {
     // Kiểm tra dữ liệu trước khi lưu
@@ -271,16 +276,39 @@ const QuestionEditor: React.FC<QuestionEditorProps> = ({
         </RadioGroup>
       </div>
       
-      {/* Giải thích đáp án */}
+      {/* Giải thích */}
       <div className="space-y-2">
-        <Label htmlFor="explanation">Giải thích đáp án</Label>
-        <Textarea 
-          id="explanation" 
-          placeholder="Nhập giải thích cho đáp án đúng" 
-          value={explanation}
-          onChange={(e) => setExplanation(e.target.value)}
-          rows={3}
-        />
+        <Label htmlFor="explanation">Giải thích</Label>
+        {isVocabularyType(questionType) ? (
+          <>
+            <div className="mb-2">
+              <div className="text-sm text-muted-foreground mb-2">
+                Với câu hỏi từ vựng, vui lòng sử dụng định dạng sau để hiển thị chính xác trong flashcard:
+              </div>
+              <div className="p-2 bg-muted rounded-md text-sm">
+                <code>Từ đúng: [từ cần điền] - Nghĩa: [nghĩa tiếng Việt của từ]</code>
+              </div>
+              <div className="text-sm text-muted-foreground mt-2">
+                Ví dụ: <code>Từ đúng: implement - Nghĩa: thực hiện, triển khai</code>
+              </div>
+            </div>
+            <Textarea 
+              id="explanation" 
+              placeholder="Từ đúng: example - Nghĩa: ví dụ" 
+              value={explanation}
+              onChange={(e) => setExplanation(e.target.value)}
+              rows={3}
+            />
+          </>
+        ) : (
+          <Textarea 
+            id="explanation" 
+            placeholder="Nhập giải thích cho câu hỏi" 
+            value={explanation}
+            onChange={(e) => setExplanation(e.target.value)}
+            rows={3}
+          />
+        )}
       </div>
       
       {/* Nút thao tác */}

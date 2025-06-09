@@ -37,10 +37,9 @@ public class TestController {
     private ToeicTestService testService;
     
     /**
-     * Lấy danh sách tất cả các bài thi (Admin only)
+     * Lấy danh sách tất cả các bài thi (Tất cả người dùng có thể truy cập)
      */
     @GetMapping
-    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<TestResponse>> getAllTests(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
@@ -181,7 +180,7 @@ public class TestController {
     }
 
     /**
-     * Lấy danh sách nhóm câu hỏi của bài thi
+     * Lấy danh sách nhóm câu hỏi của bài thi (Tất cả người dùng có thể truy cập)
      */
     @GetMapping("/{id}/questions")
     public ResponseEntity<List<QuestionGroupResponse>> getTestQuestions(@PathVariable Long id) {
@@ -198,18 +197,19 @@ public class TestController {
      */
     @PostMapping("/{id}/questions/group/{groupId}")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<ApiResponse<TestResponse>> addQuestionGroupToTest(
+    public ResponseEntity<MessageResponse> addQuestionGroupToTest(
             @PathVariable Long id, 
             @PathVariable Long groupId) {
+        
         try {
-            TestResponse updatedTest = testService.addQuestionGroupToTest(id, groupId);
-            return ResponseEntity.ok(new ApiResponse<>(true, "Thêm nhóm câu hỏi vào bài thi thành công", updatedTest));
+            testService.addQuestionGroupToTest(id, groupId);
+            return ResponseEntity.ok(new MessageResponse("Thêm nhóm câu hỏi vào bài thi thành công"));
         } catch (Exception e) {
             return ResponseEntity.badRequest()
-                    .body(new ApiResponse<>(false, "Lỗi khi thêm nhóm câu hỏi: " + e.getMessage(), null));
+                    .body(new MessageResponse("Lỗi khi thêm nhóm câu hỏi: " + e.getMessage()));
         }
     }
-
+    
     /**
      * Xóa nhóm câu hỏi khỏi bài thi
      */
@@ -218,6 +218,7 @@ public class TestController {
     public ResponseEntity<MessageResponse> removeQuestionGroupFromTest(
             @PathVariable Long id, 
             @PathVariable Long groupId) {
+        
         try {
             testService.removeQuestionGroupFromTest(id, groupId);
             return ResponseEntity.ok(new MessageResponse("Xóa nhóm câu hỏi khỏi bài thi thành công"));

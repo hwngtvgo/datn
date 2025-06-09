@@ -60,14 +60,14 @@ export default function Learning() {
                   <div className="h-2 w-2 rounded-full bg-primary"></div>
                   <span>Grammar practice tailored to your level</span>
                 </li>
-                <li className="flex items-center gap-2">
+                {/* <li className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-primary"></div>
                   <span>Listening comprehension activities</span>
                 </li>
                 <li className="flex items-center gap-2">
                   <div className="h-2 w-2 rounded-full bg-primary"></div>
                   <span>Interactive fill-in-the-blanks exercises</span>
-                </li>
+                </li> */}
               </ul>
             </CardContent>
             <CardFooter>

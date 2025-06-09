@@ -1,8 +1,60 @@
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { useEffect, useState } from "react"
+import { getActiveExams } from "@/services/toeicExamService"
+import { ToeicExam } from "@/types/toeic"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function Home() {
+  const [exams, setExams] = useState<ToeicExam[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchExams = async () => {
+      try {
+        setLoading(true)
+        const data = await getActiveExams()
+        // Sắp xếp theo ngày tạo mới nhất
+        const sortedExams = data.sort((a: ToeicExam, b: ToeicExam) => 
+          new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime()
+        ).slice(0, 3) // Chỉ lấy 3 đề thi mới nhất
+        setExams(sortedExams)
+      } catch (error) {
+        console.error("Lỗi khi lấy danh sách đề thi:", error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchExams()
+  }, [])
+
+  // Hàm định dạng ngày từ chuỗi ISO
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return ""
+    const date = new Date(dateString)
+    return date.toLocaleDateString('vi-VN')
+  }
+
+  // Hàm render skeleton khi đang tải dữ liệu
+  const renderSkeleton = () => (
+    <>
+      {[1, 2, 3].map((item) => (
+        <Card key={item} className="hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <Skeleton className="h-6 w-3/4 mb-2" />
+            <Skeleton className="h-4 w-1/2" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-20 w-full mb-4" />
+            <Skeleton className="h-10 w-1/3" />
+          </CardContent>
+        </Card>
+      ))}
+    </>
+  )
+
   return (
     <div className="min-h-screen flex flex-col">
       {/* Hero Section */}
@@ -94,20 +146,43 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center mb-12">Đề Thi Mới Nhất</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((test) => (
-              <Card key={test} className="hover:shadow-lg transition-shadow">
-                <CardHeader>
-                  <CardTitle>Đề Thi TOEIC #{test}</CardTitle>
-                  <CardDescription>Cập nhật: {new Date().toLocaleDateString()}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <p className="mb-4">Đề thi TOEIC mới nhất với cấu trúc chuẩn, giúp bạn đánh giá khả năng hiện tại.</p>
-                  <Button asChild>
-                    <Link to={`/practice-tests/${test}`}>Bắt Đầu Ngay</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
+            {loading ? (
+              renderSkeleton()
+            ) : exams.length > 0 ? (
+              exams.map((exam) => (
+                <Card key={exam.id} className="hover:shadow-lg transition-shadow">
+                  <CardHeader>
+                    <CardTitle>{exam.title}</CardTitle>
+                    <CardDescription>
+                      Cập nhật: {formatDate(exam.createdAt)}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="mb-4">
+                      <p>{exam.description || "Đề thi TOEIC với cấu trúc chuẩn, giúp bạn đánh giá khả năng hiện tại."}</p>
+                      <p className="mt-2 text-sm text-muted-foreground">
+                        <span className="font-medium">Thời gian: </span>{exam.duration} phút
+                        <span className="ml-4 font-medium">Độ khó: </span>
+                        <span className={`
+                          ${exam.difficulty === 'EASY' ? 'text-green-600' : ''}
+                          ${exam.difficulty === 'MEDIUM' ? 'text-orange-500' : ''}
+                          ${exam.difficulty === 'HARD' ? 'text-red-600' : ''}
+                        `}>
+                          {exam.difficulty === 'EASY' ? 'Dễ' : exam.difficulty === 'MEDIUM' ? 'Trung bình' : 'Khó'}
+                        </span>
+                      </p>
+                    </div>
+                    <Button asChild>
+                      <Link to={`/practice-tests/${exam.id}`}>Bắt Đầu Ngay</Link>
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="col-span-3 text-center py-8">
+                <p className="text-lg text-gray-500">Hiện chưa có đề thi nào được cập nhật</p>
+              </div>
+            )}
           </div>
           <div className="text-center mt-8">
             <Button variant="outline" asChild>

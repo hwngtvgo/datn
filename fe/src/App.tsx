@@ -19,10 +19,10 @@ import Account from "./pages/Account"
 import TestPage from "./pages/PracticeTests/TestPage"
 import VocabularyPage from "./pages/Learning/VocabularyPage"
 import GrammarPage from "./pages/Learning/GrammarPage"
-import ListeningPage from "./pages/Learning/ListeningPage"
-import FillInBlanksPage from "./pages/Learning/FillInBlanksPage"
-import VocabularyStoriesPage from "./pages/Learning/VocabularyStoriesPage"
-import VocabularyStoryDetail from "./pages/Learning/VocabularyStoryDetail"
+// import ListeningPage from "./pages/Learning/ListeningPage"
+// import FillInBlanksPage from "./pages/Learning/FillInBlanksPage"
+// import VocabularyStoriesPage from "./pages/Learning/VocabularyStoriesPage"
+// import VocabularyStoryDetail from "./pages/Learning/VocabularyStoryDetail"
 import TestHistory from "@/pages/User/TestHistory"
 import TestResultDetail from "@/pages/User/TestResultDetail"
 import TestStatistics from "@/pages/User/TestStatistics"
@@ -45,6 +45,7 @@ import { Toaster } from 'sonner'
 import { ToastContainer } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import authModule from "@/modules/auth"
+import NotFound from "@/pages/NotFound"
 
 // Route bảo vệ cho người dùng đã đăng nhập
 const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -256,10 +257,10 @@ function App() {
           <Route path="learning/:level" element={<LevelPage />} />
           <Route path="learning/:level/vocabulary" element={<VocabularyPage />} />
           <Route path="learning/:level/grammar" element={<GrammarPage />} />
-          <Route path="learning/:level/listening" element={<ListeningPage />} />
+          {/* <Route path="learning/:level/listening" element={<ListeningPage />} />
           <Route path="learning/:level/fill-in-blanks" element={<FillInBlanksPage />} />
           <Route path="learning/:level/vocabulary-stories" element={<VocabularyStoriesPage />} />
-          <Route path="learning/:level/vocabulary-stories/:id" element={<VocabularyStoryDetail />} />
+          <Route path="learning/:level/vocabulary-stories/:id" element={<VocabularyStoryDetail />} /> */}
           <Route path="learning/:level/practice-exams" element={<PracticeExamsPage />} />
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
@@ -294,6 +295,7 @@ function App() {
           <Route path="exams" element={<Navigate to="/admin/toeic-exams" replace />} />
           <Route path="questions" element={<Navigate to="/admin/toeic-questions" replace />} />
           </Route>
+          <Route path="*" element={<NotFound />} />
       </Routes>
       </AuthProvider>
     </Router>
