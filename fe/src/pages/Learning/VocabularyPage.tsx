@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, ArrowRight, Volume2, BookmarkPlus, Loader2, HelpCircle } from "lucide-react"
+import { ArrowLeft, ArrowRight, Volume2, BookmarkPlus, Loader2, HelpCircle, Search } from "lucide-react"
 import { toast } from "sonner"
 import * as toeicExamService from "@/services/toeicExamService"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -101,6 +101,7 @@ export default function VocabularyPage() {
   const [quizQuestions, setQuizQuestions] = useState<VocabularyQuizQuestion[]>([]);
   const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
   const [showExplanations, setShowExplanations] = useState<Record<number, boolean>>({});
+  const [searchQuery, setSearchQuery] = useState('');
   
   // Tham chiếu đến thẻ audio
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -500,6 +501,60 @@ export default function VocabularyPage() {
     }
   };
 
+  // Filter vocabulary exams based on search query
+  const filteredVocabularyExams = vocabularyExams.filter(exam => 
+    exam.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    exam.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Render the search bar and vocabulary topics list
+  const renderVocabularyTopicsList = () => {
+    return (
+      <div className="space-y-2">
+        <h3 className="font-medium text-lg mb-3">Vocabulary Topics</h3>
+        
+        <div className="relative mb-4">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Search topics..."
+            className="w-full pl-8 py-2 pr-4 rounded-md border border-input bg-background"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
+        </div>
+        
+        {filteredVocabularyExams.length > 0 ? (
+          filteredVocabularyExams.map((exam, index) => {
+            // Find the original index in the unfiltered array
+            const originalIndex = vocabularyExams.findIndex(e => e.id === exam.id);
+            return (
+              <div
+                key={exam.id}
+                className={`p-3 rounded-md cursor-pointer transition-colors ${
+                  selectedExamIndex === originalIndex
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted hover:bg-muted/80"
+                }`}
+                onClick={() => handleSelectExam(originalIndex)}
+              >
+                <h4 className="font-medium">{exam.title}</h4>
+                <p className="text-sm">{exam.description}</p>
+                <div className="flex justify-end mt-1">
+                  <span className="text-xs">{exam.words.length} words</span>
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="p-4 text-center bg-muted rounded-md">
+            <p>No topics found matching "{searchQuery}"</p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="container py-10">
       <div className="mb-8">
@@ -534,25 +589,8 @@ export default function VocabularyPage() {
           <TabsContent value="flashcards">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               {/* Danh sách đề thi từ vựng bên trái */}
-              <div className="md:col-span-1 space-y-2">
-                <h3 className="font-medium text-lg mb-3">Vocabulary Topics</h3>
-                {vocabularyExams.map((exam, index) => (
-                  <div
-                    key={exam.id}
-                    className={`p-3 rounded-md cursor-pointer transition-colors ${
-                      selectedExamIndex === index
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted hover:bg-muted/80"
-                    }`}
-                    onClick={() => handleSelectExam(index)}
-                  >
-                    <h4 className="font-medium">{exam.title}</h4>
-                    <p className="text-sm">{exam.description}</p>
-                    <div className="flex justify-end mt-1">
-                      <span className="text-xs">{exam.words.length} words</span>
-                    </div>
-                  </div>
-                ))}
+              <div className="md:col-span-1">
+                {renderVocabularyTopicsList()}
               </div>
 
               {/* Flashcard hiển thị bên phải */}
@@ -606,25 +644,8 @@ export default function VocabularyPage() {
           <TabsContent value="quiz">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               {/* Danh sách đề thi từ vựng bên trái */}
-              <div className="md:col-span-1 space-y-2">
-                <h3 className="font-medium text-lg mb-3">Vocabulary Topics</h3>
-                {vocabularyExams.map((exam, index) => (
-                  <div
-                    key={exam.id}
-                    className={`p-3 rounded-md cursor-pointer transition-colors ${
-                      selectedExamIndex === index
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted hover:bg-muted/80"
-                    }`}
-                    onClick={() => handleSelectExam(index)}
-                  >
-                    <h4 className="font-medium">{exam.title}</h4>
-                    <p className="text-sm">{exam.description}</p>
-                    <div className="flex justify-end mt-1">
-                      <span className="text-xs">{exam.words.length} words</span>
-                    </div>
-                  </div>
-                ))}
+              <div className="md:col-span-1">
+                {renderVocabularyTopicsList()}
               </div>
 
               {/* Quiz bên phải */}
@@ -708,25 +729,8 @@ export default function VocabularyPage() {
           <TabsContent value="wordlist">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               {/* Danh sách đề thi từ vựng bên trái */}
-              <div className="md:col-span-1 space-y-2">
-                <h3 className="font-medium text-lg mb-3">Vocabulary Topics</h3>
-                {vocabularyExams.map((exam, index) => (
-                  <div
-                    key={exam.id}
-                    className={`p-3 rounded-md cursor-pointer transition-colors ${
-                      selectedExamIndex === index
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-muted hover:bg-muted/80"
-                    }`}
-                    onClick={() => handleSelectExam(index)}
-                  >
-                    <h4 className="font-medium">{exam.title}</h4>
-                    <p className="text-sm">{exam.description}</p>
-                    <div className="flex justify-end mt-1">
-                      <span className="text-xs">{exam.words.length} words</span>
-                    </div>
-                  </div>
-                ))}
+              <div className="md:col-span-1">
+                {renderVocabularyTopicsList()}
               </div>
 
               {/* Danh sách từ vựng bên phải */}
