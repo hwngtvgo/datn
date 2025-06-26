@@ -41,7 +41,7 @@ public class ToeicQuestionService {
     private ToeicOptionRepository optionRepository;
     
     @Autowired
-    private FileStorageService fileStorageService;
+    private CloudinaryService cloudinaryService;
     
     @Autowired
     private ObjectMapper objectMapper;
@@ -276,12 +276,12 @@ public class ToeicQuestionService {
             // Upload files
             String audioUrl = null;
             if (audioFile != null && !audioFile.isEmpty()) {
-                audioUrl = fileStorageService.storeFile(audioFile, "audio");
+                audioUrl = cloudinaryService.uploadFile(audioFile, "audio");
             }
             
             String imageUrl = null;
             if (imageFile != null && !imageFile.isEmpty()) {
-                imageUrl = fileStorageService.storeFile(imageFile, "images");
+                imageUrl = cloudinaryService.uploadFile(imageFile, "images");
             }
             
             // Tạo nhóm câu hỏi mới
@@ -488,7 +488,7 @@ public class ToeicQuestionService {
             String audioUrl = group.getAudioUrl();
             if (audioFile != null && !audioFile.isEmpty()) {
                 System.out.println("Đang upload file âm thanh mới...");
-                audioUrl = fileStorageService.storeFile(audioFile, "audio");
+                audioUrl = cloudinaryService.uploadFile(audioFile, "audio");
                 System.out.println("Upload thành công, audioUrl mới: " + audioUrl);
             } else {
                 System.out.println("Giữ nguyên audioUrl cũ: " + audioUrl);
@@ -497,7 +497,7 @@ public class ToeicQuestionService {
             String imageUrl = group.getImageUrl();
             if (imageFile != null && !imageFile.isEmpty()) {
                 System.out.println("Đang upload file hình ảnh mới...");
-                imageUrl = fileStorageService.storeFile(imageFile, "images");
+                imageUrl = cloudinaryService.uploadFile(imageFile, "images");
                 System.out.println("Upload thành công, imageUrl mới: " + imageUrl);
             } else {
                 System.out.println("Giữ nguyên imageUrl cũ: " + imageUrl);
