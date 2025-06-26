@@ -72,7 +72,7 @@ const QuestionDetailView: React.FC<QuestionDetailViewProps> = ({ questions, grou
             {isGrammar && 'Ngữ pháp'}
             {' - '}{questions.length} câu hỏi
           </p>
-          
+
           {(createdAt || updatedAt) && (
             <div className="mt-2 text-xs text-muted-foreground">
               {createdAt && <p>Tạo lúc: {createdAt}</p>}
@@ -115,7 +115,7 @@ const QuestionDetailView: React.FC<QuestionDetailViewProps> = ({ questions, grou
       )}
       
       {/* Passage */}
-      {(isReading || (!isListening && (part && part >= 5))) && (groupInfo?.passage || firstQuestion.passage) && (
+      {(isReading || (!isListening && part > 0 && part >= 5)) && (groupInfo?.passage || firstQuestion.passage) && (
         <Card>
           <CardHeader>
             <CardTitle>Đoạn văn</CardTitle>

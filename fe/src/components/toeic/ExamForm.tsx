@@ -83,9 +83,10 @@ const ExamForm: React.FC<ExamFormProps> = ({
   
   // Phân trang dữ liệu
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const [itemsPerPage] = useState<number>(8); // Đổi kích thước từ 20 xuống 10 để hiển thị 5 trang
+  const [itemsPerPage, setItemsPerPage] = useState<number>(8); // Đổi kích thước từ 20 xuống 10 để hiển thị 5 trang
   const [totalPages, setTotalPages] = useState<number>(1);
   const [totalItems, setTotalItems] = useState(0);
+  const [goToPageInput, setGoToPageInput] = useState<string>('1');
   
   // Form validation
   const [titleError, setTitleError] = useState<string>('');
@@ -212,12 +213,16 @@ const ExamForm: React.FC<ExamFormProps> = ({
     }
   };
 
-  // Xử lý toggle selection của nhóm câu hỏi
+  // Xử lý toggle selection của nhóm câu hỏi - Cập nhật để lưu trạng thái khi chuyển trang
   const toggleGroupSelection = (groupId: number) => {
     if (selectedGroups.includes(groupId)) {
-      setSelectedGroups(selectedGroups.filter(id => id !== groupId));
+      // Nếu đã chọn thì bỏ chọn
+      setSelectedGroups(prev => prev.filter(id => id !== groupId));
+      console.log(`Đã bỏ chọn nhóm câu hỏi ID=${groupId}, còn lại ${selectedGroups.length - 1} nhóm được chọn`);
     } else {
-      setSelectedGroups([...selectedGroups, groupId]);
+      // Nếu chưa chọn thì thêm vào danh sách đã chọn
+      setSelectedGroups(prev => [...prev, groupId]);
+      console.log(`Đã chọn nhóm câu hỏi ID=${groupId}, hiện có ${selectedGroups.length + 1} nhóm được chọn`);
     }
   };
 
@@ -253,6 +258,28 @@ const ExamForm: React.FC<ExamFormProps> = ({
       setCurrentPage(currentPage + 1);
       // loadQuestionGroups sẽ được gọi tự động thông qua useEffect
     }
+  };
+
+  // Chuyển đến trang cụ thể từ input
+  const handleGoToPage = () => {
+    const pageNumber = parseInt(goToPageInput);
+    if (!isNaN(pageNumber) && pageNumber >= 1 && pageNumber <= totalPages) {
+      console.log(`Chuyển đến trang ${pageNumber} từ input`);
+      setCurrentPage(pageNumber);
+    } else {
+      // Nếu giá trị không hợp lệ, đặt lại giá trị input về trang hiện tại
+      setGoToPageInput(currentPage.toString());
+    }
+  };
+
+  // Xử lý thay đổi số lượng câu hỏi mỗi trang
+  const handleItemsPerPageChange = (value: string) => {
+    const newItemsPerPage = parseInt(value);
+    console.log(`Thay đổi số lượng hiển thị từ ${itemsPerPage} thành ${newItemsPerPage}`);
+    setItemsPerPage(newItemsPerPage);
+    // Khi thay đổi số lượng hiển thị, quay về trang 1
+    setCurrentPage(1);
+    // loadQuestionGroups sẽ được gọi tự động thông qua useEffect
   };
 
   // Lấy mô tả cho từng part
@@ -374,15 +401,15 @@ const ExamForm: React.FC<ExamFormProps> = ({
   // Tải danh sách nhóm câu hỏi
   useEffect(() => {
     if (activeTab === "questions") {
-      console.log(`useEffect được gọi - currentPage: ${currentPage}`);
+      console.log(`useEffect được gọi - currentPage: ${currentPage}, itemsPerPage: ${itemsPerPage}`);
       loadQuestionGroups();
       
       // Nếu đang chỉnh sửa đề thi, tải các nhóm câu hỏi đã chọn (chỉ tải 1 lần)
-      if (isEditing && initialData?.id) {
+      if (isEditing && initialData?.id && selectedGroups.length === 0) {
         loadSelectedQuestionGroups();
       }
     }
-  }, [activeTab, currentPage, isEditing, initialData]);
+  }, [activeTab, currentPage, itemsPerPage, isEditing, initialData]);
 
   // Tải lại dữ liệu khi thay đổi bộ lọc
   useEffect(() => {
@@ -679,12 +706,12 @@ const ExamForm: React.FC<ExamFormProps> = ({
                 </ScrollArea>
                 
                 {/* Phân trang */}
-                {questionGroups.length > 0 && (
-                  <div className="flex items-center justify-between space-x-2 py-4">
-                    <div className="text-sm text-muted-foreground">
-                      Trang {currentPage} / {totalPages} (Tổng {totalItems} nhóm)
-                    </div>
-                    <div className="flex items-center space-x-2">
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between mt-4 gap-2">
+                  <div className="text-sm text-muted-foreground">
+                    Hiển thị {currentItems.length} / {totalItems} nhóm câu hỏi
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex gap-1">
                       <Button
                         variant="outline"
                         size="sm"
@@ -693,95 +720,119 @@ const ExamForm: React.FC<ExamFormProps> = ({
                       >
                         Trước
                       </Button>
+                    
+                    {/* Hiển thị trang phù hợp thay vì hiển thị tất cả */}
+                    {(() => {
+                      const pageButtons = [];
+                      const maxVisiblePages = 3; // Giảm số trang hiển thị xuống
                       
-                      {/* Hiển thị trang phù hợp thay vì hiển thị tất cả */}
-                      {(() => {
-                        const pageButtons = [];
-                        const maxVisiblePages = 5;
-                        
-                        // Tính toán dãy trang cần hiển thị
-                        let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-                        let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-                        
-                        // Điều chỉnh nếu không đủ trang ở cuối
-                        if (endPage - startPage + 1 < maxVisiblePages) {
-                          startPage = Math.max(1, endPage - maxVisiblePages + 1);
-                        }
-                        
-                        // Hiển thị trang đầu tiên nếu cần
-                        if (startPage > 1) {
-                          pageButtons.push(
-                            <Button
-                              key={1}
-                              variant={currentPage === 1 ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => paginate(1)}
-                            >
-                              1
-                            </Button>
-                          );
-                          
-                          // Hiển thị dấu chấm lửng nếu không kề trang đầu
-                          if (startPage > 2) {
-                            pageButtons.push(
-                              <span key="ellipsis1" className="px-2">
-                                ...
-                              </span>
-                            );
-                          }
-                        }
-                        
-                        // Hiển thị các trang giữa
-                        for (let i = startPage; i <= endPage; i++) {
-                          pageButtons.push(
-                            <Button
-                              key={i}
-                              variant={currentPage === i ? "default" : "outline"}
-                              size="sm"
-                              onClick={() => paginate(i)}
-                            >
-                              {i}
-                            </Button>
-                          );
-                        }
-                        
-                        // Hiển thị trang cuối cùng nếu cần
-                        if (endPage < totalPages) {
-                          // Hiển thị dấu chấm lửng nếu không kề trang cuối
-                          if (endPage < totalPages - 1) {
-                            pageButtons.push(
-                              <span key="ellipsis2" className="px-2">
-                                ...
-                              </span>
-                            );
-                          }
-                          
-                          pageButtons.push(
+                      // Tính toán dãy trang cần hiển thị
+                      let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+                      let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+                      
+                      // Điều chỉnh nếu không đủ trang ở cuối
+                      if (endPage - startPage + 1 < maxVisiblePages) {
+                        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+                      }
+                      
+                      // Hiển thị trang đầu tiên nếu cần
+                      if (startPage > 1) {
+                        pageButtons.push(
                           <Button
-                              key={totalPages}
-                              variant={currentPage === totalPages ? "default" : "outline"}
+                            key={1}
+                            variant={currentPage === 1 ? "default" : "outline"}
                             size="sm"
-                              onClick={() => paginate(totalPages)}
+                            onClick={() => paginate(1)}
                           >
-                              {totalPages}
+                            1
                           </Button>
                         );
+                        
+                        // Hiển thị dấu chấm lửng nếu không kề trang đầu
+                        if (startPage > 2) {
+                          pageButtons.push(
+                            <span key="ellipsis1" className="px-1">
+                              ...
+                            </span>
+                          );
+                        }
+                      }
+                      
+                      // Hiển thị các trang giữa
+                      for (let i = startPage; i <= endPage; i++) {
+                        pageButtons.push(
+                          <Button
+                            key={i}
+                            variant={currentPage === i ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => paginate(i)}
+                          >
+                            {i}
+                          </Button>
+                        );
+                      }
+                      
+                      // Hiển thị trang cuối cùng nếu cần
+                      if (endPage < totalPages) {
+                        // Hiển thị dấu chấm lửng nếu không kề trang cuối
+                        if (endPage < totalPages - 1) {
+                          pageButtons.push(
+                            <span key="ellipsis2" className="px-1">
+                              ...
+                            </span>
+                          );
                         }
                         
-                        return pageButtons;
-                      })()}
+                        pageButtons.push(
+                        <Button
+                            key={totalPages}
+                            variant={currentPage === totalPages ? "default" : "outline"}
+                          size="sm"
+                            onClick={() => paginate(totalPages)}
+                        >
+                            {totalPages}
+                        </Button>
+                      );
+                      }
                       
-                      <Button
-                        variant="outline"
+                      return pageButtons;
+                    })()}
+                    
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={goToNextPage}
+                      disabled={currentPage === totalPages}
+                    >
+                      Sau
+                    </Button>
+                    </div>
+                    
+                    {/* Input chọn trang cụ thể */}
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="number"
+                        min="1"
+                        max={totalPages}
+                        className="h-8 w-16"
+                        value={goToPageInput}
+                        onChange={(e) => setGoToPageInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            handleGoToPage();
+                          }
+                        }}
+                      />
+                      <Button 
+                        variant="outline" 
                         size="sm"
-                        onClick={goToNextPage}
-                        disabled={currentPage === totalPages}
+                        onClick={handleGoToPage}
                       >
-                        Sau
+                        Tiếp
                       </Button>
                     </div>
                   </div>
-                )}
+                </div>
               </CardContent>
             </Card>
           )}

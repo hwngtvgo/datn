@@ -91,9 +91,9 @@ const QuestionTestMode: React.FC<QuestionTestModeProps> = ({
     <Card className="mb-6">
       <CardHeader className="pb-2">
         <div className="flex justify-between items-center">
-          <CardTitle className="text-xl">
+          {/* <CardTitle className="text-xl">
             {getGroupTitle(currentGroup)}
-          </CardTitle>
+          </CardTitle> */}
           <div className="flex items-center gap-2">
             <span className="text-sm text-muted-foreground">
               {currentGroup.questionType === 'VOCABULARY' ? 'Từ vựng' : 
