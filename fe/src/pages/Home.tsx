@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { useEffect, useState } from "react"
 import { getActiveExams } from "@/services/toeicExamService"
-import { ToeicExam } from "@/types/toeic"
+import { ToeicExam, ExamType } from "@/types/toeic"
 import { Skeleton } from "@/components/ui/skeleton"
 
 export default function Home() {
@@ -15,10 +15,20 @@ export default function Home() {
       try {
         setLoading(true)
         const data = await getActiveExams()
+        
+        // Lọc chỉ lấy đề thi TOEIC (loại bỏ đề từ vựng và ngữ pháp)
+        const toeicExams = data.filter((exam: ToeicExam) => 
+          exam.type === ExamType.FULL || 
+          exam.type === ExamType.MINI || 
+          exam.type === ExamType.LISTENING_ONLY || 
+          exam.type === ExamType.READING_ONLY
+        )
+        
         // Sắp xếp theo ngày tạo mới nhất
-        const sortedExams = data.sort((a: ToeicExam, b: ToeicExam) => 
+        const sortedExams = toeicExams.sort((a: ToeicExam, b: ToeicExam) => 
           new Date(b.createdAt || '').getTime() - new Date(a.createdAt || '').getTime()
         ).slice(0, 3) // Chỉ lấy 3 đề thi mới nhất
+        
         setExams(sortedExams)
       } catch (error) {
         console.error("Lỗi khi lấy danh sách đề thi:", error)
@@ -144,7 +154,7 @@ export default function Home() {
       {/* Recent Tests Section */}
       <section className="py-16">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Đề Thi Mới Nhất</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">Đề Thi TOEIC Mới Nhất</h2>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {loading ? (
               renderSkeleton()
@@ -180,7 +190,7 @@ export default function Home() {
               ))
             ) : (
               <div className="col-span-3 text-center py-8">
-                <p className="text-lg text-gray-500">Hiện chưa có đề thi nào được cập nhật</p>
+                <p className="text-lg text-gray-500">Hiện chưa có đề thi TOEIC nào được cập nhật</p>
               </div>
             )}
           </div>

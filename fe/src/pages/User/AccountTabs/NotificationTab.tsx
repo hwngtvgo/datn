@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
 import { Bell, Mail, Calendar, Clock, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 import notificationService, { NotificationSettingResponse } from "@/services/notificationService"
@@ -14,6 +14,7 @@ export default function NotificationTab() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [hasChanges, setHasChanges] = useState<boolean>(false);
   const [formSuccess, setFormSuccess] = useState<boolean>(false);
+  const [timeInputError, setTimeInputError] = useState<string>("");
   
   // Tải cài đặt thông báo
   useEffect(() => {
@@ -55,8 +56,13 @@ export default function NotificationTab() {
   };
   
   // Xử lý khi thay đổi thời gian nhắc nhở học tập
-  const handleTimeChange = (value: string) => {
+  const handleTimeInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!settings) return;
+    
+    const value = e.target.value;
+    
+    // Xóa thông báo lỗi khi người dùng bắt đầu nhập
+    setTimeInputError("");
     
     setSettings(prev => prev ? {
       ...prev,
@@ -67,10 +73,28 @@ export default function NotificationTab() {
     setFormSuccess(false);
   };
   
+  // Xác thực định dạng thời gian trước khi gửi form
+  const validateTimeFormat = (): boolean => {
+    if (!settings?.studyReminderTime) return false;
+    
+    const timeRegex = /^([0-1]?[0-9]|2[0-3]):([0-5][0-9])$/;
+    if (!timeRegex.test(settings.studyReminderTime)) {
+      setTimeInputError("Thời gian phải có định dạng HH:MM (ví dụ: 18:00)");
+      return false;
+    }
+    
+    return true;
+  };
+  
   // Xử lý khi gửi form
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!settings) return;
+    
+    // Kiểm tra định dạng thời gian
+    if (!validateTimeFormat()) {
+      return;
+    }
     
     try {
       setIsSubmitting(true);
@@ -145,25 +169,25 @@ export default function NotificationTab() {
               <p className="text-sm text-muted-foreground ml-6">
                 Nhận nhắc nhở luyện tập thường xuyên
               </p>
-              <div className="flex items-center ml-6 mt-2">
-                <Clock className="h-3 w-3 mr-1 text-muted-foreground" />
-                <Label htmlFor="reminder-time" className="text-xs mr-2 text-muted-foreground">Giờ nhắc nhở:</Label>
-                <Select 
-                  value={settings?.studyReminderTime} 
-                  onValueChange={handleTimeChange}
-                  disabled={!settings?.studyReminders}
-                >
-                  <SelectTrigger className="w-24 h-8 text-xs">
-                    <SelectValue placeholder="Chọn giờ" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {Array.from({ length: 24 }).map((_, i) => (
-                      <SelectItem key={i} value={`${i.toString().padStart(2, '0')}:00`}>
-                        {`${i.toString().padStart(2, '0')}:00`}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="flex flex-col ml-6 mt-2">
+                <div className="flex items-center">
+                  <Clock className="h-3 w-3 mr-1 text-muted-foreground" />
+                  <Label htmlFor="reminder-time" className="text-xs mr-2 text-muted-foreground">Giờ nhắc nhở:</Label>
+                  <Input 
+                    id="reminder-time"
+                    className="w-24 h-8 text-xs"
+                    placeholder="HH:MM"
+                    value={settings?.studyReminderTime || ""}
+                    onChange={handleTimeInputChange}
+                    disabled={!settings?.studyReminders}
+                  />
+                </div>
+                {timeInputError && (
+                  <p className="text-xs text-red-500 mt-1 ml-16">{timeInputError}</p>
+                )}
+                <p className="text-xs text-muted-foreground mt-1 ml-16">
+                  Định dạng: HH:MM (ví dụ: 18:30)
+                </p>
               </div>
             </div>
             <Switch 

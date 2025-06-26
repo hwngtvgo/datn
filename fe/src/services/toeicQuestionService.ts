@@ -42,6 +42,15 @@ const noAuthAxios = axios.create({
   }
 });
 
+// Tạo một instance axios với timeout dài hơn cho việc upload file lớn
+const fileUploadAxios = axios.create({
+  baseURL: API_URL_LOCAL,
+  timeout: 300000, // 5 phút
+  headers: {
+    'Content-Type': 'multipart/form-data',
+  }
+});
+
 // Interface cho phân trang
 export interface Page<T> {
   content: T[];
@@ -735,13 +744,27 @@ class ToeicQuestionService {
       questionsCount: data.questions.length
     });
     
-    const response = await axios.post(`${this.baseUrl}/create-group`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
+    try {
+      const response = await axios.post(`${this.baseUrl}/create-group`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        },
+        timeout: 300000 // Tăng timeout lên 5 phút (300000ms)
+      });
+      return response.data;
+    } catch (error) {
+      console.error("Lỗi khi tạo nhóm câu hỏi:", error);
+      if (axios.isAxiosError(error)) {
+        console.log('Status:', error.response?.status);
+        console.log('Data:', error.response?.data);
+        console.log('Headers:', error.response?.headers);
+        
+        if (error.code === 'ECONNABORTED') {
+          throw new Error('Quá thời gian xử lý. File quá lớn hoặc kết nối chậm. Vui lòng thử lại với file nhỏ hơn hoặc kiểm tra kết nối.');
+        }
       }
-    });
-    
-    return response.data;
+      throw error;
+    }
   }
   
   // Cập nhật nhóm câu hỏi
@@ -843,7 +866,8 @@ class ToeicQuestionService {
       const response = await axios.put(`${this.baseUrl}/question-group/${data.id}`, formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
-        }
+        },
+        timeout: 300000 // Tăng timeout lên 5 phút (300000ms)
       });
       
       console.log("Kết quả cập nhật nhóm câu hỏi:", response.status);
@@ -855,6 +879,10 @@ class ToeicQuestionService {
         console.log('Data:', error.response?.data);
         console.log('Headers:', error.response?.headers);
         console.log('Config:', error.config);
+        
+        if (error.code === 'ECONNABORTED') {
+          throw new Error('Quá thời gian xử lý. File quá lớn hoặc kết nối chậm. Vui lòng thử lại với file nhỏ hơn hoặc kiểm tra kết nối.');
+        }
       }
       throw error;
     }

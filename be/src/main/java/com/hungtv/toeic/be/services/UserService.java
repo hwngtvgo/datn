@@ -18,7 +18,11 @@ import com.hungtv.toeic.be.payload.request.CreateUserRequest;
 import com.hungtv.toeic.be.payload.request.UpdatePasswordRequest;
 import com.hungtv.toeic.be.payload.request.UpdateUserRequest;
 import com.hungtv.toeic.be.payload.response.UserResponse;
+import com.hungtv.toeic.be.repositories.NotificationSettingRepository;
+import com.hungtv.toeic.be.repositories.PasswordResetTokenRepository;
 import com.hungtv.toeic.be.repositories.RoleRepository;
+import com.hungtv.toeic.be.repositories.TestResultRepository;
+import com.hungtv.toeic.be.repositories.UserAnswerRepository;
 import com.hungtv.toeic.be.repositories.UserRepository;
 
 @Service
@@ -32,6 +36,18 @@ public class UserService {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+    
+    @Autowired
+    private TestResultRepository testResultRepository;
+    
+    @Autowired
+    private UserAnswerRepository userAnswerRepository;
+    
+    @Autowired
+    private NotificationSettingRepository notificationSettingRepository;
+    
+    @Autowired
+    private PasswordResetTokenRepository passwordResetTokenRepository;
 
     /**
      * Lấy danh sách tất cả người dùng
@@ -152,15 +168,35 @@ public class UserService {
     }
 
     /**
-     * Xóa người dùng theo ID
+     * Xóa người dùng theo ID và tất cả dữ liệu liên quan
      * @param id ID của người dùng cần xóa
      */
     @Transactional
     public void deleteUser(Long id) {
-        if (!userRepository.existsById(id)) {
-            throw new RuntimeException("Không tìm thấy người dùng với ID: " + id);
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng với ID: " + id));
+        
+        // 1. Xóa tất cả UserAnswer trước (vì nó tham chiếu đến TestResult)
+        List<com.hungtv.toeic.be.models.TestResult> testResults = testResultRepository.findByUserOrderByCreatedAtDesc(user);
+        for (com.hungtv.toeic.be.models.TestResult testResult : testResults) {
+            userAnswerRepository.deleteAll(testResult.getUserAnswers());
         }
-        userRepository.deleteById(id);
+        
+        // 2. Xóa tất cả TestResult của user
+        testResultRepository.deleteAll(testResults);
+        
+        // 3. Xóa NotificationSetting của user
+        notificationSettingRepository.findByUser(user).ifPresent(setting -> {
+            notificationSettingRepository.delete(setting);
+        });
+        
+        // 4. Xóa PasswordResetToken của user
+        passwordResetTokenRepository.findByUser(user).ifPresent(token -> {
+            passwordResetTokenRepository.delete(token);
+        });
+        
+        // 5. Cuối cùng xóa user (user_roles sẽ được xóa tự động do cascade)
+        userRepository.delete(user);
     }
 
     /**

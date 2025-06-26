@@ -4,6 +4,7 @@ import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAdjusters;
 import java.util.List;
@@ -11,6 +12,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +28,7 @@ import com.hungtv.toeic.be.repositories.UserRepository;
 @Service
 public class NotificationService {
     private static final Logger logger = LoggerFactory.getLogger(NotificationService.class);
+    private static final ZoneId VIETNAM_ZONE = ZoneId.of("Asia/Bangkok");
 
     @Autowired
     private NotificationSettingRepository notificationSettingRepository;
@@ -38,6 +41,12 @@ public class NotificationService {
 
     @Autowired
     private EmailService emailService;
+
+    @Value("${app.frontend-url}")
+    private String frontendUrl;
+    
+    @Value("${app.password-reset.base-url:${app.frontend-url}}")
+    private String passwordResetBaseUrl;
 
     /**
      * Lấy cài đặt thông báo của người dùng hiện tại
@@ -104,14 +113,15 @@ public class NotificationService {
     
     /**
      * Gửi email thông báo hoạt động tài khoản hàng tuần, chạy vào 7 giờ sáng mỗi thứ 2
+     * Múi giờ được cấu hình thông qua SchedulerConfig là GMT+7 (Việt Nam)
      */
-    @Scheduled(cron = "0 11 19 * * MON")
+    @Scheduled(cron = "0 0 7 * * MON")
     @Transactional
     public void sendWeeklyActivityEmails() {
         logger.info("Bắt đầu gửi email thông báo hoạt động tài khoản hàng tuần");
         
         // Lấy thời điểm đầu tuần trước để kiểm tra các email đã gửi
-        LocalDateTime weekStart = LocalDate.now().with(TemporalAdjusters.previous(DayOfWeek.MONDAY)).atStartOfDay();
+        LocalDateTime weekStart = LocalDate.now(VIETNAM_ZONE).with(TemporalAdjusters.previous(DayOfWeek.MONDAY)).atStartOfDay();
         
         // Lấy danh sách người dùng cần gửi email
         List<NotificationSetting> settingsToNotify = notificationSettingRepository.findAllForWeeklyEmailNotification(weekStart);
@@ -127,7 +137,7 @@ public class NotificationService {
                 sendWeeklyActivityEmail(user, testsCompletedLastWeek);
                 
                 // Cập nhật thời gian gửi email gần nhất
-                setting.setLastEmailSent(LocalDateTime.now());
+                setting.setLastEmailSent(LocalDateTime.now(VIETNAM_ZONE));
                 notificationSettingRepository.save(setting);
                 
                 logger.info("Đã gửi email thông báo hoạt động hàng tuần cho người dùng: {}", user.getUsername());
@@ -140,13 +150,14 @@ public class NotificationService {
     }
     
     /**
-     * Gửi nhắc nhở học tập hàng ngày, chạy mỗi giờ
+     * Gửi nhắc nhở học tập hàng ngày, chạy mỗi phút để kiểm tra
+     * Múi giờ được cấu hình thông qua SchedulerConfig là GMT+7 (Việt Nam)
      */
-    @Scheduled(cron = "0 0 * * * *")
+    @Scheduled(cron = "0 * * * * *")
     @Transactional
     public void sendStudyReminders() {
-        // Lấy giờ hiện tại theo định dạng HH:00
-        String currentHour = LocalTime.now().format(DateTimeFormatter.ofPattern("HH:00"));
+        // Lấy giờ hiện tại theo định dạng HH:MM theo múi giờ Việt Nam
+        String currentHour = LocalTime.now(VIETNAM_ZONE).format(DateTimeFormatter.ofPattern("HH:mm"));
         logger.info("Bắt đầu gửi nhắc nhở học tập cho giờ: {}", currentHour);
         
         // Lấy danh sách người dùng cần gửi nhắc nhở cho giờ hiện tại
@@ -160,7 +171,7 @@ public class NotificationService {
                 sendStudyReminderEmail(user);
                 
                 // Cập nhật thời gian gửi nhắc nhở gần nhất
-                setting.setLastReminderSent(LocalDateTime.now());
+                setting.setLastReminderSent(LocalDateTime.now(VIETNAM_ZONE));
                 notificationSettingRepository.save(setting);
                 
                 logger.info("Đã gửi nhắc nhở học tập cho người dùng: {}", user.getUsername());
@@ -186,6 +197,7 @@ public class NotificationService {
                 + "<li>Số bài thi đã hoàn thành: " + testsCompletedLastWeek + "</li>"
                 + "</ul>"
                 + "<p>Hãy tiếp tục rèn luyện để đạt kết quả tốt nhất!</p>"
+                + "<p><a href=\"" + passwordResetBaseUrl + "/practice-tests\">Làm bài thi ngay</a></p>"
                 + "<p>Trân trọng,<br>Đội ngũ TOEIC Learning</p>";
         
         emailService.sendHtmlEmail(user.getEmail(), subject, content);
@@ -201,7 +213,7 @@ public class NotificationService {
         String content = "<p>Chào " + user.getFullName() + ",</p>"
                 + "<p>Đây là lời nhắc nhở bạn nên dành thời gian để học tập và luyện tập TOEIC ngay bây giờ.</p>"
                 + "<p>Việc học đều đặn mỗi ngày sẽ giúp bạn cải thiện kỹ năng nhanh chóng.</p>"
-                + "<p><a href=\"http://localhost:5173/practice-tests\">Bắt đầu làm bài ngay</a></p>"
+                + "<p><a href=\"" + passwordResetBaseUrl + "/practice-tests\">Bắt đầu làm bài ngay</a></p>"
                 + "<p>Trân trọng,<br>Đội ngũ TOEIC Learning</p>";
         
         emailService.sendHtmlEmail(user.getEmail(), subject, content);

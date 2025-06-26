@@ -40,16 +40,20 @@ class AuthModule {
       const userStr = localStorage.getItem('user');
       if (userStr) {
         this.user = JSON.parse(userStr);
-        console.log('Đã tải thông tin người dùng từ localStorage');
+        console.log('Đã tải thông tin người dùng từ localStorage:', this.user?.username);
         
         // Tự động thiết lập token cho tất cả các requests
         if (this.user?.accessToken) {
           this.setAuthHeader(this.user.accessToken);
+          console.log('Đã thiết lập Authorization header với token từ localStorage');
         }
+      } else {
+        console.log('Không tìm thấy thông tin người dùng trong localStorage');
       }
     } catch (error) {
       console.error('Lỗi khi tải thông tin người dùng từ localStorage:', error);
       this.user = null;
+      localStorage.removeItem('user'); // Xóa dữ liệu bị lỗi
     }
   }
   
@@ -106,10 +110,17 @@ class AuthModule {
   // Lưu thông tin người dùng
   public setUser(user: AuthUser): void {
     this.user = user;
-    localStorage.setItem('user', JSON.stringify(user));
+    
+    try {
+      localStorage.setItem('user', JSON.stringify(user));
+      console.log('Đã lưu thông tin người dùng vào localStorage:', user.username);
+    } catch (error) {
+      console.error('Lỗi khi lưu người dùng vào localStorage:', error);
+    }
     
     if (user.accessToken) {
       this.setAuthHeader(user.accessToken);
+      console.log('Đã thiết lập Authorization header cho user:', user.username);
     }
   }
   
@@ -178,9 +189,18 @@ class AuthModule {
   
   // Xóa thông tin xác thực
   private clearAuth(): void {
+    console.log('Đang xóa thông tin xác thực...');
     this.user = null;
-    localStorage.removeItem('user');
+    
+    try {
+      localStorage.removeItem('user');
+      console.log('Đã xóa thông tin người dùng khỏi localStorage');
+    } catch (error) {
+      console.error('Lỗi khi xóa localStorage:', error);
+    }
+    
     delete axios.defaults.headers.common['Authorization'];
+    console.log('Đã xóa Authorization header');
   }
   
   // Khởi tạo request config với token

@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import axios from 'axios';
+import { API_URL } from '@/config/constants';
 
 // UI Components
 import { Button } from '@/components/ui/button';
@@ -157,7 +158,7 @@ const ExamForm: React.FC<ExamFormProps> = ({
       }
       
       // Sử dụng axios trực tiếp thay vì gọi hàm getQuestionGroups
-      const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:8080/api'}/toeic-questions/question-groups`, {
+      const response = await axios.get(`${API_URL}/toeic-questions/question-groups`, {
         params: {
           page: pageParam,
           size: sizeParam,

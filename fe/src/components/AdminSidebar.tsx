@@ -43,7 +43,7 @@ const AdminSidebar: React.FC = () => {
     },
     {
       title: 'Đề thi TOEIC',
-      path: '/admin/toeic-exams',
+      path: '/admin/tests',
       icon: <FileText className="w-5 h-5" />,
     },
     {
@@ -51,11 +51,11 @@ const AdminSidebar: React.FC = () => {
       path: '/admin/toeic-questions',
       icon: <HelpCircle className="w-5 h-5" />,
     },
-    {
-      title: 'Câu hỏi độc lập',
-      path: '/admin/standalone-questions',
-      icon: <Book className="w-5 h-5" />,
-    },
+    // {
+    //   title: 'Câu hỏi độc lập',
+    //   path: '/admin/standalone-questions',
+    //   icon: <Book className="w-5 h-5" />,
+    // },
 
 
   ];

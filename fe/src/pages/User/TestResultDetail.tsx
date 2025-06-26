@@ -11,8 +11,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Progress } from "@/components/ui/progress";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import {
   ChevronLeft,
+  ChevronRight,
   Clock,
   Calendar,
   Award,
@@ -24,12 +28,16 @@ import {
   Headphones,
   Loader2,
   FileText,
-  AlertTriangle
+  AlertTriangle,
+  Volume2,
+  Bookmark
 } from "lucide-react";
-import { getTestResultDetail, TestResultResponse } from "@/services/testResultService";
+import { getTestResultDetail, getTestResultDetailForReview, TestResultResponse } from "@/services/testResultService";
+import * as toeicExamService from "@/services/toeicExamService";
 import { toast } from "sonner";
 import { formatDate } from "@/lib/utils";
 import authModule from "@/modules/auth";
+import { API_URL } from "@/config/constants";
 
 // Định nghĩa kiểu dữ liệu cho userAnswers (nếu có)
 interface UserAnswer {
@@ -51,12 +59,59 @@ interface DetailedTestResultResponse extends TestResultResponse {
   userAnswers?: UserAnswer[];
 }
 
+// Hàm để xử lý URL audio và image
+const getFullUrl = (url?: string) => {
+  if (!url) return '';
+  if (url.startsWith('http://') || url.startsWith('https://')) {
+    return url;
+  }
+  return `${API_URL}/files/view/${url}`;
+};
+
+// Hàm để lấy tiêu đề hiển thị của nhóm câu hỏi
+const getGroupTitle = (group: any) => {
+  if (group.title) {
+    return group.title;
+  }
+  return `Part ${group.part} - ${group.part <= 4 ? 'Listening' : 'Reading'}`;
+};
+
+// Hàm sắp xếp các lựa chọn theo thứ tự chuẩn (A, B, C, D)
+const sortOptions = (options: any[]) => {
+  return [...options].sort((a, b) => {
+    // Đảm bảo thứ tự A, B, C, D hoặc a, b, c, d hoặc 1, 2, 3, 4
+    const keyA = a.optionKey.toUpperCase();
+    const keyB = b.optionKey.toUpperCase();
+    
+    // Nếu là các chữ cái
+    if (['A', 'B', 'C', 'D'].includes(keyA) && ['A', 'B', 'C', 'D'].includes(keyB)) {
+      const order = {'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4};
+      return order[keyA] - order[keyB];
+    }
+    
+    // Nếu là các số
+    if (!isNaN(Number(keyA)) && !isNaN(Number(keyB))) {
+      return Number(keyA) - Number(keyB);
+    }
+    
+    // Các trường hợp khác
+    return keyA.localeCompare(keyB);
+  });
+};
+
 const TestResultDetail: React.FC = () => {
   const { resultId } = useParams<{ resultId: string }>();
   const navigate = useNavigate();
   const [result, setResult] = useState<DetailedTestResultResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // States cho review mode giống như TestPage
+  const [isReviewMode, setIsReviewMode] = useState(false);
+  const [reviewGroupIndex, setReviewGroupIndex] = useState(0);
+  const [showSidebar, setShowSidebar] = useState(false);
+  const [test, setTest] = useState<any>(null);
+  const [testResults, setTestResults] = useState<any[]>([]);
 
   useEffect(() => {
     // Kiểm tra đăng nhập trước khi tải dữ liệu
@@ -114,6 +169,148 @@ const TestResultDetail: React.FC = () => {
 
   const handleBack = () => {
     navigate('/test-history');
+  };
+
+  // Load data cho review mode giống như TestPage
+  const loadReviewData = async () => {
+    if (!result) return;
+    
+    setIsLoading(true);
+    try {
+      // Gọi API để lấy chi tiết câu trả lời và bài thi
+      const reviewData = await getTestResultDetailForReview(result.id);
+       
+      // Lấy dữ liệu test và question groups giống như TestPage
+      const examData = await toeicExamService.getExamById(result.testId);
+      const questionsData = await toeicExamService.getExamQuestions(result.testId);
+      
+      // Sắp xếp questionGroups theo part giống như TestPage
+      const sortedGroups = questionsData.sort((a: any, b: any) => a.part - b.part);
+      
+      // Tạo dữ liệu test giống như TestPage
+      setTest({
+        id: examData.id,
+        title: examData.title,
+        description: examData.description,
+        instructions: examData.instructions,
+        duration: examData.duration,
+        type: examData.type,
+        difficulty: examData.difficulty,
+        questionGroups: sortedGroups
+      });
+      
+      // Chuyển đổi dữ liệu từ API thành định dạng phù hợp
+      const detailedResults: any[] = [];
+      
+      // Tạo map các câu trả lời của user từ API để tra cứu nhanh
+      const userAnswersMap: Record<number, any> = {};
+      if (reviewData && reviewData.userAnswers) {
+        reviewData.userAnswers.forEach((ua: any) => {
+          userAnswersMap[ua.questionId] = ua;
+        });
+      }
+      
+      sortedGroups.forEach((group: any) => {
+        if (group.questions && group.questions.length > 0) {
+          group.questions.forEach((question: any) => {
+            // Lấy thông tin câu trả lời từ API nếu có
+            let userAnswer = "";
+            let isCorrect = false;
+            let answered = false;
+            
+            const userAnswerObj = userAnswersMap[question.id];
+            if (userAnswerObj) {
+              userAnswer = userAnswerObj.userAnswer;
+              isCorrect = userAnswerObj.isCorrect;
+              answered = true;
+            }
+            
+            detailedResults.push({
+              questionId: question.id,
+              question: question.question,
+              correctAnswer: question.correctAnswer,
+              userAnswer: userAnswer,
+              answered: answered,
+              selectedOptionId: answered ? question.options?.find((opt: any) => opt.optionKey === userAnswer)?.id : null,
+              isCorrect: isCorrect,
+              explanation: question.explanation || "Không có giải thích",
+              options: question.options,
+              part: group.part,
+              passage: group.passage,
+              imageUrl: group.imageUrl,
+              audioUrl: group.audioUrl
+            });
+          });
+        }
+      });
+      
+      setTestResults(detailedResults);
+      setIsReviewMode(true);
+      setShowSidebar(true);
+      setReviewGroupIndex(0);
+      
+    } catch (error) {
+      console.error('Lỗi khi tải dữ liệu review:', error);
+      toast.error("Không thể tải dữ liệu xem lại chi tiết");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Hàm để nhảy đến câu hỏi cụ thể giống như TestPage
+  const jumpToQuestion = (questionId: number) => {
+    if (!test) return;
+    
+    for (let groupIndex = 0; groupIndex < test.questionGroups.length; groupIndex++) {
+      const group = test.questionGroups[groupIndex];
+      const questionInGroup = group.questions?.find((q: any) => q.id === questionId);
+      if (questionInGroup) {
+        setReviewGroupIndex(groupIndex);
+        setTimeout(() => {
+          const questionElement = document.getElementById(`question-${questionId}`);
+          if (questionElement) {
+            questionElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }, 100);
+        return;
+      }
+    }
+  };
+
+  // Hàm để lấy tất cả câu hỏi theo thứ tự giống như TestPage
+  const getAllQuestions = () => {
+    if (!test) return [];
+    
+    const allQuestions: Array<{
+      id: number;
+      question: string;
+      part: number;
+      groupIndex: number;
+      questionIndex: number;
+    }> = [];
+    
+    let globalIndex = 0;
+    test.questionGroups.forEach((group: any, groupIndex: number) => {
+      group.questions?.forEach((question: any) => {
+        allQuestions.push({
+          id: question.id,
+          question: question.question,
+          part: group.part,
+          groupIndex,
+          questionIndex: globalIndex + 1
+        });
+        globalIndex++;
+      });
+    });
+    
+    return allQuestions;
+  };
+
+  // Hàm để lấy trạng thái câu hỏi giống như TestPage
+  const getQuestionStatus = (questionId: number) => {
+    const questionResult = testResults.find(r => r.questionId === questionId);
+    if (!questionResult) return 'unanswered';
+    return questionResult.isCorrect ? 'correct' : 'incorrect';
   };
 
   const getScoreColor = (score: number) => {
@@ -183,6 +380,263 @@ const TestResultDetail: React.FC = () => {
       percent: Math.round((correct / answers.length) * 100)
     };
   };
+
+  // Review Mode JSX - copy từ TestPage
+  if (isReviewMode && test) {
+    const currentGroup = test.questionGroups[reviewGroupIndex];
+    
+    return (
+      <div className="fixed inset-0 bg-background z-50 flex">
+        {/* Sidebar giống như TestPage */}
+        {showSidebar && (
+          <div className="w-80 border-r bg-card">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <h2 className="text-lg font-semibold">
+                  {test.title}
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowSidebar(false)}
+                >
+                  ✕
+                </Button>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="max-h-96 overflow-y-auto">
+                  {test.questionGroups.map((group: any, groupIdx: number) => (
+                    <div key={groupIdx} className="p-4 border-b">
+                      <div 
+                        className="flex items-center justify-between cursor-pointer"
+                        onClick={() => setReviewGroupIndex(groupIdx)}
+                      >
+                        <span className="font-medium text-sm">
+                          {getGroupTitle(group)}
+                        </span>
+                        <ChevronRight className="h-4 w-4" />
+                      </div>
+                      
+                      {reviewGroupIndex === groupIdx && (
+                        <div className="mt-2 space-y-1">
+                          {group.questions?.map((question: any, qIdx: number) => {
+                            const questionResult = testResults.find(r => r.questionId === question.id);
+                            const isCorrect = questionResult?.isCorrect || false;
+                            const hasAnswer = questionResult?.answered || false;
+                            
+                            return (
+                              <div
+                                key={qIdx}
+                                className={`p-2 rounded text-xs cursor-pointer ${
+                                  !hasAnswer
+                                    ? 'bg-gray-100 text-gray-700'
+                                    : isCorrect 
+                                    ? 'bg-green-100 text-green-700' 
+                                    : 'bg-red-100 text-red-700'
+                                }`}
+                                onClick={() => jumpToQuestion(question.id)}
+                              >
+                                Câu {qIdx + 1}: {!hasAnswer ? '-' : (isCorrect ? '✓' : '✗')}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+        
+        {/* Main Content giống như TestPage */}
+        <div className="flex-1 flex flex-col">
+          {/* Header */}
+          <div className="border-b p-4 bg-card">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setIsReviewMode(false)}
+                >
+                  ← Quay lại
+                </Button>
+                
+                {!showSidebar && (
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowSidebar(true)}
+                  >
+                    Hiện thanh bên
+                  </Button>
+                )}
+              </div>
+              
+              <h1 className="text-xl font-semibold">
+                {test.title} - Chi tiết kết quả
+              </h1>
+            </div>
+          </div>
+          
+          {/* Questions Content giống như TestPage */}
+          <div className="flex-1 overflow-y-auto p-6">
+            <div className="mb-8">
+              <h2 className="text-xl font-bold mb-4">
+                {getGroupTitle(currentGroup)}
+              </h2>
+              
+              {/* Group passage/content */}
+              {currentGroup.passage && (
+                <Card className="mb-6">
+                  <CardContent className="p-6">
+                    {currentGroup.imageUrl && (
+                      <img 
+                        src={getFullUrl(currentGroup.imageUrl)} 
+                        alt="Question content" 
+                        className="w-full max-w-md mx-auto mb-4 rounded"
+                      />
+                    )}
+                    
+                    {currentGroup.audioUrl && (
+                      <div className="mb-4">
+                        <audio controls className="w-full">
+                          <source src={getFullUrl(currentGroup.audioUrl)} type="audio/mpeg" />
+                        </audio>
+                      </div>
+                    )}
+                    
+                    <div 
+                      className="prose max-w-none"
+                      dangerouslySetInnerHTML={{ __html: currentGroup.passage }}
+                    />
+                  </CardContent>
+                </Card>
+              )}
+              
+              {/* Questions */}
+              {currentGroup.questions?.map((question: any, qIdx: number) => {
+                const questionResult = testResults.find(r => r.questionId === question.id);
+                const isCorrect = questionResult?.isCorrect || false;
+                const hasAnswer = questionResult?.answered || false;
+                
+                // Tính toán số thứ tự câu hỏi dựa trên vị trí trong tất cả các nhóm
+                let questionNumber = qIdx + 1;
+                
+                // Cộng thêm tổng số câu hỏi từ các nhóm trước đó
+                for (let i = 0; i < reviewGroupIndex; i++) {
+                  questionNumber += test.questionGroups[i].questions?.length || 0;
+                }
+                
+                return (
+                  <Card 
+                    key={qIdx} 
+                    className={`mb-4 ${
+                      !hasAnswer 
+                        ? 'border-gray-200 bg-gray-50' 
+                        : isCorrect 
+                        ? 'border-green-200 bg-green-50' 
+                        : 'border-red-200 bg-red-50'
+                    }`}
+                    id={`question-${question.id}`}
+                  >
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-3">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-sm font-bold ${
+                          !hasAnswer
+                            ? 'bg-gray-400'
+                            : isCorrect 
+                            ? 'bg-green-500' 
+                            : 'bg-red-500'
+                        }`}>
+                          {questionNumber}
+                        </div>
+                        
+                        <div className="flex-1">
+                          {/* Question content */}
+                          {question.imageUrl && (
+                            <img 
+                              src={getFullUrl(question.imageUrl)} 
+                              alt="Question" 
+                              className="w-full max-w-md mb-4 rounded"
+                            />
+                          )}
+                          
+                          {question.audioUrl && (
+                            <div className="flex items-center gap-2 mb-4">
+                              <Volume2 className="h-4 w-4" />
+                              <audio controls>
+                                <source src={getFullUrl(question.audioUrl)} type="audio/mpeg" />
+                              </audio>
+                            </div>
+                          )}
+                          
+                          <div 
+                            className="mb-4 font-medium"
+                            dangerouslySetInnerHTML={{ __html: question.question }}
+                          />
+                          
+                          {/* Answer choices giống như TestPage */}
+                          <RadioGroup value={questionResult?.answered ? questionResult?.userAnswer : ""} className="space-y-2">
+                            {question.options && sortOptions(question.options)
+                              .map((option: any) => (
+                              <div key={option.id} className="flex items-center space-x-2">
+                                <RadioGroupItem 
+                                  value={option.optionKey} 
+                                  id={`${question.id}-${option.optionKey}`}
+                                  disabled
+                                />
+                                <Label 
+                                  htmlFor={`${question.id}-${option.optionKey}`}
+                                  className={`flex-1 ${
+                                    option.optionKey === question.correctAnswer
+                                      ? 'text-green-600 font-medium'
+                                      : (option.optionKey === questionResult?.userAnswer && !isCorrect)
+                                      ? 'text-red-600'
+                                      : ''
+                                  }`}
+                                >
+                                  {option.optionKey}. {option.optionText}
+                                  {option.optionKey === question.correctAnswer && (
+                                    <span className="ml-2 text-green-600">✓ Đáp án đúng</span>
+                                  )}
+                                  {questionResult?.answered && option.optionKey === questionResult?.userAnswer && !isCorrect && (
+                                    <span className="ml-2 text-red-600">✗ Câu trả lời của bạn</span>
+                                  )}
+                                </Label>
+                              </div>
+                            ))}
+                          </RadioGroup>
+                          
+                          {/* Chỉ hiện thông báo cho câu chưa trả lời */}
+                          {!hasAnswer && (
+                            <div className="mt-4 p-3 bg-gray-100 border border-gray-200 rounded">
+                              <p className="text-sm text-gray-600">Bạn chưa trả lời câu hỏi này.</p>
+                            </div>
+                          )}
+                          
+                          {/* Explanation */}
+                          {question.explanation && (
+                            <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                              <p className="text-sm font-medium text-blue-800 mb-1">Giải thích:</p>
+                              <div 
+                                className="text-sm text-blue-700"
+                                dangerouslySetInnerHTML={{ __html: question.explanation }}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -460,12 +914,17 @@ const TestResultDetail: React.FC = () => {
           )}
         </CardContent>
         <CardFooter className="flex justify-between">
-          <Button variant="outline" onClick={handleBack}>
+          <Button variant="outline" onClick={loadReviewData}>
             Xem lịch sử bài thi
           </Button>
-          <Button onClick={() => navigate("/practice-tests")}>
-            Làm bài thi mới
-          </Button>
+          <div className="flex gap-2">
+            {/* <Button variant="outline" onClick={loadReviewData}>
+              Xem chi tiết từng câu
+            </Button> */}
+            <Button onClick={() => navigate("/practice-tests")}>
+              Làm bài thi mới
+            </Button>
+          </div>
         </CardFooter>
       </Card>
     </div>

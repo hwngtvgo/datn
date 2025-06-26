@@ -7,12 +7,23 @@ export default defineConfig({
   plugins: [react()],
   server: {
     port: 5173,
-    strictPort: true,
-    host: true,
+    host: '0.0.0.0',
   },
   resolve: {
     alias: {
-      '@': path.resolve(path.dirname(new URL(import.meta.url).pathname), './src'),
+      "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      onwarn(warning, warn) {
+        // Bỏ qua warnings về unused variables
+        if (warning.code === 'UNUSED_EXTERNAL_IMPORT') return
+        warn(warning)
+      }
+    }
+  },
+  esbuild: {
+    logOverride: { 'this-is-undefined-in-esm': 'silent' }
+  }
 })

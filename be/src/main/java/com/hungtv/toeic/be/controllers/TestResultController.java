@@ -1,6 +1,10 @@
 package com.hungtv.toeic.be.controllers;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -17,9 +21,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.hungtv.toeic.be.models.TestResult;
+import com.hungtv.toeic.be.models.ToeicQuestion;
+import com.hungtv.toeic.be.models.UserAnswer;
 import com.hungtv.toeic.be.payload.request.SaveTestResultRequest;
 import com.hungtv.toeic.be.payload.response.TestResultResponse;
 import com.hungtv.toeic.be.payload.response.UserStatisticsResponse;
+import com.hungtv.toeic.be.repositories.TestResultRepository;
+import com.hungtv.toeic.be.repositories.UserAnswerRepository;
 import com.hungtv.toeic.be.services.TestResultService;
 
 import jakarta.validation.Valid;
@@ -30,6 +39,70 @@ public class TestResultController {
     
     @Autowired
     private TestResultService testResultService;
+    
+    @Autowired
+    private TestResultRepository testResultRepository;
+    
+    @Autowired
+    private UserAnswerRepository userAnswerRepository;
+    
+    /**
+     * Lấy chi tiết câu trả lời của một kết quả bài thi để xem review
+     * 
+     * @param resultId ID của kết quả bài thi
+     * @return Map<String, Object> với chi tiết câu trả lời
+     */
+    @GetMapping("/{resultId}/review")
+    @PreAuthorize("hasRole('USER') or hasRole('ADMIN')")
+    public ResponseEntity<?> getTestResultReview(@PathVariable Long resultId) {
+        try {
+            // Lấy TestResult
+            TestResult testResult = testResultRepository.findById(resultId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy kết quả bài thi với ID: " + resultId));
+            
+            // Lấy danh sách câu trả lời
+            List<UserAnswer> userAnswers = userAnswerRepository.findByTestResultOrderByQuestion_QuestionOrder(testResult);
+            
+            // Chuyển đổi sang DTO để trả về
+            List<Map<String, Object>> userAnswersDto = userAnswers.stream()
+                .map(answer -> {
+                    ToeicQuestion question = answer.getQuestion();
+                    Map<String, Object> answerMap = new HashMap<>();
+                    answerMap.put("id", answer.getId());
+                    answerMap.put("questionId", question.getId());
+                    answerMap.put("questionText", question.getQuestion());
+                    answerMap.put("questionType", question.getQuestionGroup() != null ? question.getQuestionGroup().getQuestionType().toString() : "");
+                    answerMap.put("questionGroupId", question.getQuestionGroup() != null ? question.getQuestionGroup().getId() : 0);
+                    answerMap.put("part", question.getQuestionGroup() != null ? question.getQuestionGroup().getPart() : 0);
+                    answerMap.put("questionOrder", question.getQuestionOrder());
+                    answerMap.put("userAnswer", answer.getUserAnswer());
+                    answerMap.put("correctAnswer", question.getCorrectAnswer());
+                    answerMap.put("isCorrect", answer.getIsCorrect());
+                    answerMap.put("explanation", question.getExplanation());
+                    answerMap.put("options", question.getOptions());
+                    return answerMap;
+                })
+                .collect(Collectors.toList());
+            
+            // Tạo response với dữ liệu cơ bản và chi tiết câu trả lời
+            Map<String, Object> response = new HashMap<>();
+            response.put("id", testResult.getId());
+            response.put("testId", testResult.getTest().getId());
+            response.put("testTitle", testResult.getTest().getTitle());
+            response.put("totalScore", testResult.getTotalScore());
+            response.put("correctAnswers", testResult.getCorrectAnswers());
+            response.put("totalQuestions", testResult.getTotalQuestions());
+            response.put("completionTimeInMinutes", testResult.getCompletionTimeInMinutes());
+            response.put("createdAt", testResult.getCreatedAt());
+            response.put("userAnswers", userAnswersDto);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "Không thể lấy chi tiết review: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
     
     /**
      * Lưu kết quả bài thi của người dùng
@@ -131,5 +204,29 @@ public class TestResultController {
     public ResponseEntity<UserStatisticsResponse> getUserStatistics(@PathVariable Long userId) {
         UserStatisticsResponse statistics = testResultService.getUserStatistics(userId);
         return ResponseEntity.ok(statistics);
+    }
+    
+    /**
+     * (API dành cho Admin) Lấy thống kê tổng quát của tất cả người dùng
+     * 
+     * @return Map chứa thống kê tổng quát
+     */
+    @GetMapping("/admin/dashboard-statistics")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> getDashboardStatistics() {
+        Map<String, Object> statistics = testResultService.getAllUsersStatistics();
+        return ResponseEntity.ok(statistics);
+    }
+
+    /**
+     * (API test cho Admin) Test endpoint đơn giản
+     */
+    @GetMapping("/admin/test")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<Map<String, Object>> testAdmin() {
+        Map<String, Object> result = new HashMap<>();
+        result.put("message", "Admin endpoint working!");
+        result.put("timestamp", LocalDateTime.now());
+        return ResponseEntity.ok(result);
     }
 } 

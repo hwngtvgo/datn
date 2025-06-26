@@ -61,23 +61,52 @@ public class WebSecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
+        http.cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .csrf(csrf -> csrf.disable())
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> 
                 auth
+                    // Các endpoint công khai không cần đăng nhập
                     .requestMatchers("/api/auth/**").permitAll()
                     .requestMatchers("/api/files/view/**").permitAll()
                     .requestMatchers("/api/files/**").permitAll()
-                    .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                    .requestMatchers("/api/toeic-questions/**").permitAll()
-                    .requestMatchers("/api/question-groups/**").permitAll()
-                    .requestMatchers("/api/toeic-exams/**").permitAll()
-                    .requestMatchers("/api/tests/**").permitAll()
+                    .requestMatchers("/swagger-ui/**").permitAll()
+                    .requestMatchers("/v3/api-docs/**").permitAll()
+                    .requestMatchers("/actuator/**").permitAll()
+                    .requestMatchers("/api/cors-test/**").permitAll()
                     .requestMatchers("/api/ai/**").permitAll()
+                    .requestMatchers("/error").permitAll()
+                    
+                    // Cho phép GET (đọc) các câu hỏi và bài thi mà không cần đăng nhập
+                    .requestMatchers("GET", "/api/toeic-questions").permitAll()
+                    .requestMatchers("GET", "/api/toeic-questions/**").permitAll()
+                    .requestMatchers("GET", "/api/question-groups").permitAll()
+                    .requestMatchers("GET", "/api/question-groups/**").permitAll()
+                    .requestMatchers("GET", "/api/tests").permitAll()
+                    .requestMatchers("GET", "/api/tests/**").permitAll()
+                    
+                    // Cho phép guest mode (không cần đăng nhập)
+                    .requestMatchers("/api/tests/guest/**").permitAll()
+                    .requestMatchers("/api/test-results/guest/**").permitAll()
+                    
+                    // Các endpoint cần quyền admin (tạo, sửa, xóa)
                     .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                    .requestMatchers("POST", "/api/toeic-questions").hasRole("ADMIN")
+                    .requestMatchers("PUT", "/api/toeic-questions/**").hasRole("ADMIN")
+                    .requestMatchers("DELETE", "/api/toeic-questions/**").hasRole("ADMIN")
+                    .requestMatchers("POST", "/api/question-groups").hasRole("ADMIN")
+                    .requestMatchers("PUT", "/api/question-groups/**").hasRole("ADMIN")
+                    .requestMatchers("DELETE", "/api/question-groups/**").hasRole("ADMIN")
+                    .requestMatchers("POST", "/api/tests").hasRole("ADMIN")
+                    .requestMatchers("PUT", "/api/tests/**").hasRole("ADMIN")
+                    .requestMatchers("DELETE", "/api/tests/**").hasRole("ADMIN")
+                    
+                    // Các endpoint cần đăng nhập (user hoặc admin)
+                    .requestMatchers("/api/users/**").hasAnyRole("ADMIN", "USER")
+                    .requestMatchers("/api/test-results/**").hasAnyRole("ADMIN", "USER")
+                    
+                    // Tất cả các request khác cần authentication
                     .anyRequest().authenticated()
             );
         
@@ -90,7 +119,27 @@ public class WebSecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173", "http://localhost:3000", "http://127.0.0.1:5173", "http://127.0.0.1:3000", "http://localhost:5174", "http://127.0.0.1:5174", "http://localhost:5175", "http://127.0.0.1:5175", "http://localhost:5176", "http://127.0.0.1:5176")); 
+        
+        configuration.setAllowedOrigins(Arrays.asList(
+            "http://localhost:5173",
+            "http://localhost:3000",
+            "http://localhost:8081",
+            // VPS IP trực tiếp
+            "http://YOUR_VPS_IP",
+            "http://YOUR_VPS_IP:80",
+            "http://YOUR_VPS_IP:8080",
+            "http://YOUR_VPS_IP:8081",
+            // Domain names
+            "http://www.toeicsoict.me",
+            "https://www.toeicsoict.me", 
+            "http://toeicsoict.me",
+            "https://toeicsoict.me",
+            "http://www.toeicsoict.me:8081",
+            "https://www.toeicsoict.me:8081",
+            "http://toeicsoict.me:8081",
+            "https://toeicsoict.me:8081"
+        ));
+        
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setExposedHeaders(Arrays.asList("Authorization", "Content-Type", "Set-Cookie"));

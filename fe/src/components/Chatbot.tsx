@@ -6,6 +6,7 @@ import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { MessageCircle, Send, X, Loader2 } from "lucide-react"
 import axios from "axios"
+import { API_URL } from "@/config/constants"
 
 // Interface cho tin nhắn
 interface ChatMessage {
@@ -13,91 +14,52 @@ interface ChatMessage {
   content: string;
 }
 
-// API Keys từ biến môi trường
-const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
-const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
-
-// Thử tạo backend proxy để tránh lỗi CORS
-async function callOpenAIWithProxy(messages: ChatMessage[]): Promise<string> {
+// Gọi API thông qua backend
+async function callChatAPI(message: string): Promise<string> {
   try {
-    // Kiểm tra API key
-    if (!OPENAI_API_KEY) {
-      console.error('API key không tồn tại hoặc không hợp lệ');
-      throw new Error('API key không hợp lệ');
-    }
-
-    console.log('Đang gửi yêu cầu thông qua proxy...');
+    console.log('Đang gửi yêu cầu đến backend...');
     
-    // Cố gắng gọi API thông qua backend proxy nếu có
-    try {
-      const apiUrl = import.meta.env.VITE_API_URL;
-      const response = await axios.post(
-        `${apiUrl}/ai/chat`,
-        {
-          messages: messages,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        }
-      );
-
-      if (response.data && response.data.content) {
-        return response.data.content;
-      }
-    } catch (proxyError) {
-      console.log('Không thể sử dụng proxy, thử kết nối trực tiếp...');
-    }
-
-    // Gọi API trực tiếp nếu không có proxy hoặc proxy lỗi
     const response = await axios.post(
-      OPENAI_API_URL,
+      `${API_URL}/ai/chat`,
       {
-        model: 'gpt-3.5-turbo',
-        messages: messages,
-        max_tokens: 1000,
-        temperature: 0.7,
+        message: message,
       },
       {
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`,
         },
       }
     );
 
-    if (response.data && response.data.choices && response.data.choices.length > 0) {
-      console.log('Nhận được phản hồi từ OpenAI API');
-      return response.data.choices[0].message.content;
+    if (response.data && response.data.content) {
+      console.log('Nhận được phản hồi từ backend');
+      return response.data.content;
     } else {
-      console.error('Phản hồi từ API không hợp lệ:', response.data);
+      console.error('Phản hồi từ backend không hợp lệ:', response.data);
       throw new Error('Phản hồi từ server không hợp lệ');
     }
   } catch (error: any) {
-    console.error('Lỗi khi gọi server:', error);
+    console.error('Lỗi khi gọi backend:', error);
     
     // Hiển thị chi tiết lỗi để debug
     if (error.response) {
       // Lỗi từ server với phản hồi
-      console.error('Lỗi từ server:', {
+      console.error('Lỗi từ backend:', {
         status: error.response.status,
         data: error.response.data
       });
       
       if (error.response.status === 401) {
-        throw new Error('API key không hợp lệ hoặc đã hết hạn');
+        throw new Error('Không có quyền truy cập');
       } else if (error.response.status === 429) {
-        throw new Error('Đã vượt quá giới hạn yêu cầu API. Vui lòng thử lại sau');
-      } else if (error.response.status === 403) {
-        throw new Error('Không có quyền truy cập API');
+        throw new Error('Đã vượt quá giới hạn yêu cầu. Vui lòng thử lại sau');
       } else if (error.response.status === 500) {
         throw new Error('Lỗi server nội bộ');
       }
     } else if (error.request) {
       // Không nhận được phản hồi
-      console.error('Không nhận được phản hồi từ server:', error.request);
-      throw new Error('Không nhận được phản hồi từ server');
+      console.error('Không nhận được phản hồi từ backend:', error.request);
+      throw new Error('Không thể kết nối với server');
     }
     
     throw new Error('Không thể kết nối với server. Vui lòng thử lại sau.');
@@ -107,10 +69,6 @@ async function callOpenAIWithProxy(messages: ChatMessage[]): Promise<string> {
 export default function Chatbot() {
   const [isOpen, setIsOpen] = useState(false)
   const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: "system",
-      content: "Bạn là trợ lý học tập TOEIC thông minh. Bạn cung cấp thông tin chính xác, ngắn gọn và hữu ích về việc học TOEIC và tiếng Anh. Luôn trả lời bằng tiếng Việt trừ khi được yêu cầu sử dụng tiếng Anh."
-    },
     {
       role: "assistant",
       content: "Xin chào! Tôi là trợ lý TOEIC AI. Tôi có thể giúp bạn trả lời các câu hỏi về TOEIC và tiếng Anh. Bạn cần giúp đỡ gì?",
@@ -139,16 +97,8 @@ export default function Chatbot() {
     setIsLoading(true)
 
     try {
-      // Chuẩn bị tin nhắn cho API (bao gồm tin nhắn hệ thống và lịch sử trò chuyện)
-      const historyMessages = messages.filter(msg => msg.role !== "system");
-      const messagesToSend: ChatMessage[] = [
-        messages[0], // Tin nhắn system đầu tiên
-        ...historyMessages,
-        userMessage
-      ];
-      
-      // Gọi OpenAI API thông qua proxy hoặc trực tiếp
-      const responseText = await callOpenAIWithProxy(messagesToSend);
+      // Gọi chat API thông qua backend
+      const responseText = await callChatAPI(input);
       
       // Thêm phản hồi vào danh sách tin nhắn
       setMessages(prev => [
@@ -199,11 +149,18 @@ export default function Chatbot() {
           </CardHeader>
           <CardContent className="p-4 h-80 overflow-y-auto">
             <div className="space-y-4">
-              {messages.filter(msg => msg.role !== "system").map((message, index) => (
-                <div key={index} className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}>
+              {messages.map((message, index) => (
+                <div
+                  key={index}
+                  className={`flex ${
+                    message.role === "user" ? "justify-end" : "justify-start"
+                  }`}
+                >
                   <div
-                    className={`rounded-lg px-4 py-2 max-w-[80%] ${
-                      message.role === "user" ? "bg-primary text-primary-foreground" : "bg-muted"
+                    className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
+                      message.role === "user"
+                        ? "bg-blue-500 text-white"
+                        : "bg-gray-100 text-gray-900"
                     }`}
                   >
                     {message.content}
@@ -212,35 +169,30 @@ export default function Chatbot() {
               ))}
               {isLoading && (
                 <div className="flex justify-start">
-                  <div className="rounded-lg px-4 py-2 bg-muted flex items-center space-x-2">
+                  <div className="bg-gray-100 rounded-lg px-3 py-2 text-sm">
                     <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Đang trả lời...</span>
                   </div>
                 </div>
               )}
-              <div ref={messagesEndRef} />
             </div>
+            <div ref={messagesEndRef} />
           </CardContent>
-          <CardFooter className="p-4 pt-0">
+          <CardFooter className="p-4">
             <form
-              className="flex w-full items-center space-x-2"
               onSubmit={(e) => {
                 e.preventDefault()
                 handleSend()
               }}
+              className="flex w-full space-x-2"
             >
-              <Input 
-                placeholder="Nhập câu hỏi của bạn..." 
-                value={input} 
-                onChange={(e) => setInput(e.target.value)} 
+              <Input
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Nhập câu hỏi về TOEIC..."
                 disabled={isLoading}
               />
-              <Button type="submit" size="icon" disabled={isLoading || !input.trim()}>
-                {isLoading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
+              <Button type="submit" size="icon" disabled={isLoading}>
                 <Send className="h-4 w-4" />
-                )}
                 <span className="sr-only">Gửi</span>
               </Button>
             </form>

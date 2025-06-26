@@ -127,6 +127,7 @@ export interface QuestionGroupResponse {
 // Định nghĩa phản hồi cho câu hỏi
 export interface QuestionResponse {
   id: number;
+  type?: string; // Loại câu hỏi từ QuestionGroup (LISTENING, READING, VOCABULARY, GRAMMAR)
   question: string;
   correctAnswer: string;
   explanation?: string;

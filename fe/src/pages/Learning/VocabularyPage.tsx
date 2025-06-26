@@ -421,20 +421,23 @@ export default function VocabularyPage() {
     }
   }
 
-  const playAudio = () => {
-    if (currentWord.audioUrl) {
+  const playAudio = (word?: VocabularyWord) => {
+    // Sử dụng từ được truyền vào hoặc từ hiện tại nếu không có
+    const wordToPlay = word || currentWord;
+    
+    if (wordToPlay.audioUrl) {
       if (audioRef.current) {
-        audioRef.current.src = currentWord.audioUrl;
+        audioRef.current.src = wordToPlay.audioUrl;
         audioRef.current.play();
       }
     } else {
       // Nếu không có file audio, sử dụng Web Speech API
-      const utterance = new SpeechSynthesisUtterance(currentWord.correctWord);
+      const utterance = new SpeechSynthesisUtterance(wordToPlay.correctWord);
       utterance.lang = 'en-US';
       speechSynthesis.speak(utterance);
     }
     
-    console.log(`Playing audio for: ${currentWord.correctWord}`);
+    console.log(`Playing audio for: ${wordToPlay.correctWord}`);
   }
 
   const saveToNotes = () => {
@@ -578,7 +581,7 @@ export default function VocabularyPage() {
                     </Button>
 
                     <div className="flex gap-2">
-                      <Button variant="outline" size="icon" onClick={playAudio}>
+                      <Button variant="outline" size="icon" onClick={() => playAudio()}>
                         <Volume2 className="h-4 w-4" />
                       </Button>
                       <Button variant="outline" size="icon" onClick={saveToNotes}>
@@ -751,9 +754,8 @@ export default function VocabularyPage() {
                           </div>
                           <div className="sm:w-1/4 flex justify-end gap-2">
                             <Button variant="outline" size="sm" onClick={() => {
-                              // Đặt từ hiện tại và chơi âm thanh
-                              setCurrentWordIndex(selectedExam.words.findIndex(w => w.id === word.id));
-                              setTimeout(() => playAudio(), 100);
+                              // Phát âm thanh trực tiếp cho từ hiện tại
+                              playAudio(word);
                             }}>
                               <Volume2 className="h-4 w-4 mr-2" /> Listen
                             </Button>

@@ -73,6 +73,76 @@ public class TestResultService {
         
         // Xử lý câu trả lời của người dùng
         if (request.getUserAnswers() != null && !request.getUserAnswers().isEmpty()) {
+            // Lấy tất cả câu hỏi trong bài thi để tính tổng số câu hỏi chính xác
+            List<ToeicQuestion> allQuestionsInExam = questionRepository.findByTestIdOrderByQuestionOrder(request.getTestId());
+            
+            // Debug: In ra số lượng câu hỏi tìm được
+            System.out.println("=== DEBUG SCORING ===");
+            System.out.println("Test ID: " + request.getTestId());
+            System.out.println("Questions found by findByTestIdOrderByQuestionOrder: " + allQuestionsInExam.size());
+            if (allQuestionsInExam.isEmpty()) {
+                System.out.println("❌ Không tìm thấy câu hỏi nào cho bài thi ID: " + request.getTestId());
+                
+                // Thử phương án khác: tìm qua questionGroups
+                Test testForDebug = testRepository.findById(request.getTestId()).orElse(null);
+                if (testForDebug != null && testForDebug.getQuestionGroups() != null) {
+                    System.out.println("Số QuestionGroups trong test: " + testForDebug.getQuestionGroups().size());
+                    for (QuestionGroup group : testForDebug.getQuestionGroups()) {
+                        List<ToeicQuestion> questionsInGroup = questionRepository.findByQuestionGroupIdOrderByQuestionOrder(group.getId());
+                        System.out.println("Group " + group.getId() + " (" + group.getTitle() + ") có " + questionsInGroup.size() + " câu hỏi");
+                        allQuestionsInExam.addAll(questionsInGroup);
+                    }
+                    System.out.println("Tổng câu hỏi sau khi tìm qua groups: " + allQuestionsInExam.size());
+                }
+            }
+            
+            // Kiểm tra xem bài thi có câu hỏi không
+            if (allQuestionsInExam.isEmpty()) {
+                // Nếu không có câu hỏi nào, set giá trị mặc định
+                testResult.setTotalQuestions(0);
+                testResult.setCorrectAnswers(0);
+                testResult.setTotalScore(0);
+                testResult.setListeningScore(0);
+                testResult.setReadingScore(0);
+                testResult.setGrammarScore(0);
+                testResult.setVocabularyScore(0);
+                testResult.setListeningScaledScore(0);
+                testResult.setReadingScaledScore(0);
+                testResult = testResultRepository.save(testResult);
+                return convertToTestResultResponse(testResult);
+            }
+            
+            // Đếm tổng số câu hỏi thực tế theo loại trong bài thi
+            int totalListeningInExam = 0;
+            int totalReadingInExam = 0;
+            int totalGrammarInExam = 0;
+            int totalVocabularyInExam = 0;
+            
+            for (ToeicQuestion question : allQuestionsInExam) {
+                if (question.getQuestionGroup() != null) {
+                    QuestionGroup.QuestionType type = question.getQuestionGroup().getQuestionType();
+                    if (QuestionGroup.QuestionType.LISTENING.equals(type)) {
+                        totalListeningInExam++;
+                    } else if (QuestionGroup.QuestionType.READING.equals(type)) {
+                        totalReadingInExam++;
+                    } else if (QuestionGroup.QuestionType.GRAMMAR.equals(type)) {
+                        totalGrammarInExam++;
+                    } else if (QuestionGroup.QuestionType.VOCABULARY.equals(type)) {
+                        totalVocabularyInExam++;
+                    }
+                }
+                
+                if (question.getCategory() != null) {
+                    if (ToeicQuestion.QuestionCategory.GRAMMAR.equals(question.getCategory())) {
+                        totalGrammarInExam++;
+                    } else if (ToeicQuestion.QuestionCategory.VOCABULARY.equals(question.getCategory())) {
+                        totalVocabularyInExam++;
+                    } else if (ToeicQuestion.QuestionCategory.LISTENING.equals(question.getCategory())) {
+                        totalListeningInExam++;
+                    }
+                }
+            }
+            
             // Lấy tất cả câu hỏi trong bài thi
             List<Long> questionIds = request.getUserAnswers().stream()
                     .map(SaveTestResultRequest.UserAnswerRequest::getQuestionId)
@@ -81,18 +151,14 @@ public class TestResultService {
             Map<Long, ToeicQuestion> questionMap = questionRepository.findAllById(questionIds).stream()
                     .collect(Collectors.toMap(ToeicQuestion::getId, q -> q));
             
-            int totalQuestions = request.getUserAnswers().size();
+            int totalQuestions = allQuestionsInExam.size(); // Dùng tổng số câu thực tế trong bài thi
             int correctAnswers = 0;
             
-            // Thống kê theo loại câu hỏi
+            // Thống kê theo loại câu hỏi - chỉ đếm câu trả lời đúng
             int listeningCorrect = 0;
-            int listeningTotal = 0;
             int readingCorrect = 0;
-            int readingTotal = 0;
             int grammarCorrect = 0;
-            int grammarTotal = 0;
             int vocabularyCorrect = 0;
-            int vocabularyTotal = 0;
             
             // Xử lý từng câu trả lời
             List<UserAnswer> userAnswers = new ArrayList<>();
@@ -105,7 +171,7 @@ public class TestResultService {
                 UserAnswer userAnswer = new UserAnswer(testResult, question, answerRequest.getUserAnswer());
                 userAnswers.add(userAnswer);
                 
-                // Cập nhật thống kê
+                // Cập nhật thống kê chỉ khi trả lời đúng
                 if (userAnswer.getIsCorrect()) {
                     correctAnswers++;
                     
@@ -134,63 +200,48 @@ public class TestResultService {
                         }
                     }
                 }
-                
-                // Đếm tổng số câu hỏi theo loại QuestionGroup.QuestionType
-                if (question.getQuestionGroup() != null) {
-                    QuestionGroup.QuestionType type = question.getQuestionGroup().getQuestionType();
-                    if (QuestionGroup.QuestionType.LISTENING.equals(type)) {
-                        listeningTotal++;
-                    } else if (QuestionGroup.QuestionType.READING.equals(type)) {
-                        readingTotal++;
-                    } else if (QuestionGroup.QuestionType.GRAMMAR.equals(type)) {
-                        grammarTotal++;
-                    } else if (QuestionGroup.QuestionType.VOCABULARY.equals(type)) {
-                        vocabularyTotal++;
-                    }
-                }
-                
-                // Đếm tổng số câu hỏi theo category
-                if (question.getCategory() != null) {
-                    if (ToeicQuestion.QuestionCategory.GRAMMAR.equals(question.getCategory())) {
-                        grammarTotal++;
-                    } else if (ToeicQuestion.QuestionCategory.VOCABULARY.equals(question.getCategory())) {
-                        vocabularyTotal++;
-                    } else if (ToeicQuestion.QuestionCategory.LISTENING.equals(question.getCategory())) {
-                        listeningTotal++;
-                    }
-                }
             }
             
             // Lưu các câu trả lời
             userAnswerRepository.saveAll(userAnswers);
             
-            // Tính điểm và cập nhật TestResult
+            // Tính điểm dựa trên tổng số câu thực tế trong bài thi, không phải chỉ câu trả lời
             int listeningScore = 0;
-            if (listeningTotal > 0) {
-                listeningScore = (int) Math.round((double) listeningCorrect / listeningTotal * 100);
+            if (totalListeningInExam > 0) {
+                listeningScore = (int) Math.round((double) listeningCorrect / totalListeningInExam * 100);
             }
             
             int readingScore = 0;
-            if (readingTotal > 0) {
-                readingScore = (int) Math.round((double) readingCorrect / readingTotal * 100);
+            if (totalReadingInExam > 0) {
+                readingScore = (int) Math.round((double) readingCorrect / totalReadingInExam * 100);
             }
             
             int grammarScore = 0;
-            if (grammarTotal > 0) {
-                grammarScore = (int) Math.round((double) grammarCorrect / grammarTotal * 100);
+            if (totalGrammarInExam > 0) {
+                grammarScore = (int) Math.round((double) grammarCorrect / totalGrammarInExam * 100);
             }
             
             int vocabularyScore = 0;
-            if (vocabularyTotal > 0) {
-                vocabularyScore = (int) Math.round((double) vocabularyCorrect / vocabularyTotal * 100);
+            if (totalVocabularyInExam > 0) {
+                vocabularyScore = (int) Math.round((double) vocabularyCorrect / totalVocabularyInExam * 100);
             }
             
-            // Tính điểm tổng
-            int totalScore = (int) Math.round((double) correctAnswers / totalQuestions * 100);
+            // Tính điểm tổng dựa trên tổng số câu thực tế
+            int totalScore = 0;
+            if (totalQuestions > 0) {
+                totalScore = (int) Math.round((double) correctAnswers / totalQuestions * 100);
+            }
             
-            // Quy đổi sang thang 495
-            int listeningScaledScore = (int) Math.round(listeningScore / 100.0 * 495.0);
-            int readingScaledScore = (int) Math.round(readingScore / 100.0 * 495.0);
+            // Quy đổi sang thang 495 - chỉ cho điểm tối thiểu 5 khi có trả lời câu hỏi
+            int listeningScaledScore = 0;
+            if (totalListeningInExam > 0) {
+                listeningScaledScore = (int) Math.round(Math.max(5, listeningScore / 100.0 * 495.0));
+            }
+            
+            int readingScaledScore = 0;
+            if (totalReadingInExam > 0) {
+                readingScaledScore = (int) Math.round(Math.max(5, readingScore / 100.0 * 495.0));
+            }
             
             // Cập nhật TestResult
             testResult.setListeningScore(listeningScore);
@@ -204,6 +255,18 @@ public class TestResultService {
             testResult.setTotalQuestions(totalQuestions);
             
             // Lưu lại TestResult với điểm số
+            testResult = testResultRepository.save(testResult);
+        } else {
+            // Trường hợp không có câu trả lời nào
+            testResult.setTotalQuestions(0);
+            testResult.setCorrectAnswers(0);
+            testResult.setTotalScore(0);
+            testResult.setListeningScore(0);
+            testResult.setReadingScore(0);
+            testResult.setGrammarScore(0);
+            testResult.setVocabularyScore(0);
+            testResult.setListeningScaledScore(0);
+            testResult.setReadingScaledScore(0);
             testResult = testResultRepository.save(testResult);
         }
         
@@ -439,6 +502,91 @@ public class TestResultService {
                 testResult.getTotalQuestions(),
                 testResult.getCreatedAt()
         );
+    }
+    
+    /**
+     * (Dành cho Admin) Lấy thống kê tổng quát của tất cả người dùng
+     * 
+     * @return Map chứa thống kê tổng quát
+     */
+    public Map<String, Object> getAllUsersStatistics() {
+        Map<String, Object> statistics = new HashMap<>();
+        
+        // Thống kê tổng quan - sử dụng điểm TOEIC thay vì phần trăm
+        Long totalUsers = userRepository.count();
+        Long totalTests = testResultRepository.count();
+        Double overallAverageToeicScore = testResultRepository.findOverallAverageToeicScore();
+        
+        statistics.put("totalUsers", totalUsers);
+        statistics.put("totalTests", totalTests);
+        statistics.put("overallAverageScore", overallAverageToeicScore != null ? overallAverageToeicScore : 0.0);
+        
+        // Thống kê số bài test hoàn thành theo tháng (của tất cả users)
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM");
+        
+        // Lấy số liệu 6 tháng gần nhất
+        LocalDateTime endDate = LocalDateTime.now();
+        LocalDateTime startDate = endDate.minusMonths(5).withDayOfMonth(1).withHour(0).withMinute(0).withSecond(0);
+        
+        // Tạo danh sách các tháng trong khoảng thời gian
+        Map<String, Long> testsByMonth = new HashMap<>();
+        Map<String, Double> scoresByMonth = new HashMap<>();
+        
+        YearMonth current = YearMonth.from(startDate);
+        YearMonth end = YearMonth.from(endDate);
+        
+        while (!current.isAfter(end)) {
+            String monthKey = current.format(formatter);
+            testsByMonth.put(monthKey, 0L);
+            scoresByMonth.put(monthKey, 0.0);
+            current = current.plusMonths(1);
+        }
+        
+        // Lấy tất cả kết quả trong khoảng thời gian
+        List<TestResult> allResultsInRange = testResultRepository.findByCreatedAtBetweenOrderByCreatedAtDesc(startDate, endDate);
+        
+        // Thống kê theo tháng cho tất cả users
+        Map<String, List<TestResult>> resultsByMonth = allResultsInRange.stream()
+                .collect(Collectors.groupingBy(
+                        result -> result.getCreatedAt().format(formatter)
+                ));
+        
+        // Tính số bài thi và điểm trung bình cho mỗi tháng
+        for (Map.Entry<String, List<TestResult>> entry : resultsByMonth.entrySet()) {
+            String month = entry.getKey();
+            List<TestResult> monthResults = entry.getValue();
+            
+            testsByMonth.put(month, (long) monthResults.size());
+            
+            Double monthAvgScore = monthResults.stream()
+                    .filter(r -> r.getTotalScore() != null)
+                    .mapToDouble(TestResult::getTotalScore)
+                    .average()
+                    .orElse(0.0);
+            
+            scoresByMonth.put(month, monthAvgScore);
+        }
+        
+        statistics.put("testsByMonth", testsByMonth);
+        statistics.put("scoresByMonth", scoresByMonth);
+        
+        // Top 5 users với điểm TOEIC cao nhất (loại bỏ điểm 0)
+        List<Object[]> topUsers = testResultRepository.getTopUsersByAverageToeicScore(PageRequest.of(0, 5));
+        List<Map<String, Object>> topUsersData = new ArrayList<>();
+        
+        for (Object[] row : topUsers) {
+            Map<String, Object> userData = new HashMap<>();
+            userData.put("userId", row[0]);
+            userData.put("username", row[1]);
+            userData.put("fullName", row[2]);
+            userData.put("averageScore", row[3]); // Điểm TOEIC trung bình (thang 990)
+            userData.put("totalTests", row[4]); // Số bài thi có điểm > 0
+            topUsersData.add(userData);
+        }
+        
+        statistics.put("topUsers", topUsersData);
+        
+        return statistics;
     }
     
     /**

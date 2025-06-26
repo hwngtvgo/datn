@@ -43,7 +43,9 @@ public interface NotificationSettingRepository extends JpaRepository<Notificatio
      * @return List<NotificationSetting>
      */
     @Query("SELECT ns FROM NotificationSetting ns WHERE ns.studyReminders = true " + 
-           "AND ns.studyReminderTime = :reminderTime " +
-           "AND (ns.lastReminderSent IS NULL OR DATE(ns.lastReminderSent) < CURRENT_DATE)")  
+           "AND ns.studyReminderTime = :reminderTime " 
+           )
+        //    +
+        //    "AND (ns.lastReminderSent IS NULL OR DATE(ns.lastReminderSent) < CURRENT_DATE)")  
     List<NotificationSetting> findAllForStudyReminder(String reminderTime);
 } 

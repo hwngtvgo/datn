@@ -27,7 +27,12 @@ public interface TestResultRepository extends JpaRepository<TestResult, Long> {
            "ORDER BY tr.totalScore DESC, tr.createdAt DESC")
     List<TestResult> findHighestScoreByUserAndTestId(@Param("user") User user, @Param("testId") Long testId, Pageable pageable);
     
-    // Tìm điểm trung bình của người dùng
+    // Tìm điểm trung bình TOEIC của người dùng (loại bỏ điểm 0)
+    @Query("SELECT AVG(tr.listeningScaledScore + tr.readingScaledScore) FROM TestResult tr " +
+           "WHERE tr.user = :user AND (tr.listeningScaledScore + tr.readingScaledScore) > 0")
+    Double findAverageToeicScoreByUser(@Param("user") User user);
+    
+    // Tìm điểm trung bình của người dùng (giữ lại cho backward compatibility)
     @Query("SELECT AVG(tr.totalScore) FROM TestResult tr WHERE tr.user = :user")
     Double findAverageScoreByUser(@Param("user") User user);
     
@@ -39,7 +44,12 @@ public interface TestResultRepository extends JpaRepository<TestResult, Long> {
     List<TestResult> findByUserAndCreatedAtBetweenOrderByCreatedAtDesc(
             User user, LocalDateTime startDate, LocalDateTime endDate);
     
-    // Tìm kết quả cao nhất của người dùng
+    // Tìm kết quả cao nhất TOEIC của người dùng
+    @Query("SELECT MAX(tr.listeningScaledScore + tr.readingScaledScore) FROM TestResult tr " +
+           "WHERE tr.user = :user")
+    Integer findHighestToeicScoreByUser(@Param("user") User user);
+    
+    // Tìm kết quả cao nhất của người dùng (giữ lại cho backward compatibility)
     @Query("SELECT MAX(tr.totalScore) FROM TestResult tr WHERE tr.user = :user")
     Integer findHighestScoreByUser(@Param("user") User user);
     
@@ -62,4 +72,35 @@ public interface TestResultRepository extends JpaRepository<TestResult, Long> {
     
     // Tìm tất cả kết quả bài thi liên kết với một đề thi cụ thể
     List<TestResult> findByTest(com.hungtv.toeic.be.models.Test test);
+    
+    // (Dành cho Admin) Tìm tất cả kết quả trong khoảng thời gian
+    List<TestResult> findByCreatedAtBetweenOrderByCreatedAtDesc(LocalDateTime startDate, LocalDateTime endDate);
+    
+    // (Dành cho Admin) Tìm điểm trung bình TOEIC tổng quát của tất cả users (loại bỏ điểm 0)
+    @Query("SELECT AVG(tr.listeningScaledScore + tr.readingScaledScore) FROM TestResult tr " +
+           "WHERE (tr.listeningScaledScore + tr.readingScaledScore) > 0")
+    Double findOverallAverageToeicScore();
+    
+    // (Dành cho Admin) Tìm điểm trung bình tổng quát của tất cả users (giữ lại cho backward compatibility)
+    @Query("SELECT AVG(tr.totalScore) FROM TestResult tr")
+    Double findOverallAverageScore();
+    
+    // (Dành cho Admin) Lấy top users theo điểm trung bình TOEIC (loại bỏ điểm 0)
+    @Query("SELECT u.id, u.username, u.fullName, " +
+           "AVG(tr.listeningScaledScore + tr.readingScaledScore), " +
+           "COUNT(CASE WHEN (tr.listeningScaledScore + tr.readingScaledScore) > 0 THEN 1 ELSE NULL END) " +
+           "FROM TestResult tr JOIN tr.user u " +
+           "WHERE (tr.listeningScaledScore + tr.readingScaledScore) > 0 " +
+           "GROUP BY u.id, u.username, u.fullName " +
+           "HAVING COUNT(CASE WHEN (tr.listeningScaledScore + tr.readingScaledScore) > 0 THEN 1 ELSE NULL END) > 0 " +
+           "ORDER BY AVG(tr.listeningScaledScore + tr.readingScaledScore) DESC")
+    List<Object[]> getTopUsersByAverageToeicScore(Pageable pageable);
+    
+    // (Dành cho Admin) Lấy top users theo điểm trung bình (giữ lại cho backward compatibility)
+    @Query("SELECT u.id, u.username, u.fullName, AVG(tr.totalScore), COUNT(tr) " +
+           "FROM TestResult tr JOIN tr.user u " +
+           "GROUP BY u.id, u.username, u.fullName " +
+           "HAVING COUNT(tr) > 0 " +
+           "ORDER BY AVG(tr.totalScore) DESC")
+    List<Object[]> getTopUsersByAverageScore(Pageable pageable);
 } 

@@ -130,9 +130,7 @@ export default function Login() {
             <Separator className="flex-grow" />
           </div> */}
 
-          <Button variant="outline" className="w-full mt-4">
-            Tiếp tục với Google
-          </Button>
+
         </CardContent>
         <CardFooter>
           <div className="text-sm text-center w-full">

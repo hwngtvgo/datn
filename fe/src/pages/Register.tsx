@@ -147,9 +147,9 @@ export default function Register() {
             <Separator className="flex-grow" />
           </div> */}
 
-          <Button variant="outline" className="w-full mt-4">
+          {/* <Button variant="outline" className="w-full mt-4">
             Đăng ký với Google
-          </Button>
+          </Button> */}
         </CardContent>
         <CardFooter>
           <div className="text-sm text-center w-full">

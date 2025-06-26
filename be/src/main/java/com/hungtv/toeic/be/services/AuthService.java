@@ -71,8 +71,11 @@ public class AuthService {
         
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         
-        // Tạo và lưu cookie
-        this.latestJwtCookie = jwtUtils.generateJwtCookie(userDetails);
+        // Tạo JWT token từ username
+        String jwtToken = jwtUtils.generateTokenFromUsername(userDetails.getUsername());
+        
+        // Tạo và lưu cookie từ token
+        this.latestJwtCookie = jwtUtils.generateJwtCookie(jwtToken);
         
         List<String> roles = userDetails.getAuthorities().stream()
                 .map(item -> item.getAuthority())
@@ -84,7 +87,7 @@ public class AuthService {
                 userDetails.getEmail(),
                 userDetails.getFullName(),
                 roles,
-                this.latestJwtCookie.getValue(),
+                jwtToken,
                 "Bearer"
         );
     }

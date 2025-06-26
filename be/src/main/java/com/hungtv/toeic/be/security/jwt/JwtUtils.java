@@ -1,9 +1,9 @@
 package com.hungtv.toeic.be.security.jwt;
 
-import com.hungtv.toeic.be.security.services.UserDetailsImpl;
-import io.jsonwebtoken.*;
-import io.jsonwebtoken.io.Decoders;
-import io.jsonwebtoken.security.Keys;
+import java.security.Key;
+import java.time.Duration;
+import java.util.Date;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,10 +11,15 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.stereotype.Component;
 import org.springframework.web.util.WebUtils;
 
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.MalformedJwtException;
+import io.jsonwebtoken.SignatureAlgorithm;
+import io.jsonwebtoken.UnsupportedJwtException;
+import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
-import java.security.Key;
-import java.util.Date;
 
 @Component
 public class JwtUtils {
@@ -31,6 +36,15 @@ public class JwtUtils {
 
     @Value("${app.jwt.refreshCookieName}")
     private String jwtRefreshCookie;
+
+    @Value("${app.cookie.domain:}")
+    private String cookieDomain;
+
+    @Value("${app.cookie.secure:false}")
+    private boolean cookieSecure;
+
+    @Value("${app.cookie.sameSite:lax}")
+    private String cookieSameSite;
 
     public String getJwtFromCookies(HttpServletRequest request) {
         Cookie cookie = WebUtils.getCookie(request, jwtCookie);
@@ -50,43 +64,68 @@ public class JwtUtils {
         }
     }
 
-    public ResponseCookie generateJwtCookie(UserDetailsImpl userPrincipal) {
-        String jwt = generateTokenFromUsername(userPrincipal.getUsername());
-        ResponseCookie cookie = ResponseCookie.from(jwtCookie, jwt)
-                .path("/")
-                .maxAge(24 * 60 * 60)
+    public ResponseCookie generateJwtCookie(String jwt) {
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(jwtCookie, jwt)
+                .maxAge(Duration.ofSeconds(jwtExpirationMs / 1000))
                 .httpOnly(true)
-                .secure(false) // Đặt thành true trong môi trường sản xuất với HTTPS
-                .sameSite("Lax") // Thay đổi từ Strict sang Lax để phù hợp với các yêu cầu cross-site
-                .build();
-        return cookie;
+                .secure(cookieSecure)
+                .path("/")
+                .sameSite(cookieSameSite);
+        
+        // Chỉ set domain nếu được cấu hình
+        if (cookieDomain != null && !cookieDomain.trim().isEmpty()) {
+            builder.domain(cookieDomain);
+        }
+        
+        return builder.build();
     }
 
     public ResponseCookie generateRefreshJwtCookie(String refreshToken) {
-        ResponseCookie cookie = ResponseCookie.from(jwtRefreshCookie, refreshToken)
-                .path("/")
-                .maxAge(7 * 24 * 60 * 60)
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(jwtRefreshCookie, refreshToken)
+                .maxAge(Duration.ofDays(30))
                 .httpOnly(true)
-                .secure(false)
-                .sameSite("Lax")
-                .build();
-        return cookie;
+                .secure(cookieSecure)
+                .path("/")
+                .sameSite(cookieSameSite);
+        
+        // Chỉ set domain nếu được cấu hình
+        if (cookieDomain != null && !cookieDomain.trim().isEmpty()) {
+            builder.domain(cookieDomain);
+        }
+        
+        return builder.build();
     }
 
     public ResponseCookie getCleanJwtCookie() {
-        ResponseCookie cookie = ResponseCookie.from(jwtCookie, "")
-                .path("/")
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(jwtCookie, "")
                 .maxAge(0)
-                .build();
-        return cookie;
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .path("/")
+                .sameSite(cookieSameSite);
+        
+        // Chỉ set domain nếu được cấu hình
+        if (cookieDomain != null && !cookieDomain.trim().isEmpty()) {
+            builder.domain(cookieDomain);
+        }
+        
+        return builder.build();
     }
 
-    public ResponseCookie getCleanJwtRefreshCookie() {
-        ResponseCookie cookie = ResponseCookie.from(jwtRefreshCookie, "")
-                .path("/")
+    public ResponseCookie getCleanRefreshJwtCookie() {
+        ResponseCookie.ResponseCookieBuilder builder = ResponseCookie.from(jwtRefreshCookie, "")
                 .maxAge(0)
-                .build();
-        return cookie;
+                .httpOnly(true)
+                .secure(cookieSecure)
+                .path("/")
+                .sameSite(cookieSameSite);
+        
+        // Chỉ set domain nếu được cấu hình
+        if (cookieDomain != null && !cookieDomain.trim().isEmpty()) {
+            builder.domain(cookieDomain);
+        }
+        
+        return builder.build();
     }
 
     public String getUserNameFromJwtToken(String token) {

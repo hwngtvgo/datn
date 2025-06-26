@@ -7,46 +7,60 @@ import {
   LineChart,
 } from "lucide-react"
 import { useEffect, useState } from "react"
-import { UserStatisticsResponse } from "@/services/testResultService"
 import api from "@/services/api"
 import { Skeleton } from "@/components/ui/skeleton"
 import { UserResponse } from "@/services/userService"
+
+// Interface cho thống kê admin
+interface AdminStatisticsResponse {
+  totalUsers: number;
+  totalTests: number;
+  averageScore: number;
+  testsByMonth: { [key: string]: number };
+  topUsers: any[];
+}
 
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true)
   const [userCount, setUserCount] = useState(0)
   const [examCount, setExamCount] = useState(0)
-  const [testCount, setTestCount] = useState(0)
+  const [totalTestResults, setTotalTestResults] = useState(0)
+  const [averageScore, setAverageScore] = useState(0)
   const [testsCompletedByMonth, setTestsCompletedByMonth] = useState<{[key: string]: number}>({})
   const [recentUsers, setRecentUsers] = useState<UserResponse[]>([])
+  const [topUsers, setTopUsers] = useState<any[]>([])
   
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true)
       try {
-        // Lấy tổng số người dùng
-        const usersResponse = await api.get('/users')
-        setUserCount(usersResponse.data.length)
+        // Lấy thống kê tổng từ API admin
+        const adminStatisticsResponse = await api.get('/test-results/admin/dashboard-statistics')
+        const adminStats: AdminStatisticsResponse = adminStatisticsResponse.data
         
-        // Lưu danh sách 5 người dùng mới nhất
+        // Cập nhật các thống kê từ API admin
+        setUserCount(adminStats.totalUsers)
+        setTotalTestResults(adminStats.totalTests)
+        setAverageScore(adminStats.averageScore)
+        setTestsCompletedByMonth(adminStats.testsByMonth || {})
+        setTopUsers(adminStats.topUsers || [])
+        
+        // Lấy tổng số bài thi TOEIC
+        const examsResponse = await api.get('/tests', {
+          params: {
+            page: 0,
+            size: 1
+          }
+        })
+        setExamCount(examsResponse.data.totalElements || 0)
+        
+        // Lấy danh sách 5 người dùng mới nhất
+        const usersResponse = await api.get('/users')
         const sortedUsers = [...usersResponse.data].sort((a: UserResponse, b: UserResponse) => 
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         ).slice(0, 5)
         setRecentUsers(sortedUsers)
         
-        // Lấy số lượng bài thi TOEIC
-        const examsResponse = await api.get('/toeic-exams')
-        setExamCount(examsResponse.data.length || 0)
-        
-        // Lấy tổng số bài test đã hoàn thành (sử dụng API lấy thống kê)
-        const statisticsResponse = await api.get('/test-results/my-statistics')
-        const statistics: UserStatisticsResponse = statisticsResponse.data
-        
-        // Tổng số bài test
-        setTestCount(statistics.testsTaken || 0)
-        
-        // Thống kê bài test theo tháng
-        setTestsCompletedByMonth(statistics.testsByMonth || {})
       } catch (error) {
         console.error("Error fetching dashboard data:", error)
       } finally {
@@ -75,7 +89,7 @@ export default function AdminDashboard() {
         <p className="text-muted-foreground">Tổng quan về hệ thống học TOEIC</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Tổng người dùng</CardTitle>
@@ -102,12 +116,24 @@ export default function AdminDashboard() {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Bài làm hoàn thành</CardTitle>
+            <CardTitle className="text-sm font-medium">Tổng bài làm</CardTitle>
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             {loading ? renderSkeleton() : (
-              <div className="text-2xl font-bold">{testCount}</div>
+              <div className="text-2xl font-bold">{totalTestResults}</div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium">Điểm trung bình TOEIC</CardTitle>
+            <LineChart className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            {loading ? renderSkeleton() : (
+              <div className="text-2xl font-bold">{averageScore ? Math.round(averageScore) : '0'}/990</div>
             )}
           </CardContent>
         </Card>
@@ -123,7 +149,7 @@ export default function AdminDashboard() {
             <Card className="col-span-4">
               <CardHeader>
                 <CardTitle>Hoạt động người dùng</CardTitle>
-                <CardDescription>Số lượng bài test hoàn thành theo tháng</CardDescription>
+                <CardDescription>Số lượng bài test hoàn thành theo tháng (tất cả người dùng)</CardDescription>
               </CardHeader>
               <CardContent>
                 {loading ? (
@@ -134,7 +160,9 @@ export default function AdminDashboard() {
                   <div className="h-[300px] flex items-center justify-center">
                     {Object.keys(testsCompletedByMonth).length > 0 ? (
                       <div className="w-full">
-                        {Object.entries(testsCompletedByMonth).map(([month, count]) => (
+                        {Object.entries(testsCompletedByMonth)
+                          .sort(([a], [b]) => a.localeCompare(b))
+                          .map(([month, count]) => (
                           <div key={month} className="flex items-center justify-between mb-3">
                             <span className="font-medium">{month}</span>
                             <div className="flex items-center">
@@ -160,22 +188,36 @@ export default function AdminDashboard() {
 
             <Card className="col-span-3">
               <CardHeader>
-                <CardTitle>Thống kê bài thi</CardTitle>
-                <CardDescription>Danh sách bài thi hiện có</CardDescription>
+                <CardTitle>Top 5 người dùng</CardTitle>
+                <CardDescription>Xếp hạng theo điểm trung bình TOEIC (không tính bài điểm 0)</CardDescription>
               </CardHeader>
               <CardContent>
                 {loading ? (
                   <div className="space-y-2">
-                    {[1, 2, 3].map(i => <Skeleton key={i} className="h-[20px] w-full" />)}
+                    {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-[50px] w-full" />)}
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    <div className="p-4 bg-secondary/10 rounded-lg">
-                      <div className="text-lg font-medium flex items-center justify-between">
-                        <span>Tổng số bài thi</span>
-                        <span className="text-xl font-bold">{examCount}</span>
+                  <div className="space-y-3">
+                    {topUsers.length > 0 ? (
+                      topUsers.map((user, index) => (
+                        <div key={user.userId} className="flex items-center justify-between p-3 bg-secondary/10 rounded-lg">
+                          <div className="flex items-center">
+                            <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center mr-3 text-sm font-bold">
+                              {index + 1}
+                            </div>
+                            <div>
+                              <div className="font-medium">{user.username}</div>
+                              <div className="text-sm text-muted-foreground">{user.totalTests} bài thi</div>
+                            </div>
+                          </div>
+                          <div className="text-lg font-bold">{Math.round(user.averageScore)}/990</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-4 text-muted-foreground">
+                        Chưa có dữ liệu
                       </div>
-                    </div>
+                    )}
                   </div>
                 )}
               </CardContent>
@@ -192,29 +234,26 @@ export default function AdminDashboard() {
             <CardContent>
               {loading ? (
                 <div className="space-y-2">
-                  {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-[20px] w-full" />)}
+                  {[1, 2, 3, 4, 5].map(i => <Skeleton key={i} className="h-[60px] w-full" />)}
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {recentUsers.length > 0 ? (
-                    recentUsers.map(user => (
-                      <div key={user.id} className="flex items-center justify-between border-b pb-2">
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium">{user.fullName} ({user.username})</p>
-                          <p className="text-xs text-muted-foreground">{user.email} - {formatDate(user.createdAt)}</p>
+                    recentUsers.map((user) => (
+                      <div key={user.id} className="flex items-center justify-between p-3 bg-secondary/10 rounded-lg">
+                        <div>
+                          <div className="font-medium">{user.fullName}</div>
+                          <div className="text-sm text-muted-foreground">{user.username}</div>
+                          <div className="text-sm text-muted-foreground">{user.email}</div>
                         </div>
-                        <div className="flex items-center">
-                          {user.role === 'ROLE_ADMIN' ? (
-                            <span className="text-xs bg-primary/20 text-primary px-2 py-1 rounded">Admin</span>
-                          ) : (
-                            <span className="text-xs bg-secondary/20 text-secondary px-2 py-1 rounded">User</span>
-                          )}
+                        <div className="text-sm text-muted-foreground">
+                          {formatDate(user.createdAt)}
                         </div>
                       </div>
                     ))
                   ) : (
-                    <div className="text-center text-muted-foreground py-8">
-                      <p>Không có người dùng nào</p>
+                    <div className="text-center py-4 text-muted-foreground">
+                      Chưa có người dùng mới
                     </div>
                   )}
                 </div>

@@ -21,6 +21,7 @@ import { QuestionGroupDTO, ToeicQuestionDTO } from "@/services/toeicQuestionServ
 import QuestionDetailView from "@/components/toeic/QuestionDetailView";
 import QuestionGroupForm from "@/components/toeic/QuestionGroupForm";
 import { QuestionType } from "@/types/toeic";
+import { API_URL } from '@/config/constants';
 // import { Separator } from "@/components/ui/separator";
 import axios from "axios";
 // import QuestionEditor from "@/components/toeic/QuestionEditor";
@@ -117,7 +118,7 @@ const ToeicQuestions: React.FC = () => {
       
       console.log("Đang tải dữ liệu với tham số:", params);
       
-      const response = await axios.get(`${import.meta.env.VITE_API_URL || 'http://localhost:8080/api'}/toeic-questions/question-groups`, {
+      const response = await axios.get(`${API_URL}/toeic-questions/question-groups`, {
         params: params
       });
       
@@ -192,72 +193,113 @@ const ToeicQuestions: React.FC = () => {
 
   // Thêm hàm render phân trang
   const renderPagination = () => (
-    <Pagination>
-      <PaginationContent>
-        <PaginationItem>
-          <PaginationPrevious 
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              setCurrentPage(prev => Math.max(0, prev - 1));
-            }}
-            className={currentPage === 0 ? "pointer-events-none opacity-50" : ""}
-          />
-        </PaginationItem>
-        
-        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-          // Nếu có nhiều trang, hiển thị các trang xung quanh trang hiện tại
-          let pageNumber;
-          if (totalPages <= 5) {
-            // Nếu ít hơn 5 trang, hiển thị tất cả các trang từ 0-4
-            pageNumber = i;
-          } else if (currentPage < 3) {
-            // Nếu đang ở đầu, hiển thị 5 trang đầu tiên
-            pageNumber = i;
-          } else if (currentPage > totalPages - 3) {
-            // Nếu đang ở cuối, hiển thị 5 trang cuối cùng
-            pageNumber = totalPages - 5 + i;
-          } else {
-            // Nếu đang ở giữa, hiển thị 2 trang trước và 2 trang sau trang hiện tại
-            pageNumber = currentPage - 2 + i;
-          }
-          
-          const isCurrentPage = currentPage === pageNumber;
-          
-          return (
-            <PaginationItem key={pageNumber}>
-              <PaginationLink
-                href="#"
-                isActive={isCurrentPage}
-                onClick={(e) => {
-                  e.preventDefault();
-                  setCurrentPage(pageNumber);
-                }}
-              >
-                {pageNumber + 1}
-              </PaginationLink>
-            </PaginationItem>
-          );
-        })}
-        
-        {totalPages > 5 && (
+    <div className="flex flex-col md:flex-row items-center justify-between w-full gap-4">
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-muted-foreground">Hiển thị</span>
+        <select
+          value={pageSize}
+          onChange={(e) => {
+            setPageSize(Number(e.target.value));
+            setCurrentPage(0);
+          }}
+          className="h-8 w-16 rounded-md border border-input px-2"
+        >
+          <option value={8}>8</option>
+          <option value={16}>16</option>
+          <option value={24}>24</option>
+          <option value={32}>32</option>
+          <option value={48}>48</option>
+        </select>
+        <span className="text-sm text-muted-foreground">mục mỗi trang</span>
+      </div>
+      
+      <Pagination>
+        <PaginationContent>
           <PaginationItem>
-            <PaginationEllipsis />
+            <PaginationPrevious 
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                setCurrentPage(prev => Math.max(0, prev - 1));
+              }}
+              className={currentPage === 0 ? "pointer-events-none opacity-50" : ""}
+            />
           </PaginationItem>
-        )}
-        
-        <PaginationItem>
-          <PaginationNext
-            href="#"
-            onClick={(e) => {
-              e.preventDefault();
-              setCurrentPage(prev => Math.min(totalPages - 1, prev + 1));
+          
+          {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+            // Nếu có nhiều trang, hiển thị các trang xung quanh trang hiện tại
+            let pageNumber;
+            if (totalPages <= 5) {
+              // Nếu ít hơn 5 trang, hiển thị tất cả các trang từ 0-4
+              pageNumber = i;
+            } else if (currentPage < 3) {
+              // Nếu đang ở đầu, hiển thị 5 trang đầu tiên
+              pageNumber = i;
+            } else if (currentPage > totalPages - 3) {
+              // Nếu đang ở cuối, hiển thị 5 trang cuối cùng
+              pageNumber = totalPages - 5 + i;
+            } else {
+              // Nếu đang ở giữa, hiển thị 2 trang trước và 2 trang sau trang hiện tại
+              pageNumber = currentPage - 2 + i;
+            }
+            
+            const isCurrentPage = currentPage === pageNumber;
+            
+            return (
+              <PaginationItem key={pageNumber}>
+                <PaginationLink
+                  href="#"
+                  isActive={isCurrentPage}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setCurrentPage(pageNumber);
+                  }}
+                >
+                  {pageNumber + 1}
+                </PaginationLink>
+              </PaginationItem>
+            );
+          })}
+          
+          {totalPages > 5 && (
+            <PaginationItem>
+              <PaginationEllipsis />
+            </PaginationItem>
+          )}
+          
+          <PaginationItem>
+            <PaginationNext
+              href="#"
+              onClick={(e) => {
+                e.preventDefault();
+                setCurrentPage(prev => Math.min(totalPages - 1, prev + 1));
+              }}
+              className={currentPage >= totalPages - 1 ? "pointer-events-none opacity-50" : ""}
+            />
+          </PaginationItem>
+        </PaginationContent>
+      </Pagination>
+      
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-muted-foreground">Đi đến trang</span>
+        <div className="flex items-center">
+          <input
+            type="number"
+            min={1}
+            max={totalPages}
+            value={currentPage + 1}
+            onChange={(e) => {
+              const page = parseInt(e.target.value) - 1;
+              if (page >= 0 && page < totalPages) {
+                setCurrentPage(page);
+              }
             }}
-            className={currentPage >= totalPages - 1 ? "pointer-events-none opacity-50" : ""}
+            className="h-8 w-16 rounded-md border border-input px-2"
           />
-        </PaginationItem>
-      </PaginationContent>
-    </Pagination>
+          <span className="ml-1 text-sm text-muted-foreground">/ {totalPages}</span>
+        </div>
+      </div>
+    </div>
   );
 
   const handleCreateGroup = async (
@@ -718,13 +760,8 @@ const ToeicQuestions: React.FC = () => {
           </div>
           
           {/* Thêm phân trang ở dưới bảng */}
-          <div className="flex flex-col items-center gap-2 mt-6">
+          <div className="mt-6">
             {renderPagination()}
-            {totalPages > 0 && (
-              <div className="text-sm text-muted-foreground">
-                Trang {currentPage + 1} / {totalPages} - Tổng cộng {totalElements} nhóm câu hỏi
-              </div>
-            )}
           </div>
         </TabsContent>
       </Tabs>
