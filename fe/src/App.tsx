@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom"
-import { useEffect, useState, useRef } from "react"
+import { useEffect, useState } from "react"
 import { useAuth, AuthProvider } from './contexts/AuthContext'
 import authService from './services/authService'
 // Layouts
@@ -19,10 +19,6 @@ import Account from "./pages/Account"
 import TestPage from "./pages/PracticeTests/TestPage"
 import VocabularyPage from "./pages/Learning/VocabularyPage"
 import GrammarPage from "./pages/Learning/GrammarPage"
-// import ListeningPage from "./pages/Learning/ListeningPage"
-// import FillInBlanksPage from "./pages/Learning/FillInBlanksPage"
-// import VocabularyStoriesPage from "./pages/Learning/VocabularyStoriesPage"
-// import VocabularyStoryDetail from "./pages/Learning/VocabularyStoryDetail"
 import TestHistory from "@/pages/User/TestHistory"
 import TestResultDetail from "@/pages/User/TestResultDetail"
 import TestStatistics from "@/pages/User/TestStatistics"
@@ -31,19 +27,11 @@ import PracticeExamsPage from "./pages/Learning/PracticeExamsPage"
 // Admin pages
 import AdminDashboard from "./pages/Admin/Dashboard"
 import AdminUsers from "./pages/Admin/Users"
-// import AdminCourses from "./pages/Admin/Courses"
 import AdminToeicExams from "./pages/Admin/ToeicExams"
 import AdminToeicQuestions from "./pages/Admin/ToeicQuestions"
-// import StandaloneQuestions from "./pages/Admin/StandaloneQuestions"
-// import AdminFinance from "./pages/Admin/Finance"
-// import AdminFeedback from "./pages/Admin/Feedback"
-// import ModalExamples from "./pages/Admin/ModalExamples"
-
 
 // Components and utilities
 import { Toaster } from 'sonner'
-import { ToastContainer } from "react-toastify"
-import "react-toastify/dist/ReactToastify.css"
 import authModule from "@/modules/auth"
 import NotFound from "@/pages/NotFound"
 
@@ -93,146 +81,108 @@ const PrivateRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => 
 
 // Route bảo vệ riêng cho admin
 const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, loading, checkAuth } = useAuth()
-  const [checking, setChecking] = useState(true)
-  const [isAdmin, setIsAdmin] = useState(false)
-  const [retryCount, setRetryCount] = useState(0)
-  const MAX_RETRIES = 1 // Giảm số lần thử để tránh quá nhiều requests
-  const timeoutRef = useRef<number | null>(null)
-  const navigate = useNavigate()
-
-  // Kiểm tra quyền admin 
+  const { user, loading, checkAuth } = useAuth();
+  const [checking, setChecking] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  
+  // Sử dụng sessionStorage để theo dõi số lần thử truy cập
   useEffect(() => {
-    let isMounted = true;
+    // Kiểm tra nhanh từ localStorage trước khi làm bất cứ điều gì
+    const quickAdminCheck = authService.isAdmin();
+    if (quickAdminCheck) {
+      console.log('Xác nhận nhanh quyền admin từ localStorage');
+      setIsAdmin(true);
+      setChecking(false);
+      return;
+    }
     
-    // Đặt timeout để thoát khỏi trạng thái checking nếu quá lâu
-    timeoutRef.current = window.setTimeout(() => {
-      if (checking && isMounted) {
-        console.log("Timeout: Quá thời gian kiểm tra quyền admin trong Route");
-        if (isMounted) {
-          setChecking(false);
-          setIsAdmin(false);
-        }
-      }
-    }, 5000); // 5 giây timeout
-    
-    // Kiểm tra quyền
-    const checkIsAdmin = () => {
-      if (!user) {
-        console.log("Không có thông tin người dùng, chuyển hướng đến trang đăng nhập");
-        setIsAdmin(false);
-        setChecking(false);
-        return;
-      }
-      
-      // Kiểm tra quyền admin từ localStorage
-      const isAdminUser = authService.isAdmin();
-      console.log("Kiểm tra quyền admin từ localStorage:", isAdminUser);
-      
-      if (isAdminUser) {
-        setIsAdmin(true);
-        setChecking(false);
-        return;
-      }
-      
-      // Nếu không phải admin theo localStorage và còn lượt thử
-      if (retryCount < MAX_RETRIES) {
-        setRetryCount(prev => prev + 1);
-      } else {
-        // Hết lượt thử
-        setIsAdmin(false);
-        setChecking(false);
-      }
+    // Hàm để lấy và tăng số lần thử truy cập
+    const getAndIncrementAttemptCount = () => {
+      const key = 'admin_route_attempt_count';
+      const count = parseInt(sessionStorage.getItem(key) || '0', 10);
+      const newCount = count + 1;
+      sessionStorage.setItem(key, newCount.toString());
+      return newCount;
     };
     
-    // Hàm kiểm tra và refresh thông tin
+    // Hàm để reset số lần thử
+    const resetAttemptCount = () => {
+      sessionStorage.removeItem('admin_route_attempt_count');
+    };
+    
+    // Kiểm tra số lần thử truy cập
+    const attemptCount = getAndIncrementAttemptCount();
+    
+    // Nếu đã thử quá 3 lần, chuyển hướng về trang chủ và reset bộ đếm
+    if (attemptCount > 3) {
+      console.log('Đã thử truy cập trang admin quá nhiều lần, chuyển về trang chủ');
+      resetAttemptCount();
+      navigate('/', { replace: true });
+      return;
+    }
+    
+    // Hàm kiểm tra quyền admin
     const verifyAdmin = async () => {
       try {
-        // Nếu không có user, không làm gì cả
+        // Nếu không có user, chuyển đến trang đăng nhập
         if (!user) {
-          if (isMounted) {
-            setIsAdmin(false);
-            setChecking(false);
-          }
+          setChecking(false);
+          setIsAdmin(false);
+          resetAttemptCount(); // Reset bộ đếm khi chuyển đến trang đăng nhập
+          navigate('/login', { replace: true, state: { from: location } });
           return;
         }
         
-        // Kiểm tra quyền admin nhanh từ cache/localStorage
-        const isAdminUser = authService.isAdmin();
-        if (isAdminUser) {
-          console.log('Xác nhận quyền admin từ cache');
-          if (isMounted) {
-            setIsAdmin(true);
-            setChecking(false);
-          }
-          return;
-        }
+        // Refresh token và kiểm tra lại
+        await checkAuth();
         
-        // Nếu không phải admin theo cache, kiểm tra lại từ server
-        if (retryCount < MAX_RETRIES) {
-          console.log(`Thử lại kiểm tra quyền admin (${retryCount + 1}/${MAX_RETRIES})`);
-          
-          try {
-            await checkAuth();
-            // Kiểm tra lại sau khi refresh thông tin
-            const newAdminCheck = authService.isAdmin();
-            
-            if (isMounted) {
-              setIsAdmin(newAdminCheck);
-              setChecking(false);
-            }
-          } catch (error) {
-            console.error("Lỗi khi kiểm tra lại quyền admin:", error);
-            if (isMounted) {
-              setIsAdmin(false);
-              setChecking(false);
-            }
-          }
+        // Kiểm tra lại sau khi refresh
+        const isAdminAfterRefresh = authService.isAdmin();
+        
+        if (isAdminAfterRefresh) {
+          // Nếu là admin sau khi refresh, reset bộ đếm và cho phép truy cập
+          resetAttemptCount();
+          setIsAdmin(true);
+          setChecking(false);
         } else {
-          // Hết lượt thử
-          if (isMounted) {
-            setIsAdmin(false);
-            setChecking(false);
-          }
+          // Nếu vẫn không phải admin, chuyển về trang chủ
+          setIsAdmin(false);
+          setChecking(false);
+          navigate('/', { replace: true });
         }
       } catch (error) {
         console.error('Lỗi khi kiểm tra quyền admin:', error);
-        if (isMounted) {
-          setIsAdmin(false);
-          setChecking(false);
-        }
+        setIsAdmin(false);
+        setChecking(false);
+        navigate('/', { replace: true });
       }
     };
-
-    // Nếu đang trong trạng thái loading/checking, thực hiện kiểm tra
-    if (checking && !loading && user) {
-      checkIsAdmin();
+    
+    if (!loading) {
       verifyAdmin();
-    } else if (!user || loading) {
-      // Nếu không có user hoặc đang loading, kết thúc checking
-      setChecking(false);
-      setIsAdmin(false);
     }
     
+    // Cleanup function
     return () => {
-      isMounted = false;
-      if (timeoutRef.current) {
-        window.clearTimeout(timeoutRef.current);
-      }
+      // Không làm gì trong cleanup
     };
-  }, [user, checkAuth, retryCount, loading, checking]);
-
+  }, [user, loading, checkAuth, navigate, location]);
+  
   // Hiển thị trạng thái loading khi đang kiểm tra
   if (loading || checking) {
-    return <div className="flex h-screen items-center justify-center">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-      <div className="ml-4 text-blue-500 font-semibold">Đang kiểm tra quyền admin...</div>
-    </div>
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        <div className="ml-4 text-blue-500 font-semibold">Đang kiểm tra quyền admin...</div>
+      </div>
+    );
   }
-
-  // Chuyển hướng đến trang chủ nếu không có quyền admin
-  return isAdmin ? <>{children}</> : <Navigate to="/" />
-}
+  
+  // Render children chỉ khi là admin
+  return isAdmin ? <>{children}</> : null;
+};
 
 function App() {
   // Khởi tạo module auth khi ứng dụng khởi động
@@ -245,7 +195,6 @@ function App() {
     <Router>
       <AuthProvider>
         <Toaster position="top-right" richColors />
-        <ToastContainer />
       <Routes>
           {/* Trang người dùng */}
         <Route path="/" element={<Layout />}>
@@ -257,10 +206,6 @@ function App() {
           <Route path="learning/:level" element={<LevelPage />} />
           <Route path="learning/:level/vocabulary" element={<VocabularyPage />} />
           <Route path="learning/:level/grammar" element={<GrammarPage />} />
-          {/* <Route path="learning/:level/listening" element={<ListeningPage />} />
-          <Route path="learning/:level/fill-in-blanks" element={<FillInBlanksPage />} />
-          <Route path="learning/:level/vocabulary-stories" element={<VocabularyStoriesPage />} />
-          <Route path="learning/:level/vocabulary-stories/:id" element={<VocabularyStoryDetail />} /> */}
           <Route path="learning/:level/practice-exams" element={<PracticeExamsPage />} />
           <Route path="login" element={<Login />} />
           <Route path="register" element={<Register />} />
@@ -284,14 +229,8 @@ function App() {
           }>
           <Route index element={<AdminDashboard />} />
           <Route path="users" element={<AdminUsers />} />
-          {/* <Route path="courses" element={<AdminCourses />} />                                                      */}
           <Route path="tests" element={<AdminToeicExams />} />
           <Route path="toeic-questions" element={<AdminToeicQuestions />} />
-          {/* <Route path="standalone-questions" element={<StandaloneQuestions />} /> */}
-          {/* <Route path="finance" element={<AdminFinance />} />
-          <Route path="modal-examples" element={<ModalExamples />} />
-          <Route path="feedback" element={<AdminFeedback />} /> */}
-          {/* Redirects for old URLs */}
           <Route path="exams" element={<Navigate to="/admin/tests" replace />} />
           <Route path="toeic-exams" element={<Navigate to="/admin/tests" replace />} />
           <Route path="questions" element={<Navigate to="/admin/toeic-questions" replace />} />

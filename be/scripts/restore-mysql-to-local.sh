@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # Thông tin MySQL local
-LOCAL_CONTAINER="mysql-toeic"  # Tên container MySQL trên máy local
+LOCAL_CONTAINER="mysql-container"  # Tên container MySQL trên máy local
 LOCAL_USER="root"
 LOCAL_PASSWORD="root"  # Mật khẩu MySQL local
-LOCAL_DATABASE="toeic_db"  # Tên database sẽ restore vào - đồng nhất với VPS
+LOCAL_DATABASE="toeic_learning"  
 
 # Thư mục chứa file backup
 BACKUP_DIR="./mysql_backups"

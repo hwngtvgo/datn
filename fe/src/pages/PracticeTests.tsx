@@ -170,7 +170,8 @@ export default function PracticeTests() {
       updatedTests[practiceIndex].isLoading = true;
       setPracticeTests(updatedTests);
 
-      const questions = await toeicExamService.getExamQuestions(examId);
+      // Thêm tham số phân trang để tránh lỗi khi có quá nhiều câu hỏi
+      const questions = await toeicExamService.getExamQuestions(examId, 0, 100, 500);
       console.log(`Dữ liệu nhóm câu hỏi cho đề thi ${examId}:`, questions);
       
       // Cập nhật state

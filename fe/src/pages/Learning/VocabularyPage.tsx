@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, ArrowRight, Volume2, BookmarkPlus, Loader2, HelpCircle, Search } from "lucide-react"
+import { ArrowLeft, ArrowRight, Volume2, BookmarkPlus, Loader2, HelpCircle, Search, ChevronLeft, ChevronRight } from "lucide-react"
 import { toast } from "sonner"
 import * as toeicExamService from "@/services/toeicExamService"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
@@ -102,6 +102,8 @@ export default function VocabularyPage() {
   const [userAnswers, setUserAnswers] = useState<Record<number, string>>({});
   const [showExplanations, setShowExplanations] = useState<Record<number, boolean>>({});
   const [searchQuery, setSearchQuery] = useState('');
+  const [topicsPage, setTopicsPage] = useState(1);
+  const topicsPerPage = 6;  
   
   // Tham chiếu đến thẻ audio
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -258,8 +260,44 @@ export default function VocabularyPage() {
             let words: VocabularyWord[] = [];
             
             try {
-              const questionsData = await toeicExamService.getExamQuestions(exam.id);
+              // Tải dữ liệu theo phân trang để tránh lỗi khi có quá nhiều câu hỏi
+              // Thử tải tất cả câu hỏi trước với maxQuestions=500
+              let questionsData = await toeicExamService.getExamQuestions(exam.id, 0, 100, 500);
               console.log(`Dữ liệu từ vựng cho đề thi ${exam.id}:`, questionsData);
+              
+              // Nếu không có dữ liệu hoặc có lỗi, thử tải theo từng trang nhỏ
+              if (!questionsData || questionsData.length === 0) {
+                console.log(`Không tải được dữ liệu đề thi ${exam.id} với maxQuestions=500, thử phân trang nhỏ hơn`);
+                
+                // Tải theo từng trang nhỏ, mỗi trang 20 câu hỏi
+                let allQuestions: any[] = [];
+                let currentPage = 0;
+                let hasMoreData = true;
+                
+                while (hasMoreData && currentPage < 15) { // Giới hạn tối đa 15 trang
+                  try {
+                    const pageData = await toeicExamService.getExamQuestions(exam.id, currentPage, 20);
+                    
+                    if (pageData && Array.isArray(pageData) && pageData.length > 0) {
+                      allQuestions = [...allQuestions, ...pageData];
+                      currentPage++;
+                      
+                      // Nếu số lượng dữ liệu nhỏ hơn kích thước trang, không còn dữ liệu
+                      if (pageData.length < 20) {
+                        hasMoreData = false;
+                      }
+                    } else {
+                      hasMoreData = false;
+                    }
+                  } catch (error) {
+                    console.error(`Lỗi khi tải trang ${currentPage} của đề thi ID=${exam.id}:`, error);
+                    hasMoreData = false;
+                  }
+                }
+                
+                questionsData = allQuestions;
+                console.log(`Đã tải ${questionsData.length} nhóm câu hỏi cho đề thi ID=${exam.id} bằng phương pháp phân trang`);
+              }
               
               // Tạo danh sách từ vựng từ dữ liệu API
               if (questionsData && questionsData.length > 0) {
@@ -441,11 +479,6 @@ export default function VocabularyPage() {
     console.log(`Playing audio for: ${wordToPlay.correctWord}`);
   }
 
-  const saveToNotes = () => {
-    // Trong ứng dụng thực, sẽ lưu từ vào ghi chú của người dùng
-    toast.success(`Đã lưu từ "${currentWord.correctWord}" vào ghi chú`);
-  }
-
   // Hàm toggle giải thích cho phần quiz
   const toggleExplanation = (questionId: number) => {
     setShowExplanations(prev => ({
@@ -507,7 +540,17 @@ export default function VocabularyPage() {
     exam.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Render the search bar and vocabulary topics list
+  // Get paginated topics
+  const getPaginatedTopics = () => {
+    const startIndex = (topicsPage - 1) * topicsPerPage;
+    const endIndex = startIndex + topicsPerPage;
+    return filteredVocabularyExams.slice(startIndex, endIndex);
+  };
+
+  // Get total pages for topics pagination
+  const totalTopicsPages = Math.ceil(filteredVocabularyExams.length / topicsPerPage);
+
+  // Render the search bar and vocabulary topics list with pagination
   const renderVocabularyTopicsList = () => {
     return (
       <div className="space-y-2">
@@ -520,32 +563,108 @@ export default function VocabularyPage() {
             placeholder="Search topics..."
             className="w-full pl-8 py-2 pr-4 rounded-md border border-input bg-background"
             value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setTopicsPage(1); // Reset to first page when searching
+            }}
           />
         </div>
         
         {filteredVocabularyExams.length > 0 ? (
-          filteredVocabularyExams.map((exam, index) => {
-            // Find the original index in the unfiltered array
-            const originalIndex = vocabularyExams.findIndex(e => e.id === exam.id);
-            return (
-              <div
-                key={exam.id}
-                className={`p-3 rounded-md cursor-pointer transition-colors ${
-                  selectedExamIndex === originalIndex
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted hover:bg-muted/80"
-                }`}
-                onClick={() => handleSelectExam(originalIndex)}
-              >
-                <h4 className="font-medium">{exam.title}</h4>
-                <p className="text-sm">{exam.description}</p>
-                <div className="flex justify-end mt-1">
-                  <span className="text-xs">{exam.words.length} words</span>
+          <>
+            {getPaginatedTopics().map((exam, index) => {
+              // Find the original index in the unfiltered array
+              const originalIndex = vocabularyExams.findIndex(e => e.id === exam.id);
+              return (
+                <div
+                  key={exam.id}
+                  className={`p-3 rounded-md cursor-pointer transition-colors ${
+                    selectedExamIndex === originalIndex
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-muted hover:bg-muted/80"
+                  }`}
+                  onClick={() => handleSelectExam(originalIndex)}
+                >
+                  <h4 className="font-medium">{exam.title}</h4>
+                  <p className="text-sm">{exam.description}</p>
+                  <div className="flex justify-end mt-1">
+                    <span className="text-xs">{exam.words.length} words</span>
+                  </div>
+                </div>
+              );
+            })}
+            
+            {/* Topics pagination controls */}
+            {filteredVocabularyExams.length > topicsPerPage && (
+              <div className="flex justify-center items-center mt-4 pt-2 border-t">
+                <div className="flex items-center gap-1">
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="w-8 h-8"
+                    onClick={() => setTopicsPage(prev => Math.max(prev - 1, 1))}
+                    disabled={topicsPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  
+                  {/* Page numbers */}
+                  {Array.from({ length: Math.min(3, totalTopicsPages) }, (_, i) => {
+                    let pageToShow;
+                    if (totalTopicsPages <= 3) {
+                      // If 3 or fewer pages, show all
+                      pageToShow = i + 1;
+                    } else if (topicsPage <= 2) {
+                      // Near start
+                      pageToShow = i + 1;
+                    } else if (topicsPage >= totalTopicsPages - 1) {
+                      // Near end
+                      pageToShow = totalTopicsPages - 2 + i;
+                    } else {
+                      // Middle
+                      pageToShow = topicsPage - 1 + i;
+                    }
+                    
+                    return (
+                      <Button
+                        key={pageToShow}
+                        variant={topicsPage === pageToShow ? "default" : "outline"}
+                        size="sm"
+                        className="w-8 h-8 p-0"
+                        onClick={() => setTopicsPage(pageToShow)}
+                      >
+                        {pageToShow}
+                      </Button>
+                    );
+                  })}
+                  
+                  {totalTopicsPages > 3 && topicsPage < totalTopicsPages - 1 && (
+                    <>
+                      <span className="mx-1">...</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-8 h-8 p-0"
+                        onClick={() => setTopicsPage(totalTopicsPages)}
+                      >
+                        {totalTopicsPages}
+                      </Button>
+                    </>
+                  )}
+                  
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    className="w-8 h-8" 
+                    onClick={() => setTopicsPage(prev => Math.min(prev + 1, totalTopicsPages))}
+                    disabled={topicsPage === totalTopicsPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
                 </div>
               </div>
-            );
-          })
+            )}
+          </>
         ) : (
           <div className="p-4 text-center bg-muted rounded-md">
             <p>No topics found matching "{searchQuery}"</p>
@@ -621,9 +740,6 @@ export default function VocabularyPage() {
                     <div className="flex gap-2">
                       <Button variant="outline" size="icon" onClick={() => playAudio()}>
                         <Volume2 className="h-4 w-4" />
-                      </Button>
-                      <Button variant="outline" size="icon" onClick={saveToNotes}>
-                        <BookmarkPlus className="h-4 w-4" />
                       </Button>
                     </div>
 
@@ -762,13 +878,6 @@ export default function VocabularyPage() {
                               playAudio(word);
                             }}>
                               <Volume2 className="h-4 w-4 mr-2" /> Listen
-                            </Button>
-                            <Button variant="outline" size="sm" onClick={() => {
-                              // Đặt từ hiện tại và lưu vào ghi chú
-                              setCurrentWordIndex(selectedExam.words.findIndex(w => w.id === word.id));
-                              saveToNotes();
-                            }}>
-                              <BookmarkPlus className="h-4 w-4 mr-2" /> Save
                             </Button>
                           </div>
                         </div>

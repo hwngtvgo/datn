@@ -1,15 +1,32 @@
 .cursor/
 .github/
-fe/.env.example
+
+# Environment files (chứa secrets)
+.env
+.env.local
+.env.production
+.env.vps
+.env.domain
 fe/.env
+fe/.env.local
+fe/.env.production
+fe/.env.vps
+fe/.env.domain
+be/.env
 
 # Các file cấu hình nhạy cảm khác
 **/application-local.properties
 **/application-dev.properties
 **/application-prod.properties
-**/application.properties
+**/application-production.properties
 
 # Logs
 logs/
 *.log
+
+# Database backups
+*.sql
+
+# Sensitive files
+cookies.txt
 

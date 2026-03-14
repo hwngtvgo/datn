@@ -45,7 +45,7 @@ export default function Login() {
         
         if (authService.isAdmin()) {
           console.log('Người dùng là ADMIN, chuyển hướng đến trang admin');
-          navigate("/");
+          navigate("/admin");
         } else {
           console.log('Người dùng KHÔNG phải là admin, chuyển hướng đến trang chủ');
           navigate("/");

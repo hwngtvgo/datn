@@ -5,10 +5,10 @@ services:
     image: mysql:8.0
     container_name: toeic-mysql
     environment:
-      MYSQL_ROOT_PASSWORD: toeic123456
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-toeic123456}
       MYSQL_DATABASE: toeic_learning
       MYSQL_USER: toeic
-      MYSQL_PASSWORD: REDACTED_DB_PASSWORD
+      MYSQL_PASSWORD: ${DB_PASSWORD:-REDACTED_DB_PASSWORD}
     volumes:
       - mysql_data:/var/lib/mysql
       - ./db:/docker-entrypoint-initdb.d
@@ -78,4 +78,4 @@ volumes:
 
 networks:
   toeic-network:
-    driver: bridge 
+    driver: bridge

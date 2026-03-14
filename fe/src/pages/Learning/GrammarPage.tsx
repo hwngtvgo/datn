@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { CheckCircle2, AlertCircle, BookOpen, HelpCircle, Lightbulb, Loader2 } from "lucide-react"
+import { CheckCircle2, AlertCircle, BookOpen, HelpCircle, Lightbulb, Loader2, Search, ChevronLeft, ChevronRight } from "lucide-react"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { toast } from "sonner"
 
@@ -98,6 +98,9 @@ export default function GrammarPage() {
   const [showExplanations, setShowExplanations] = useState<Record<number, boolean>>({});
   const [quizQuestions, setQuizQuestions] = useState<FormattedQuestion[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [rulesPage, setRulesPage] = useState(1);
+  const rulesPerPage = 5;
 
   // Hàm tạo phương án trả lời với key A, B, C, D
   const createOptionsWithKeys = (correctAnswer: string, questionText: string): {key: string, text: string}[] => {
@@ -163,6 +166,25 @@ export default function GrammarPage() {
     }
     
     return quizQuestionsData;
+  };
+
+  // Hàm xử lý nội dung để định dạng các từ được đánh dấu bằng **
+  const formatContent = (content: string): string => {
+    if (!content) return '';
+    
+    // Chỉ thay thế các đánh dấu **text** thành <strong>text</strong> với màu primary
+    let formattedContent = content.replace(/\*\*(.*?)\*\*/g, '<strong class="text-primary">$1</strong>');
+    
+    // Thêm định dạng cho các từ "am", "is", "are" và "not" để làm nổi bật
+    formattedContent = formattedContent.replace(/\b(am|is|are)\b/g, '<span class="text-primary font-semibold">$1</span>');
+    formattedContent = formattedContent.replace(/\b(not)\b/g, '<span class="text-primary font-semibold">$1</span>');
+    
+    // Đảm bảo các đoạn văn được bọc trong thẻ p nếu chưa có thẻ HTML
+    if (!formattedContent.startsWith('<')) {
+      formattedContent = `<p>${formattedContent}</p>`;
+    }
+    
+    return formattedContent;
   };
 
   // Tải dữ liệu ngữ pháp từ API
@@ -244,7 +266,7 @@ export default function GrammarPage() {
           const rulesPromises = grammarExams.map(async (exam: any) => {
             // Nếu có instructions, sử dụng làm nội dung lý thuyết
             const content = exam.instructions ? 
-              `<div class="space-y-4">${exam.instructions}</div>` : 
+              `<div class="space-y-4">${formatContent(exam.instructions)}</div>` : 
               `<div class="space-y-4">
                 <h3 class="text-lg font-medium mb-2">${exam.title}</h3>
                 <p>${exam.description || 'Không có mô tả chi tiết.'}</p>
@@ -332,7 +354,7 @@ export default function GrammarPage() {
           const rulesPromises = allGrammarExams.map(async (exam: any) => {
             // Nếu có instructions, sử dụng làm nội dung lý thuyết
             const content = exam.instructions ? 
-              `<div class="space-y-4">${exam.instructions}</div>` : 
+              `<div class="space-y-4">${formatContent(exam.instructions)}</div>` : 
               `<div class="space-y-4">
                 <h3 class="text-lg font-medium mb-2">${exam.title}</h3>
                 <p>${exam.description || 'Không có mô tả chi tiết.'}</p>
@@ -444,6 +466,139 @@ export default function GrammarPage() {
     }));
   };
 
+  // Filter grammar rules based on search query
+  const filteredGrammarRules = grammarRules.filter(rule => 
+    rule.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    rule.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Get paginated rules
+  const getPaginatedRules = () => {
+    const startIndex = (rulesPage - 1) * rulesPerPage;
+    const endIndex = startIndex + rulesPerPage;
+    return filteredGrammarRules.slice(startIndex, endIndex);
+  };
+
+  // Get total pages for rules pagination
+  const totalRulesPages = Math.ceil(filteredGrammarRules.length / rulesPerPage);
+
+  // Render the search bar and grammar rules list with pagination
+  const renderGrammarRulesList = () => {
+    return (
+      <div className="space-y-2">
+        <h3 className="font-medium text-lg mb-3">Danh sách quy tắc</h3>
+        
+        <div className="relative mb-4">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <input
+            type="text"
+            placeholder="Tìm kiếm quy tắc..."
+            className="w-full pl-8 py-2 pr-4 rounded-md border border-input bg-background"
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              setRulesPage(1); // Reset to first page when searching
+            }}
+          />
+        </div>
+        
+        {filteredGrammarRules.length > 0 ? (
+          <>
+            {getPaginatedRules().map((rule) => (
+              <div
+                key={rule.id}
+                className={`p-3 rounded-md cursor-pointer transition-colors ${
+                  selectedRule?.id === rule.id
+                    ? "bg-primary text-primary-foreground"
+                    : "bg-muted hover:bg-muted/80"
+                }`}
+                onClick={() => handleSelectRule(rule)}
+              >
+                <h4 className="font-medium">{rule.title}</h4>
+                <p className="text-sm">{rule.description}</p>
+              </div>
+            ))}
+            
+            {/* Rules pagination controls */}
+            {filteredGrammarRules.length > rulesPerPage && (
+              <div className="flex justify-center items-center mt-4 pt-2 border-t">
+                <div className="flex items-center gap-1">
+                  <Button 
+                    variant="outline" 
+                    size="icon" 
+                    className="w-8 h-8"
+                    onClick={() => setRulesPage(prev => Math.max(prev - 1, 1))}
+                    disabled={rulesPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  
+                  {/* Page numbers */}
+                  {Array.from({ length: Math.min(3, totalRulesPages) }, (_, i) => {
+                    let pageToShow;
+                    if (totalRulesPages <= 3) {
+                      // If 3 or fewer pages, show all
+                      pageToShow = i + 1;
+                    } else if (rulesPage <= 2) {
+                      // Near start
+                      pageToShow = i + 1;
+                    } else if (rulesPage >= totalRulesPages - 1) {
+                      // Near end
+                      pageToShow = totalRulesPages - 2 + i;
+                    } else {
+                      // Middle
+                      pageToShow = rulesPage - 1 + i;
+                    }
+                    
+                    return (
+                      <Button
+                        key={pageToShow}
+                        variant={rulesPage === pageToShow ? "default" : "outline"}
+                        size="sm"
+                        className="w-8 h-8 p-0"
+                        onClick={() => setRulesPage(pageToShow)}
+                      >
+                        {pageToShow}
+                      </Button>
+                    );
+                  })}
+                  
+                  {totalRulesPages > 3 && rulesPage < totalRulesPages - 1 && (
+                    <>
+                      <span className="mx-1">...</span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-8 h-8 p-0"
+                        onClick={() => setRulesPage(totalRulesPages)}
+                      >
+                        {totalRulesPages}
+                      </Button>
+                    </>
+                  )}
+                  
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    className="w-8 h-8" 
+                    onClick={() => setRulesPage(prev => Math.min(prev + 1, totalRulesPages))}
+                    disabled={rulesPage === totalRulesPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+          </>
+        ) : (
+          <div className="p-4 text-center bg-muted rounded-md">
+            <p>Không tìm thấy quy tắc nào phù hợp với "{searchQuery}"</p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="container py-10">
       <div className="mb-8">
@@ -488,48 +643,34 @@ export default function GrammarPage() {
             <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   <div className="md:col-span-1 space-y-2">
-                    <h3 className="font-medium text-lg mb-3">Danh sách quy tắc</h3>
-                    {grammarRules.map(rule => (
-                      <div
-                        key={rule.id}
-                        className={`p-3 rounded-md cursor-pointer transition-colors ${
-                          selectedRule?.id === rule.id
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted hover:bg-muted/80"
-                        }`}
-                        onClick={() => handleSelectRule(rule)}
-                      >
-                        <h4 className="font-medium">{rule.title}</h4>
-                        <p className="text-sm">{rule.description}</p>
-                    </div>
-                    ))}
-                </div>
+                    {renderGrammarRulesList()}
+                  </div>
 
                   <div className="md:col-span-3">
                     {selectedRule && (
-                      <>
-                        <h2 className="text-xl font-bold mb-4">{selectedRule.title}</h2>
+                      <div className="bg-white p-6 rounded-lg shadow-sm border">
+                        <h2 className="text-xl font-bold mb-4 text-primary">{selectedRule.title}</h2>
                         <div 
-                          className="prose max-w-none"
+                          className="prose max-w-none grammar-content"
                           dangerouslySetInnerHTML={{ __html: selectedRule.content }}
                         />
                         
-                        <Alert className="mt-6">
-                          <AlertCircle className="h-4 w-4" />
-                          <AlertTitle>Mẹo học</AlertTitle>
+                        <Alert className="mt-6 bg-primary/5 border-primary/20">
+                          <AlertCircle className="h-4 w-4 text-primary" />
+                          <AlertTitle className="text-primary">Mẹo học</AlertTitle>
                           <AlertDescription>
                             Để ghi nhớ tốt các quy tắc ngữ pháp, hãy luyện tập thường xuyên và áp dụng vào các tình huống thực tế. Chuyển sang tab "Ví dụ minh họa" để xem các ví dụ cụ thể và tab "Bài tập" để kiểm tra kiến thức của bạn.
                           </AlertDescription>
                         </Alert>
-                      </>
+                      </div>
                     )}
                   </div>
                 </div>
 
-                <div className="flex justify-between mt-8">
+                {/* <div className="flex justify-between mt-8">
                 <Button variant="outline">Previous</Button>
                 <Button>Next</Button>
-              </div>
+              </div> */}
             </CardContent>
           </Card>
         </TabsContent>
@@ -543,21 +684,7 @@ export default function GrammarPage() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   <div className="md:col-span-1 space-y-2">
-                    <h3 className="font-medium text-lg mb-3">Danh sách quy tắc</h3>
-                    {grammarRules.map(rule => (
-                      <div
-                        key={rule.id}
-                        className={`p-3 rounded-md cursor-pointer transition-colors ${
-                          selectedRule?.id === rule.id
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted hover:bg-muted/80"
-                        }`}
-                        onClick={() => handleSelectRule(rule)}
-                      >
-                        <h4 className="font-medium">{rule.title}</h4>
-                        <p className="text-sm">{rule.description}</p>
-                      </div>
-                    ))}
+                    {renderGrammarRulesList()}
                   </div>
 
                   <div className="md:col-span-3">
@@ -683,9 +810,9 @@ export default function GrammarPage() {
               </div>
               )}
 
-              <div className="mt-8 flex justify-end">
+              {/* <div className="mt-8 flex justify-end">
                 <Button>Submit Answers</Button>
-              </div>
+              </div> */}
             </CardContent>
           </Card>
         </TabsContent>

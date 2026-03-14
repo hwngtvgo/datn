@@ -4,8 +4,7 @@ import { useState } from "react"
 import { Link, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Menu, User, BookOpen, FileText, ChevronDown, LogOut, History } from "lucide-react"                                       
-import { ModeToggle } from "./ModeToggle"
+import { Menu, User, BookOpen, FileText, ChevronDown, LogOut, History } from "lucide-react"
 import { useAuth } from "@/contexts/AuthContext"
 import { toast } from "sonner"
 
@@ -163,7 +162,6 @@ export default function Header() {
           </nav>
         </div>
         <div className="flex items-center gap-2">
-          {/* <ModeToggle /> */}
           <div className="hidden md:flex items-center gap-2">
             {user ? (
               <>

@@ -97,6 +97,7 @@ export default function TestPage() {
   const audioRef = useRef<HTMLAudioElement>(null)
   const [isPlayingQuestion, setIsPlayingQuestion] = useState(false)
   const [audioEnded, setAudioEnded] = useState(false)
+  const [manualPlayRequired, setManualPlayRequired] = useState(false)
   
   // Test phases
   const [currentPhase, setCurrentPhase] = useState<'listening' | 'reading'>('listening')
@@ -264,6 +265,7 @@ export default function TestPage() {
       
       setAudioEnded(false);
       setIsPlayingQuestion(false);
+      setManualPlayRequired(false); // Reset trạng thái phát thủ công
       
       if (isListeningPart && currentPhase === 'listening' && currentGroup.audioUrl && audioRef.current) {
         const audioUrl = getFullUrl(currentGroup.audioUrl);
@@ -311,11 +313,33 @@ export default function TestPage() {
           }, waitTime);
         };
       
+        // Thêm xử lý lỗi khi không thể tải audio
+        audioRef.current.onerror = (e) => {
+          console.error("Lỗi khi tải audio:", e);
+          toast.error("Không thể tải file âm thanh. Vui lòng thử lại sau.", { 
+            duration: 3000,
+            position: "top-center" 
+          });
+          
+          // Đánh dấu cần phát thủ công
+          setManualPlayRequired(true);
+          setAudioEnded(false);
+          setIsPlayingQuestion(false);
+        };
+      
         setTimeout(() => {
           setIsPlayingQuestion(true);
           audioRef.current?.play().catch(err => {
             console.error("Không thể tự động phát audio câu hỏi:", err);
-            setAudioEnded(true);
+            toast.error("Không thể phát audio tự động. Vui lòng nhấn nút phát để nghe.", {
+              duration: 5000,
+              position: "top-center"
+            });
+            
+            // Hiển thị nút phát thủ công
+            setManualPlayRequired(true);
+            setAudioEnded(false);
+            setIsPlayingQuestion(false);
           });
         }, 500);
       }
@@ -750,8 +774,35 @@ export default function TestPage() {
             {audioEnded && (
               <p className="text-sm text-green-600">✅ Đã phát xong. Đang chuyển sang phần tiếp theo...</p>
             )}
-            {!isPlayingQuestion && !audioEnded && (
+            {!isPlayingQuestion && !audioEnded && !manualPlayRequired && (
               <p className="text-sm text-blue-600">⏳ Đang chuẩn bị...</p>
+            )}
+            {manualPlayRequired && (
+              <div className="mt-2">
+                <p className="text-sm text-amber-600 mb-2">⚠️ Không thể tự động phát audio. Vui lòng nhấn nút phát:</p>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="flex items-center gap-2 bg-blue-100"
+                  onClick={() => {
+                    if (audioRef.current) {
+                      audioRef.current.play()
+                        .then(() => {
+                          setIsPlayingQuestion(true);
+                          setManualPlayRequired(false);
+                        })
+                        .catch(err => {
+                          console.error("Vẫn không thể phát audio:", err);
+                          toast.error("Vẫn không thể phát audio. Vui lòng kiểm tra cài đặt trình duyệt của bạn.", {
+                            duration: 5000
+                          });
+                        });
+                    }
+                  }}
+                >
+                  <Volume2 className="h-4 w-4" /> Phát audio
+                </Button>
+              </div>
             )}
           </div>
         )}

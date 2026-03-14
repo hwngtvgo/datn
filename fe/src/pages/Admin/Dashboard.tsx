@@ -89,7 +89,7 @@ export default function AdminDashboard() {
         <p className="text-muted-foreground">Tổng quan về hệ thống học TOEIC</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-6 md:grid-cols-3 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium">Tổng người dùng</CardTitle>
@@ -122,18 +122,6 @@ export default function AdminDashboard() {
           <CardContent>
             {loading ? renderSkeleton() : (
               <div className="text-2xl font-bold">{totalTestResults}</div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Điểm trung bình TOEIC</CardTitle>
-            <LineChart className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            {loading ? renderSkeleton() : (
-              <div className="text-2xl font-bold">{averageScore ? Math.round(averageScore) : '0'}/990</div>
             )}
           </CardContent>
         </Card>

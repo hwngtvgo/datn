@@ -103,7 +103,7 @@ const ExamForm: React.FC<ExamFormProps> = ({
       if (!initialData?.id) return;
       
       console.log("Đang tải nhóm câu hỏi đã chọn cho đề thi ID:", initialData.id);
-      const response = await toeicExamService.getExamQuestions(initialData.id);
+      const response = await toeicExamService.getExamQuestions(initialData.id, 0, 100, 500);
       
       if (response && Array.isArray(response)) {
         // Lấy danh sách id của các nhóm câu hỏi đã chọn
@@ -828,7 +828,7 @@ const ExamForm: React.FC<ExamFormProps> = ({
                         size="sm"
                         onClick={handleGoToPage}
                       >
-                        Tiếp
+                        Tìm
                       </Button>
                     </div>
                   </div>

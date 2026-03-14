@@ -137,16 +137,70 @@ export async function updateExamPublishStatus(id: number, isActive: boolean) {
 }
 
 // Lấy câu hỏi trong đề thi
-export async function getExamQuestions(id: number) {
+export async function getExamQuestions(id: number, page = 0, size = 50, maxQuestions = 300) {
   try {
-    const response = await axios.get(`${TOEIC_EXAM_API_URL}/${id}/questions`, {
-      ...authModule.createAuthConfig()
-    });
-    console.log(`Kết quả getExamQuestions(${id}):`, response.data);
-    return response.data;
+    // Kiểm tra đề thi có tồn tại không
+    try {
+      const response = await axios.get(`${TOEIC_EXAM_API_URL}/${id}/questions`, {
+        params: { page: 0, size: maxQuestions },
+        ...authModule.createAuthConfig(),
+        timeout: 60000 // Tăng timeout lên 60 giây
+      });
+      console.log(`Kết quả getExamQuestions(${id}) - tải tất cả:`, response.data);
+      return response.data;
+    } catch (error) {
+      console.log(`Không thể tải tất cả câu hỏi cùng lúc, chuyển sang phương pháp phân trang`);
+      
+      // Nếu không thành công, chuyển sang phương pháp phân trang
+      let allQuestions = [];
+      let currentPage = 0;
+      let hasMoreData = true;
+      const pageSize = 10; // Giảm kích thước trang xuống 10 để tránh lỗi
+      
+      while (hasMoreData && currentPage < 30) { // Tăng số trang tối đa lên 30
+        try {
+          const response = await axios.get(`${TOEIC_EXAM_API_URL}/${id}/questions`, {
+            params: { page: currentPage, size: pageSize },
+            ...authModule.createAuthConfig(),
+            timeout: 30000 // Timeout 30 giây cho mỗi request phân trang
+          });
+          
+          const pageData = response.data;
+          console.log(`Kết quả getExamQuestions(${id}) - trang ${currentPage}:`, pageData);
+          
+          if (Array.isArray(pageData) && pageData.length > 0) {
+            allQuestions = [...allQuestions, ...pageData];
+            currentPage++;
+            
+            // Nếu số lượng dữ liệu nhỏ hơn kích thước trang, không còn dữ liệu
+            if (pageData.length < pageSize) {
+              hasMoreData = false;
+            }
+          } else {
+            hasMoreData = false;
+          }
+        } catch (error) {
+          console.error(`Lỗi khi tải trang ${currentPage} của đề thi ID=${id}:`, error);
+          
+          // Đợi 2 giây trước khi thử lại trang tiếp theo
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          
+          // Tăng trang để bỏ qua trang lỗi
+          currentPage++;
+          
+          // Nếu đã thử nhiều trang mà vẫn lỗi, dừng lại
+          if (currentPage > 5 && allQuestions.length === 0) {
+            hasMoreData = false;
+          }
+        }
+      }
+      
+      console.log(`Đã tải tổng cộng ${allQuestions.length} nhóm câu hỏi cho đề thi ID=${id}`);
+      return allQuestions;
+    }
   } catch (error) {
     console.error(`Lỗi khi lấy câu hỏi của đề thi ID=${id}:`, error);
-    throw error;
+    return [];
   }
 }
 
